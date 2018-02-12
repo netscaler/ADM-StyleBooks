@@ -1,0 +1,202 @@
+--- 
+name: sharepoint-responder-config
+namespace: com.citrix.adc.enterprise.stylebooks
+version: "1.0"
+display-name: Sharepoint Responder Configuration
+description: This stylebook creates Sharepoint Responder Config
+private: true
+schema-version: "1.0"
+import-stylebooks: 
+  - 
+    namespace: netscaler.nitro.config
+    prefix: ns
+    version: "10.5"
+  - 
+    namespace: com.citrix.adc.stylebooks
+    prefix: stlb
+    version: "1.0"
+  - 
+    namespace: com.citrix.adc.enterprise.stylebooks
+    prefix: entsb
+    version: "1.0"
+parameters-default-sources:
+  - entsb::sharepoint-feature-config-params
+substitutions:
+  serverips-patset-name: truncate(replace("%{$parameters.appname}%-responder-serverips-patset", "-", "_"), 31)
+  host-headername: HOST
+  pattern-url: str("HTTP.REQ.HEADER(%{quotewrap($substitutions.host-headername)}%).CONTAINS_ANY(%{quotewrap($substitutions.serverips-patset-name)}%) && !CLIENT.SSL.IS_SSL")
+components:
+  -
+    name: enable-features-comp
+    type: ns::nsfeature
+    description: Enables the Responder Feature
+    meta-properties:
+        action: enable
+    properties:
+        feature: ["responder"]
+  -
+    name: serverips-patset-comp
+    type: ns::policypatset
+    properties:
+      name: $substitutions.serverips-patset-name
+    components:
+      -
+        name: serverips-patset-bindings-comp
+        type: ns::policypatset_pattern_binding
+        repeat: $parameters.server-ips
+        repeat-item: server-ip
+        properties:
+          name: $parent.properties.name
+          String: str($server-ip)
+  -
+    name: sharepoint-responder-config-comp
+    type: stlb::responder-config
+    properties:
+        appname: $parameters.appname
+        responder-config:
+          redirect-to-https:
+            pattern: $substitutions.pattern-url
+  -
+    name: default-responder-policy-bindings-comp
+    type: stlb::vserver-responderpolicies-bindings
+    description: This component binds Sharepoint's default lbvserver to the responder policy label created by the previous component.
+    properties:
+      vserver-name: $parameters.sharepoint-lbvservers.default-lbvserver-name
+      vserver-type: LBVSERVER
+      policies:
+        -
+          name: $components.sharepoint-responder-config-comp.outputs.responder-policy-label
+          type: POLICYLABEL
+          bind-point: REQUEST
+  -
+    name: frontpage-responder-policy-bindings-comp
+    type: stlb::vserver-responderpolicies-bindings
+    description: This component binds Sharepoint's frontpage lbvserver to the responder policy label created earlier.
+    properties:
+      vserver-name: $parameters.sharepoint-lbvservers.frontpage-lbvserver-name
+      vserver-type: LBVSERVER
+      policies:
+        -
+          name: $components.sharepoint-responder-config-comp.outputs.responder-policy-label
+          type: POLICYLABEL
+          bind-point: REQUEST
+  -
+    name: soap-responder-policy-bindings-comp
+    type: stlb::vserver-responderpolicies-bindings
+    description: This component binds Sharepoint's soap lbvserver to the responder policy label created earlier.
+    properties:
+      vserver-name: $parameters.sharepoint-lbvservers.soap-services-lbvserver-name
+      vserver-type: LBVSERVER
+      policies:
+        -
+          name: $components.sharepoint-responder-config-comp.outputs.responder-policy-label
+          type: POLICYLABEL
+          bind-point: REQUEST
+  -
+    name: portal-responder-policy-bindings-comp
+    type: stlb::vserver-responderpolicies-bindings
+    description: This component binds Sharepoint's portal management lbvserver to the responder policy label created earlier.
+    properties:
+      vserver-name: $parameters.sharepoint-lbvservers.portal-management-lbvserver-name
+      vserver-type: LBVSERVER
+      policies:
+        -
+          name: $components.sharepoint-responder-config-comp.outputs.responder-policy-label
+          type: POLICYLABEL
+          bind-point: REQUEST
+  -
+    name: docs-responder-policy-bindings-comp
+    type: stlb::vserver-responderpolicies-bindings
+    description: This component binds Sharepoint's documents lbvserver to the responder policy label created earlier.
+    properties:
+      vserver-name: $parameters.sharepoint-lbvservers.docs-lbvserver-name
+      vserver-type: LBVSERVER
+      policies:
+        -
+          name: $components.sharepoint-responder-config-comp.outputs.responder-policy-label
+          type: POLICYLABEL
+          bind-point: REQUEST
+  -
+    name: editable-images-responder-policy-bindings-comp
+    type: stlb::vserver-responderpolicies-bindings
+    description: This component binds Sharepoint's editable images lbvserver to the responder policy label created earlier.
+    properties:
+      vserver-name: $parameters.sharepoint-lbvservers.editable-images-lbvserver-name
+      vserver-type: LBVSERVER
+      policies:
+        -
+          name: $components.sharepoint-responder-config-comp.outputs.responder-policy-label
+          type: POLICYLABEL
+          bind-point: REQUEST
+  -
+    name: readonly-images-responder-policy-bindings-comp
+    type: stlb::vserver-responderpolicies-bindings
+    description: This component binds Sharepoint's readonly images lbvserver to the responder policy label created earlier.
+    properties:
+      vserver-name: $parameters.sharepoint-lbvservers.readonly-images-lbvserver-name
+      vserver-type: LBVSERVER
+      policies:
+        -
+          name: $components.sharepoint-responder-config-comp.outputs.responder-policy-label
+          type: POLICYLABEL
+          bind-point: REQUEST
+  -
+    name: videos-responder-policy-bindings-comp
+    type: stlb::vserver-responderpolicies-bindings
+    description: This component binds Sharepoint's readonly images lbvserver to the responder policy label created earlier.
+    properties:
+      vserver-name: $parameters.sharepoint-lbvservers.videos-lbvserver-name
+      vserver-type: LBVSERVER
+      policies:
+        -
+          name: $components.sharepoint-responder-config-comp.outputs.responder-policy-label
+          type: POLICYLABEL
+          bind-point: REQUEST
+  -
+    name: audio-responder-policy-bindings-comp
+    type: stlb::vserver-responderpolicies-bindings
+    description: This component binds Sharepoint's readonly images lbvserver to the responder policy label created earlier.
+    properties:
+      vserver-name: $parameters.sharepoint-lbvservers.audio-lbvserver-name
+      vserver-type: LBVSERVER
+      policies:
+        -
+          name: $components.sharepoint-responder-config-comp.outputs.responder-policy-label
+          type: POLICYLABEL
+          bind-point: REQUEST
+  -
+    name: styles-scripts-responder-policy-bindings-comp
+    type: stlb::vserver-responderpolicies-bindings
+    description: This component binds Sharepoint's Styles&Scripts lbvserver to the responder policy label created earlier.
+    properties:
+      vserver-name: $parameters.sharepoint-lbvservers.styles-scripts-lbvserver-name
+      vserver-type: LBVSERVER
+      policies:
+        -
+          name: $components.sharepoint-responder-config-comp.outputs.responder-policy-label
+          type: POLICYLABEL
+          bind-point: REQUEST
+  -
+    name: webservices-definitions-responder-policy-bindings-comp
+    type: stlb::vserver-responderpolicies-bindings
+    description: This component binds Sharepoint's WebServices definitions lbvserver to the responder policy label created earlier.
+    properties:
+      vserver-name: $parameters.sharepoint-lbvservers.webservices-definitions-lbvserver-name
+      vserver-type: LBVSERVER
+      policies:
+        -
+          name: $components.sharepoint-responder-config-comp.outputs.responder-policy-label
+          type: POLICYLABEL
+          bind-point: REQUEST
+  -
+    name: webservices-schemas-responder-policy-bindings-comp
+    type: stlb::vserver-responderpolicies-bindings
+    description: This component binds Sharepoint's WebServices schemas lbvserver to the responder policy label created earlier.
+    properties:
+      vserver-name: $parameters.sharepoint-lbvservers.webservices-schemas-lbvserver-name
+      vserver-type: LBVSERVER
+      policies:
+        -
+          name: $components.sharepoint-responder-config-comp.outputs.responder-policy-label
+          type: POLICYLABEL
+          bind-point: REQUEST

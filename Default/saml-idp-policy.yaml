@@ -1,0 +1,121 @@
+--- 
+name: saml-idp-policy
+namespace: com.citrix.adc.stylebooks
+version: "1.1"
+description: This StyleBook configures an SAML IdP Policy and Profile on NetScaler 11.0 and above.
+schema-version: "1.0"
+private: true
+import-stylebooks: 
+    - 
+        namespace: netscaler.nitro.config
+        version: "11.0"
+        prefix: ns
+    -
+        namespace: com.citrix.adc.commontypes
+        version: "1.0"
+        prefix: cmtypes   
+parameters:
+    -
+        name: appname
+        type: string
+        label: Application Domain
+        description: The Application Name
+        required: true
+    -
+        name: rule
+        type: string
+        label: NetScaler PI Rule for when to apply the Active Directory SAML Policy
+        description: The Application Rule
+        default: "true"
+    -
+        name: saml-idp-settings
+        type: object
+        label: SAML IdP Settings
+        description: Advanced SAML IdP Settings 
+        required: true
+        parameters-default-sources:
+            - cmtypes::saml-idp-base-params
+        parameters:
+            -
+                name: saml-idp-cert-name
+                label: CertKey Name for Signing Assertions 
+                description: |
+                    The CertKey Name (private key) is used by NetScaler to sign SAML Responses sent to the Service Provider 
+                    after successful authentication. This Certificate and its private key are created on the NetScaler
+                type: string
+                required: true
+            -
+                name: saml-sp-cert-name
+                label: CertKey Name for Verifying Authentication Requests
+                description: |
+                    This CertKey Name (the public key) that is used by NetScaler to verify the Service Provider's signature. 
+                    This Certificate is created by the Service Provider and provided to the NetScaler.
+                type: string
+substitutions:
+    bool-to-onoff: 
+        true: "ON"
+        false: "OFF"
+components:
+    -
+        name: enable-features-comp
+        type: ns::nsfeature
+        description: Enables the NetScaler features needed for SSO Office 365
+        meta-properties:
+          action: enable
+        properties:
+          feature: ["aaa"]
+    -
+        name: saml-idp-profile-comp
+        type: ns::authenticationsamlidpprofile
+        description: This component creates the SAML IdP Profile
+        properties:
+          name: $parameters.appname + "-saml-idp-profile"
+          samlissuername: $parameters.saml-idp-settings.saml-idp-issuer-name
+          samlidpcertname: $parameters.saml-idp-settings.saml-idp-cert-name
+          assertionconsumerserviceurl: $parameters.saml-idp-settings.saml-assertion-consumerservice-url
+          samlspcertname?: $parameters.saml-idp-settings.saml-sp-cert-name
+          samlbinding?: $parameters.saml-idp-settings.saml-binding
+          serviceproviderid?: $parameters.saml-idp-settings.saml-sp-id
+          nameidexpr?: $parameters.saml-idp-settings.name-id-expr
+          nameidformat?: $parameters.saml-idp-settings.name-id-format
+          rejectunsignedrequests?: $substitutions.bool-to-onoff[$parameters.saml-idp-settings.reject-unsigned-requests]
+          signaturealg?: $parameters.saml-idp-settings.signature-algorithm
+          digestmethod?: $parameters.saml-idp-settings.digest-method
+          audience?: $parameters.saml-idp-settings.audience
+          sendpassword?: $substitutions.bool-to-onoff[$parameters.saml-idp-settings.send-password]
+          encryptassertion?: $substitutions.bool-to-onoff[$parameters.saml-idp-settings.encrypt-assertion]
+          encryptionalgorithm?: $parameters.saml-idp-settings.encryption-algorithm
+          skewtime?: $parameters.saml-idp-settings.valid-period
+          attribute1?: $parameters.saml-idp-settings.user-attrs.attribute1-name
+          attribute1expr?: $parameters.saml-idp-settings.user-attrs.attribute1-expr
+          attribute1friendlyname?: $parameters.saml-idp-settings.user-attrs.attribute1-friendly-name
+          attribute1format?: $parameters.saml-idp-settings.user-attrs.attribute1-format
+          attribute2?: $parameters.saml-idp-settings.user-attrs.attribute2-name
+          attribute2expr?: $parameters.saml-idp-settings.user-attrs.attribute2-expr
+          attribute2friendlyname?: $parameters.saml-idp-settings.user-attrs.attribute2-friendly-name
+          attribute2format?: $parameters.saml-idp-settings.user-attrs.attribute2-format
+          attribute3?: $parameters.saml-idp-settings.user-attrs.attribute3-name
+          attribute3expr?: $parameters.saml-idp-settings.user-attrs.attribute3-expr
+          attribute3friendlyname?: $parameters.saml-idp-settings.user-attrs.attribute3-friendly-name
+          attribute3format?: $parameters.saml-idp-settings.user-attrs.attribute3-format
+          attribute4?: $parameters.saml-idp-settings.user-attrs.attribute4-name
+          attribute4expr?: $parameters.saml-idp-settings.user-attrs.attribute4-expr
+          attribute4friendlyname?: $parameters.saml-idp-settings.user-attrs.attribute4-friendly-name
+          attribute4format?: $parameters.saml-idp-settings.user-attrs.attribute4-format
+          attribute5?: $parameters.saml-idp-settings.user-attrs.attribute5-name
+          attribute5expr?: $parameters.saml-idp-settings.user-attrs.attribute5-expr
+          attribute5friendlyname?: $parameters.saml-idp-settings.user-attrs.attribute5-friendly-name
+          attribute5format?: $parameters.saml-idp-settings.user-attrs.attribute5-format
+    -
+         name: saml-idp-policy-comp
+         type: ns::authenticationsamlidppolicy
+         description: This component creates SAML IDP Policy
+         properties:
+            name: $parameters.appname + "-saml-idp-policy"
+            rule: $parameters.rule
+            action: $components.saml-idp-profile-comp.properties.name
+outputs:
+    -
+        name: saml-idp-policy
+        value: $components.saml-idp-policy-comp
+        description: The SAML IdP Policy Component

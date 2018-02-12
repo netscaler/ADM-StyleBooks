@@ -1,0 +1,139 @@
+--- 
+name: monitor
+namespace: com.citrix.adc.commontypes
+version: "1.0"
+private: true
+display-name: "LB Monitor"
+description: "This StyleBook defines a LB Monitor type."
+schema-version: "1.0"
+import-stylebooks: 
+  - 
+    namespace: netscaler.nitro.config
+    version: "10.5"
+    prefix: ns
+parameters: 
+    - 
+      name: monitorname
+      label: "Monitor Name"
+      description: "Name of the monitor"
+      type: string
+      required: true
+    -
+      name: type
+      label: "Monitor Type"
+      description: "Type of the monitor"
+      type: string
+      required: true
+      allowed-values:
+        - PING
+        - TCP
+        - HTTP
+        - HTTP-ECV
+        - TCP-ECV
+        - HTTP-INLINE
+    -
+      name: destip
+      label: "Destination IP"
+      description: "Destination IP to be monitored"
+      type: ipaddress
+    -
+      name: destport
+      label: "Destination Port"
+      description: "Destination Port to be monitored"
+      type: tcp-port
+    -
+      name: httprequest
+      label: "HTTP Request"
+      description: "HTTP Request sent by the monitor"
+      type: string
+    -
+      name: send
+      label: "Send String"
+      description: "String sent by the ECV monitor"
+      type: string
+    -
+      name: customheaders
+      label: "Custom HTTP Headers"
+      description: "custom HTTP Headers to send in monitor probe requests"
+      type: string
+    -
+      name: respcodes
+      label: "List of HTTP Status Response Code"
+      description: "Expected HTTP Status Response Code"
+      type: string[]
+    -
+      name: recv
+      label: "Expected Response"
+      description: "HTTP Response expected back by the monitor"
+      type: string
+    -
+      name: lrtm
+      label: "Enable LRTM mode for the monitor"
+      description: "Enables the Least-Response-Time mode for the monitor used for load-balancing."
+      type: string
+      allowed-values:
+        - ENABLED
+        - DISABLED
+    -
+      name: secure
+      label: "Enable Secure mode for the monitor"
+      description: "Uses HTTPS for sending monitoring probes."
+      type: string
+      allowed-values:
+        - "YES"
+        - "NO"
+    -
+      name: interval
+      label: "Interval"
+      description: "Interval between successive monitor probes (in seconds)"
+      type: number
+      required: false
+    -
+      name: interval_units
+      label: "Interval Units"
+      description: "Interval Units"
+      type: string
+      allowed-values:
+        - SEC
+        - MSEC
+        - MIN
+    -
+      name: resptimeout
+      label: "Response Timeout"
+      description: "Response Timeout in seconds."
+      type: number
+    -
+      name: retries
+      label: "Number of retries"
+      description: "Number of retries if monitor fails to reach service."
+      type: number 
+    -
+      name: downtime
+      label: "Probe Interval during downTime"
+      description: "Time duration to wait before probing a service when it is down to detect when it comes up again."
+      type: number
+components:
+  -
+    name: monitor
+    type: ns::lbmonitor
+    properties:
+        monitorname: $parameters.monitorname
+        type: $parameters.type
+        destip?: $parameters.destip
+        destport?: $parameters.destport
+        httprequest?: $parameters.httprequest
+        send?: $parameters.send
+        customheaders?: $parameters.customheaders
+        respcode?: $parameters.respcodes
+        recv?: $parameters.recv
+        lrtm?: $parameters.lrtm
+        secure?: $parameters.secure
+        interval?: $parameters.interval
+        units3?: $parameters.interval_units
+        resptimeout?: $parameters.resptimeout
+        retries?: $parameters.retries
+        downtime?: $parameters.downtime
+outputs:
+  -
+    name: monitor
+    value: $components.monitor

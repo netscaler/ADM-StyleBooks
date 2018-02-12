@@ -1,0 +1,62 @@
+name: replace-content
+namespace: com.citrix.adc.stylebooks
+version: "1.0"
+display-name: Replace Text in Responses StyleBook
+private: true
+schema-version: "1.0"
+description: |    
+    This StyleBook can be use to configure NetScaler to replace Text Strings ina Response.
+import-stylebooks: 
+  - 
+    namespace: netscaler.nitro.config
+    version: "10.5"
+    prefix: ns
+  - 
+    namespace: com.citrix.adc.commontypes
+    version: "1.0"
+    prefix: cmtypes
+parameters:
+    -
+        name: appname
+        type: string
+        label: Application Name
+        description: The Name of the Application
+    -
+        name: content-config
+        type: object
+        description: The content config to replace
+        parameters-default-sources:
+            - cmtypes::replace-content-params
+substitutions:
+    convert-to-bytes(kilobytes): $kilobytes * 1024
+    max-response-size-expr: str("HTTP.RES.BODY(%{$substitutions.convert-to-bytes($parameters.content-config.max-lookup-size)}%)")
+    replacement-text: str("\"") + $parameters.content-config.replacement-text + str("\"")
+    all_occurrences: $parameters.content-config.replace-all == "All Occurrences"
+    choose-rewrite-action:
+        true: REPLACE_ALL
+        false: REPLACE
+    rewrite-action: $substitutions.choose-rewrite-action[$substitutions.all_occurrences]
+components:
+  -
+    name: replace-content-action-comp
+    type: ns::rewriteaction
+    properties:
+        name: $parameters.appname + "-" + $parameters.content-config.name + "-rewrite-action"
+        type: $substitutions.rewrite-action
+        pattern: str($parameters.content-config.text-to-replace)
+        stringbuilderexpr: $substitutions.replacement-text
+        target: $substitutions.max-response-size-expr
+    components:
+      -
+        name: replace-content-policy-comp
+        type: ns::rewritepolicy
+        properties:
+            name: $parameters.appname + "-" + $parameters.content-config.name + "-rewrite-policy"
+            rule: $parameters.content-config.pattern
+            action: $parent.properties.name
+outputs:
+    -
+        name: replace-content-policy
+        value: $components.replace-content-action-comp.components.replace-content-policy-comp
+
+

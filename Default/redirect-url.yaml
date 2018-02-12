@@ -1,0 +1,51 @@
+name: redirect-url
+namespace: com.citrix.adc.stylebooks
+version: "1.0"
+display-name:  Redirect users to a different URL
+private: true
+schema-version: "1.0"
+description: |    
+    This StyleBook configures NetScaler to redirect users to another URL.
+import-stylebooks: 
+  - 
+    namespace: netscaler.nitro.config
+    version: "10.5"
+    prefix: ns
+  - 
+    namespace: com.citrix.adc.commontypes
+    version: "1.0"
+    prefix: cmtypes
+parameters:
+    -
+        name: appname
+        type: string
+        label: Application Name
+        description: The Name of the Application
+    -
+        name: redirect-url
+        type: object
+        label: Redirect URL Settings
+        description: The Settings for redirecting to a URL
+        parameters-default-sources:
+            - cmtypes::redirect-url-params
+components:
+  -
+    name: redirect-url-action-comp
+    type: ns::responderaction
+    properties:
+        name: $parameters.appname + "-redirecturl-responder-action"
+        type: REDIRECT
+        target: $parameters.redirect-url.target-expr
+        bypasssafetycheck: "YES"
+    components:
+      -
+        name: redirect-url-policy-comp
+        type: ns::responderpolicy
+        properties:
+            name: $parameters.appname + "-redirecturl-responder-policy"
+            rule: $parameters.redirect-url.pattern
+            action: $parent.properties.name
+outputs:
+    -
+        name: redirect-url-policy
+        value: $components.redirect-url-action-comp.components.redirect-url-policy-comp

@@ -1,0 +1,385 @@
+---
+name: microsoft-skype
+namespace: com.citrix.adc.enterprise.stylebooks
+version: "1.1"
+description: This StyleBook defines a NetScaler configuration for Microsoft Skype for Business 2015.
+display-name: Microsoft Skype for Business 2015 StyleBook
+schema-version: "1.0"
+import-stylebooks:
+  -
+    namespace: com.citrix.adc.enterprise.stylebooks
+    version: "1.1"
+    prefix: ent
+target-roles:
+  -
+    name: director
+  -
+    name: edge
+    min-targets: 1
+  -
+    name: frontend
+    min-targets: 1
+parameters:
+  -
+    name: skype-appname
+    label: Application name for Microsoft Skype
+    description: Application name for Microsoft Skype for Business
+    type: string
+    key: true
+    required: true
+  -
+    name: skype-edge
+    label: Server IPs and Virtual IP of Edge Server for Microsoft Skype
+    description: Server IPs and Virtual IP of Edge Server for Microsoft Skype
+    type: object
+    required: true
+    parameters:
+      -
+        name: edge-external-vip
+        label: External VIP for Edge 
+        description: The external Virtual IP address of Edge server for Microsoft Skype
+        type: ipaddress
+        required: true
+      -
+        name: edge-internal-vip
+        label: Internal VIP for Edge
+        description: The internal Virtual IP address of Edge server for Microsoft Skype
+        type: ipaddress
+        required: true
+      -
+        name: edge-external-server-ips
+        label: External Edge Server IPs
+        description: List of the external Server IPs of the Edge Servers
+        type: ipaddress[]
+        required: true
+        min-items: 1
+      -
+        name: edge-internal-server-ips
+        label: Internal Edge Server IPs
+        description: List of the internal Server IPs of the Edge Servers
+        type: ipaddress[]
+        required: true
+        min-items: 1
+  -
+    name: skype-frontend
+    label: Server IPs and Virtual IP of Front End Server for Microsoft Skype
+    description: Server IPs and Virtual IP of Front End Server for Microsoft Skype
+    type: object
+    required: true
+    parameters:
+      -
+        name: fe-vip
+        label: Skype for Business FrontEnd Virtual IP
+        description: The FrontEnd Virtual IP address for Microsoft Skype
+        type: ipaddress
+        required: true
+      -
+        name: fe-server-ips
+        label: Skype for Business FrontEnd Server IPs
+        description: List of Skype for Business FrontEnd Server IPs
+        type: ipaddress[]
+        required: true
+        min-items: 1
+  -
+    name: skype-director
+    label: Server IPs and Virtual IP of Business Director for Microsoft Skype
+    description: Server IPs and Virtual IP of Business Director for Microsoft Skype
+    type: object
+    gui:
+      collapse_pane: true
+    parameters:
+      -
+        name: dir-vip
+        label: Skype for Business Director Virtual IP
+        description: The Director Virtual IP address for Microsoft Skype
+        type: ipaddress
+      -
+        name: dir-server-ips
+        label: Skype for Business Director Server IPs
+        description: List of Skype for Business Director Server IPs
+        type: ipaddress[]
+        min-items: 1
+  -
+    name: skype-advanced
+    label: Advanced Settings for Microsoft Skype
+    description: Advanced Settings for Microsoft Skype
+    type: object
+    required: true
+    gui:
+      collapse_pane: true
+      columns: 1
+    parameters:
+      -
+        name: dir-ports-list
+        label: List of Ports for Business Director
+        description: List of Ports for Business Director
+        type: object
+        gui:
+          collapse_pane: true
+          columns: 1
+        required: true
+        parameters:
+           -
+              name: http
+              label: HTTP Port
+              description: Port used for communication from Director Servers to the web farm FQDNs (the URLs used by IIS web components) when HTTPS is not used.
+              type: tcp-port
+              gui:
+                updatable: false
+              default: 80
+           -
+              name: https
+              label: HTTPS Port
+              description: Port used for communication from Director Servers to the Web farm FQDNs (the URLs used by Web Components).
+              type: tcp-port
+              gui:
+                updatable: false
+              default: 443
+           -
+              name: autodiscover-interpool
+              label: AutoDiscover Internal Port
+              description: HTTPS (from Reverse Proxy) and HTTPS Director inter-pool communications for Autodiscover sign-in.
+              gui:
+                updatable: false
+              type: tcp-port
+              default: 4443
+           -
+              name: sip-mtls
+              label: SIP Internal Port
+              description: Port used for internal SIP communications between servers and between servers and Office Communicator.
+              type: tcp-port
+              gui:
+                updatable: false
+              default: 5061
+      -
+        name: edge-ports-list
+        label: List of Ports used for Edge Servers
+        description: List of Ports used for Edge Servers
+        type: object
+        required: true
+        gui:
+          collapse_pane: true
+        parameters:
+           -
+              name: https-ext
+              label: HTTPS External Port
+              description: |
+                    Used for external SIP/TLS communication for remote user access, 
+                    accessing internal Web conferences, and STUN/TCP inbound and outbound 
+                    media communications for accessing internal media and A/V sessions
+              type: tcp-port
+              gui:
+                updatable: false
+              default: 443
+           -
+              name: https-int
+              label: HTTPS Internal Port
+              description: |
+                      Used for internal SIP/TLS communication, for remote user access, 
+                      accessing internal Web conferences, and STUN/TCP inbound and outbound 
+                      media communications for accessing internal media and A/V sessions
+              type: tcp-port
+              gui:
+                updatable: false
+              default: 443
+           -
+              name: sip-external-remoteaccess
+              label: SIP External Remote Access Port
+              description: |
+                    Used for external ports for SIP/MTLS communication for remote user access 
+                    or federation
+              type: tcp-port
+              gui:
+                updatable: false
+              default: 5061
+           -
+              name: sip-internal-remoteaccess
+              label: SIP Internal Remote Access Port
+              description: |
+                    Used for internal SIP/MTLS communication for remote user access 
+                    or federation
+              type: tcp-port
+              gui:
+                updatable: false
+              default: 5061
+           -
+              name: sip-external-STUN-UDP
+              label: SIP External STUN UDP port
+              description: |
+                    Used for external ports for STUN/ UDP inbound and outbound media 
+                    communications
+              type: tcp-port
+              gui:
+                updatable: false 
+              default: 3478
+           -
+              name: sip-internal-STUN-UDP
+              label: SIP Internal STUN UDP port
+              description: Used for STUN/UDP inbound and outbound media communications
+              type: tcp-port
+              gui:
+                updatable: false
+              default: 3478    
+           -
+              name: sip-internal-IM
+              label: SIP Internal IM Port
+              description: |
+                      Used for internal SIP/MTLS authentication of IM communications flowing 
+                      outbound through the internal firewall. (MRAS authentication)
+              type: tcp-port
+              gui:
+                updatable: false
+              default: 5062
+      -
+        name: fe-ports-list
+        label: List of Ports for Front-End Servers
+        description: List of Ports for Front-End Servers
+        type: object
+        required: true
+        gui:
+          collapse_pane: true
+        parameters:
+           -
+              name: http
+              label: HTTP Port
+              description: Port used for communication from Front End Servers to the web farm FQDNs (the URLs used by IIS web components) when https is not used.
+              type: tcp-port
+              gui:
+                updatable: false          
+              default: 80
+           -
+              name: https
+              label: HTTPS Port
+              description: Port used for communication from Front End Servers to the Web farm FQDNs (the URLs used by Web Components).
+              type: tcp-port
+              gui:
+                updatable: false
+              default: 443
+           -
+              name: autodiscover-interpool
+              label: AutoDiscover Internal Port
+              description: HTTPS (from Reverse Proxy) and HTTPS Front End inter-pool communications for Autodiscover sign-in.
+              type: tcp-port
+              gui:
+                updatable: false
+              default: 4443
+           -
+              name: rpc
+              label: RPC Port
+              description: Port used by the Front End Servers for Windows Management Instrumentation (WMI) operations and for moving users (a remote DCOM-based database operation).
+              type: tcp-port
+              gui:
+                updatable: false
+              default: 135
+           -
+              name: sip-mtls
+              label: SIP Port
+              description: Port used for internal SIP communications between servers and between servers and Office Communicator.
+              type: tcp-port
+              gui:
+                updatable: false
+              default: 5061
+           -
+              name: sip-conf-focus
+              label: SIP Focus Port
+              description: Port used for communication between the Focus (the Office Communications Server component that manages conference state) and the conferencing servers.
+              type: tcp-port
+              gui:
+                updatable: false
+              default: 444
+           -
+              name: sip-groupapp
+              label: SIP Group Port
+              description: Port used for incoming SIP requests for the Response Group application.
+              type: tcp-port
+              gui:
+                updatable: false
+              default: 5071
+           -
+              name: sip-appsharing
+              label: SIP AppSharing Port
+              description: Port used for listening to incoming SIP requests for application sharing.
+              type: tcp-port
+              gui:
+                updatable: false
+              default: 5065
+           -
+              name: sip-attendant
+              label: SIP Attendant Port
+              description: Port used for incoming SIP requests for Attendant (dial in conferencing).
+              type: tcp-port
+              gui:
+                updatable: false
+              default: 5072
+           -
+              name: sip-conf-announce
+              label: SIP Conf Announcement Port
+              description: Port used for incoming SIP requests for the Skype for Business Server Conferencing Announcement service (that is, for dial-in conferencing).
+              type: tcp-port
+              gui:
+                updatable: false
+              default: 5073
+           -
+              name: sip-callpark
+              label: SIP CallPark Port
+              description: Port used for incoming SIP requests for the Call Park application.
+              type: tcp-port
+              gui:
+                updatable: false
+              default: 5075
+           -
+              name: call-admission-control
+              label: SIP Call Admission Port
+              description: Port used for call admission control by the Bandwidth Policy Service.
+              type: tcp-port
+              gui:
+                updatable: false
+              default: 448
+           -
+              name: call-admission-control-TURN
+              label: SIP Call Admission TURN Port
+              description: Port used for call admission control by the Bandwidth Policy service for A/V Edge TURN traffic.
+              type: tcp-port
+              gui:
+                updatable: false          
+              default: 5080
+           -
+              name: sip-audiotest
+              label: SIP Audio Test Port
+              description: Port used for incoming SIP requests for the Audio Test service.
+              type: tcp-port
+              gui:
+                updatable: false
+              default: 5076                    
+components:
+  -
+    name: skype-edge
+    type: ent::microsoft-skype-for-business-edge
+    roles:
+      - edge
+    properties-default-sources:
+      - $parameters.skype-edge
+    properties:
+      edge-appname: $parameters.skype-appname
+      edge-ports-list: $parameters.skype-advanced.edge-ports-list
+  -
+    name: skype-frontend
+    type: ent::microsoft-skype-for-business-front-end
+    roles:
+      - frontend
+    properties-default-sources:
+      - $parameters.skype-frontend
+    properties:
+      fe-appname: $parameters.skype-appname
+      fe-ports-list: $parameters.skype-advanced.fe-ports-list
+  -
+    name: skype-director
+    type: ent::microsoft-skype-for-business-director
+    roles:
+      - director
+    condition: exists($parameters.skype-director.dir-vip) and exists($parameters.skype-director.dir-server-ips)
+    properties-default-sources:
+      - $parameters.skype-director
+    properties:
+      dir-appname: $parameters.skype-appname
+      dir-ports-list: $parameters.skype-advanced.dir-ports-list

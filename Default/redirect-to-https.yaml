@@ -1,0 +1,58 @@
+name: redirect-to-https
+namespace: com.citrix.adc.stylebooks
+version: "1.0"
+display-name:  Redirect users to use https
+private: true
+schema-version: "1.0"
+description: |    
+    This StyleBook configures NetScaler to redirect users to the https URL.
+import-stylebooks: 
+  - 
+    namespace: netscaler.nitro.config
+    version: "10.5"
+    prefix: ns
+  - 
+    namespace: com.citrix.adc.commontypes
+    version: "1.0"
+    prefix: cmtypes
+parameters:
+    -
+        name: appname
+        type: string
+        label: Application Name
+        description: The Name of the Application
+    -
+        name: redirect-to-https
+        type: object
+        label: Redirect To HTTPS Settings
+        description: The Settings for redirecting to an HTTPS URL
+        parameters-default-sources:
+            - cmtypes::redirect-to-https-params
+substitutions:
+    url-parts:
+        - quotewrap("https://")
+        - str("HTTP.REQ.HOSTNAME")
+        - str("HTTP.REQ.URL")
+    https-url: join($substitutions.url-parts, " + ")
+components:
+  -
+    name: redirect-to-https-action-comp
+    type: ns::responderaction
+    properties:
+        name: $parameters.appname + "-redirect-to-https-responder-action"
+        type: REDIRECT
+        target: $substitutions.https-url
+        bypasssafetycheck: str("YES")
+
+    components:
+      -
+        name: redirect-to-https-policy-comp
+        type: ns::responderpolicy
+        properties:
+            name: $parameters.appname + "-redirect-to-https-responder-policy"
+            rule: $parameters.redirect-to-https.pattern
+            action: $parent.properties.name
+outputs:
+    -
+        name: redirect-to-https-policy
+        value: $components.redirect-to-https-action-comp.components.redirect-to-https-policy-comp

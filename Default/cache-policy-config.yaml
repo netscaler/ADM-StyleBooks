@@ -1,0 +1,100 @@
+name: cache-policy-config
+namespace: com.citrix.adc.stylebooks
+version: "1.0"
+display-name: Cache Policy Config
+private: true
+schema-version: "1.0"
+import-stylebooks: 
+  - 
+    namespace: netscaler.nitro.config
+    prefix: ns
+    version: "10.5"
+parameters:
+  -
+    name: policyname
+    type: string
+    label: Cache Policy Name
+    description: The name for the Policy
+    required: true
+  -
+    name: rule
+    type: string
+    label: Cache Policy Expression
+    description: Expression against which the traffic is evaluated
+    required: true
+  -
+    name: action
+    type: string
+    label: Cache Policy Action
+    description: Action to apply to content that matches the policy (CACHE/INVAL)
+    required: true
+    allowed-values:
+        - CACHE
+        - NOCACHE
+        - INVAL
+  -
+    name: cachegroup
+    type: string
+    label: Cache Content Group Name
+    description: Name of the content group in which to store the object for CACHE policies
+  -
+    name: invalgroups
+    type: string[]
+    label: Content Groups to be invalidated
+    description: Content group(s) to be invalidated when the INVAL action is applied
+  -
+    name: invalobjects
+    type: string[]
+    label: Content Group in which objects will be invalidated
+    description: Content groups(s) in which the objects will be invalidated if the action is INVAL
+    #parameters:
+      # -
+      #   name: cachegroup
+      #   type: string
+      #   label: Invalidation Content Group Name
+      #   description: Name of the content group which will be invalidated
+      #   required: true
+      # -
+      #   name: inval-selector
+      #   type: string
+      #   label: Invalidation Object Selector
+      #   description: Name of the Selector used to invalidate
+
+#substitutions:
+  #correct-value(x): if-then-else($x, $x, str(""))
+  #form-one-invalobject-string(inval-obj): str(quote(join([$inval-obj.cache-obj, substitutions.correct-value($inval-obj.inval-selector)], ",")))
+  #build-list(obj):
+  #  - $obj["cachegroup"]
+  #  - $obj["inval-selector"]
+components:
+  - 
+    name: cache-policy-comp
+    type: ns::cachepolicy
+    description: Component for creation of cache policy for action CACHE
+    condition: $parameters.action == CACHE
+    properties: 
+      policyname: $parameters.policyname
+      rule: $parameters.rule
+      action: CACHE
+      storeingroup: $parameters.cachegroup
+  - 
+    name: inval-policy-comp
+    type: ns::cachepolicy
+    description: Component for creation of cache policy for action INVAL
+    condition: $parameters.action == INVAL
+    properties: 
+      policyname: $parameters.policyname
+      rule: $parameters.rule
+      action: INVAL
+      invalgroups?: $parameters.invalgroups
+      #invalobjects?: map(quotewrap, $parameters.invalobjects)
+      invalobjects?: $parameters.invalobjects
+  - 
+    name: nocache-policy-comp
+    type: ns::cachepolicy
+    description: Component for creation of cache policy for action NOCACHE
+    condition: $parameters.action == NOCACHE
+    properties: 
+      policyname: $parameters.policyname
+      rule: $parameters.rule
+      action: NOCACHE

@@ -1,0 +1,100 @@
+name: cs-lb-mon-full
+namespace: com.citrix.adc.stylebooks
+version: "1.0"
+display-name: Content-Switching StyleBook with L7 Features
+description: |    
+    This StyleBook builds on, and augments the cs-lb-mon StyleBook by adding the ability    
+    to make use of rewrite, responder or compression features of the NetScaler
+schema-version: "1.0"
+import-stylebooks: 
+  - 
+    namespace: com.citrix.adc.stylebooks
+    prefix: stlb
+    version: "1.0"
+  - 
+    namespace: com.citrix.adc.commontypes
+    prefix: cmtypes
+    version: "1.0"
+parameters-default-sources:
+    - stlb::cs-lb-mon
+    - cmtypes::rewrite-config-params
+    - cmtypes::responder-config-params
+    - cmtypes::compression-config-params
+    - cmtypes::ssl-config-params
+components:
+  -
+    name: cs-config-comp
+    type: stlb::cs-lb-mon
+    properties-default-sources:
+      - $parameters
+  -
+    name: rewrite-config-comp
+    type: stlb::rewrite-config
+    condition: $parameters.rewrite-config
+    properties-default-sources:
+      - $parameters
+  -
+    name: rewrite-policies-bindings-comp
+    type: stlb::vserver-rewritepolicies-bindings
+    condition: $parameters.rewrite-config
+    properties:
+        vserver-name: $components.cs-config-comp.outputs.csvserver.properties.name
+        vserver-type: CSVSERVER
+        policies:
+          -
+            name: $components.rewrite-config-comp.outputs.rewrite-request-policy-label
+            type: POLICYLABEL
+            bind-point: REQUEST
+          -
+            name: $components.rewrite-config-comp.outputs.rewrite-response-policy-label
+            type: POLICYLABEL
+            bind-point: RESPONSE
+  -
+    name: responder-config-comp
+    type: stlb::responder-config
+    condition: $parameters.responder-config
+    properties-default-sources:
+      - $parameters
+  -
+    name: responder-policies-bindings-comp
+    type: stlb::vserver-responderpolicies-bindings
+    condition: $parameters.responder-config
+    properties:
+        vserver-name: $components.cs-config-comp.outputs.csvserver.properties.name
+        vserver-type: CSVSERVER
+        policies:
+          -
+            name: $components.responder-config-comp.outputs.responder-policy-label
+            type: POLICYLABEL
+            bind-point: REQUEST
+  -
+    name: ssl-config-comp
+    type: stlb::ssl-config
+    condition: $parameters.cs-service-type == SSL
+    properties-default-sources:
+      - $parameters
+    properties:
+        vserver-name: $components.cs-config-comp.outputs.csvserver.properties.name
+        vserver-type: CSVSERVER
+  -
+    name: compression-config-comp
+    type: stlb::compression-config
+    condition: $parameters.compression-config
+    properties-default-sources:
+      - $parameters
+  -
+    name: compression-policies-bindings-comp
+    type: stlb::vserver-cmppolicies-bindings
+    condition: $parameters.compression-config
+    properties:
+        vserver-name: $components.cs-config-comp.outputs.csvserver.properties.name
+        vserver-type: CSVSERVER
+        policies:
+          -
+            name: $components.compression-config-comp.outputs.cmp-request-policy-label
+            type: POLICYLABEL
+            bind-point: REQUEST
+          -
+            name: $components.compression-config-comp.outputs.cmp-response-policy-label
+            type: POLICYLABEL
+            bind-point: RESPONSE

@@ -1,0 +1,280 @@
+---
+name: auth
+description: This StyleBook is used to create the Auth VServers and bind to it different types of AAA Policies (LDAP, Audit, Session, etc.)
+display-name: AuthVServer Policies Bindings
+namespace: com.citrix.adc.stylebooks
+schema-version: "1.0"
+version: "1.0"
+private: true
+import-stylebooks:
+ -
+  namespace: netscaler.nitro.config
+  prefix: ns
+  version: "10.5"
+ - 
+  namespace: com.citrix.adc.stylebooks
+  prefix: stlb
+  version: "1.0"
+ - 
+  namespace: com.citrix.adc.commontypes
+  prefix: cmtypes
+  version: "1.0"
+parameters:
+  -
+    name: name
+    label: Application Name
+    description: The name for Application Name
+    type: string
+    required: true   
+  -
+    name: vip
+    label: Authentication VIP
+    description: The Auth VIP IP address 
+    type: ipaddress
+    required: true
+  -
+    name: port
+    label: Authentication Port
+    description: The Auth VIP Port
+    type: tcp-port
+    default: 443
+  -
+    name: protocol
+    label: Authentication VIP Protocol 
+    description: The protocol used to connect to the Auth VIP
+    type: string
+    allowed-values:
+        - HTTP
+        - SSL
+    default: SSL
+  -
+    name: auth-settings
+    label: Authentication VIP auth-settings
+    description: Authentication VIP auth-settings
+    type: object
+    required: true
+    parameters:
+      -
+        name: auth-domain
+        label: LDAP Authentication Domain
+        description: LDAP Authentication Domain name (e.g "acme.com")
+        type: string
+      -
+        name: max-login-attempts
+        label: Max Login Attempts
+        description: Maximum login attempts before login fails
+        type: number
+        default: 255
+      - 
+        name: failed-login-timeout
+        label: Timeout for Failed Login
+        description: Timeout period after login failure before allowing user to try again
+        type: number
+        default: 1
+  -
+    name: aaa-policies
+    label: AAA Policies
+    description: AAA Policies to attach to the Auth VIP
+    type: object
+    parameters:
+        -
+            name: ldap-policies
+            label: LDAP Auth Policies
+            description: LDAP Authentication Policies
+            type: string[]
+        -
+            name: negotiate-policies
+            label: Windows Negotiate Auth Policies
+            description: Windows Negotiate Authentication Policies
+            type: string[]
+        -
+            name: samlidp-policies
+            label: SAML IdP Auth Policies
+            description: SAML Identity Provider (IdP) Authentication Policies
+            type: string[]
+        -
+            name: webauth-policies
+            label: Web Auth Policies
+            description: Web Authentication Policies
+            type: string[]
+        -
+            name: radius-policies
+            label: RADIUS Auth Policies
+            description: RADIUS Authentication Policies
+            type: string[]
+        -
+            name: tacacs-policies
+            label: TACACS Auth Policies
+            description: TACACS Authentication Policies
+            type: string[]
+        -
+            name: cert-policies
+            label: Certificate Auth Policies
+            description: Client Certificate Authentication Policies
+            type: string[]
+        -
+            name: audit-nslog-policies
+            label:  NSLOG Audit Policies
+            description: NSLOG Audit Policies
+            type: string[]
+        -
+            name: audit-syslog-policies
+            label: Syslog Audit Policies
+            description: Syslog Audit Policies
+            type: string[]
+        -
+            name: session-policies
+            label: TM Session Policies
+            description: AAA Session Policies
+            type: string[]
+  -
+    name: certificates
+    label: Auth Certificates 
+    description: Certificates for this authentication virtual server
+    type: cmtypes::certificate[]
+components:
+    -
+      name: auth-ldap-vserver-comp
+      type: ns::authenticationvserver
+      description: This component creates the LDAP Auth Vserver config entity
+      properties:
+          name: $parameters.name + "-auth-vserver"
+          servicetype: $parameters.protocol
+          ipv46: $parameters.vip
+          port: $parameters.port
+          authenticationdomain?: $parameters.auth-settings.auth-domain
+          maxloginattempts?: $parameters.auth-settings.max-login-attempts
+          failedlogintimeout?: $parameters.auth-settings.failed-login-timeout
+      components:
+        - 
+          name: auth-vserver-certs-bindings-comp
+          type: stlb::vserver-certs-binds
+          condition: $parameters.certificates
+          properties: 
+            vserver-name: $parent.properties.name
+            certificates: $parameters.certificates
+        -
+          name: auth-vserver-ldap-policies-bind-comp
+          type: ns::authenticationvserver_authenticationpolicy_binding
+          description: This component creates the binding config between the LDAP Auth Policies and the Auth Vserver
+          condition: $parameters.aaa-policies.ldap-policies
+          repeat: $parameters.aaa-policies.ldap-policies
+          repeat-item: ldap-policy
+          repeat-index: pol-index
+          properties:
+              name: $parent.properties.name
+              policy: $ldap-policy
+              priority: 10 + (10 * $pol-index)
+        -
+          name: auth-vserver-negotiate-policies-bind-comp
+          type: ns::authenticationvserver_authenticationpolicy_binding
+          description: This component creates the binding config between the Windows Negotiate Auth Policies and the Auth Vserver
+          condition: $parameters.aaa-policies.negotiate-policies
+          repeat: $parameters.aaa-policies.negotiate-policies
+          repeat-item: negotiate-policy
+          repeat-index: pol-index
+          properties:
+              name: $parent.properties.name
+              policy: $negotiate-policy
+              priority: 10 + (10 * $pol-index)
+        -
+          name: auth-vserver-samlidp-policies-bind-comp
+          type: ns::authenticationvserver_authenticationsamlidppolicy_binding
+          description: This component creates the binding config between the SAML IdP Auth Policies and the Auth Vserver
+          condition: $parameters.aaa-policies.samlidp-policies
+          repeat: $parameters.aaa-policies.samlidp-policies
+          repeat-item: samlidp-policy
+          repeat-index: pol-index
+          properties:
+              name: $parent.properties.name
+              policy: $samlidp-policy
+              priority: 10 + (10 * $pol-index)
+        -
+          name: auth-vserver-webauth-policies-bind-comp
+          type: ns::authenticationvserver_authenticationwebauthpolicy_binding
+          description: This component creates the binding config between the Web Auth Policies and the Auth Vserver
+          condition: $parameters.aaa-policies.webauth-policies
+          repeat: $parameters.aaa-policies.webauth-policies
+          repeat-item: webauth-policy
+          repeat-index: pol-index
+          properties:
+              name: $parent.properties.name
+              policy: $webauth-policy
+              priority: 10 + (10 * $pol-index)
+        -
+          name: auth-vserver-radius-policies-bind-comp
+          type: ns::authenticationvserver_authenticationradiuspolicy_binding
+          description: This component creates the binding config between the RADIUS Auth Policies and the Auth Vserver
+          condition: $parameters.aaa-policies.radius-policies
+          repeat: $parameters.aaa-policies.radius-policies
+          repeat-item: radius-policy
+          repeat-index: pol-index
+          properties:
+              name: $parent.properties.name
+              policy: $radius-policy
+              priority: 10 + (10 * $pol-index)
+        -
+          name: auth-vserver-tacacs-policies-bind-comp
+          type: ns::authenticationvserver_authenticationtacacspolicy_binding
+          description: This component creates the binding config between the TACACS Auth Policies and the Auth Vserver
+          condition: $parameters.aaa-policies.tacacs-policies
+          repeat: $parameters.aaa-policies.tacacs-policies
+          repeat-item: tacacs-policy
+          repeat-index: pol-index
+          properties:
+              name: $parent.properties.name
+              policy: $tacacs-policy
+              priority: 10 + (10 * $pol-index)
+        -
+          name: auth-vserver-cert-policies-bind-comp
+          type: ns::authenticationvserver_authenticationcertpolicy_binding
+          description: This component creates the binding config between the Certificate Auth Policies and the Auth Vserver
+          condition: $parameters.aaa-policies.cert-policies
+          repeat: $parameters.aaa-policies.cert-policies
+          repeat-item: cert-policy
+          repeat-index: pol-index
+          properties:
+              name: $parent.properties.name
+              policy: $cert-policy
+              priority: 10 + (10 * $pol-index)
+        -
+          name: auth-vserver-audit-nslog-policies-bind-comp
+          type: ns::authenticationvserver_auditnslogpolicy_binding
+          description: This component creates the binding config between the NSLOG Audit Policies and the Auth Vserver
+          condition: $parameters.aaa-policies.audit-nslog-policies
+          repeat: $parameters.aaa-policies.audit-nslog-policies
+          repeat-item: nslog-policy
+          repeat-index: pol-index
+          properties:
+              name: $parent.properties.name
+              policy: $nslog-policy
+              priority: 10 + (10 * $pol-index)
+        -
+          name: auth-vserver-audit-syslog-policies-bind-comp
+          type: ns::authenticationvserver_auditsyslogpolicy_binding
+          description: This component creates the binding config between the Syslog Audit Policies and the Auth Vserver
+          condition: $parameters.aaa-policies.audit-syslog-policies
+          repeat: $parameters.aaa-policies.audit-syslog-policies
+          repeat-item: syslog-policy
+          repeat-index: pol-index
+          properties:
+              name: $parent.properties.name
+              policy: $syslog-policy
+              priority: 10 + (10 * $pol-index)
+        -
+          name: auth-vserver-session-policies-bind-comp
+          type: ns::authenticationvserver_tmsessionpolicy_binding
+          description: This component creates the binding config between the TM Session Policies and the Auth Vserver
+          condition: $parameters.aaa-policies.session-policies
+          repeat: $parameters.aaa-policies.session-policies
+          repeat-item: session-policy
+          repeat-index: pol-index
+          properties:
+              name: $parent.properties.name
+              policy: $session-policy
+              priority: 10 + (10 * $pol-index)
+outputs:
+    -
+        name: auth-vserver
+        description: The Auth VServer Component
+        value: $components.auth-ldap-vserver-comp

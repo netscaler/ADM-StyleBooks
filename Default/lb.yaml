@@ -1,0 +1,153 @@
+--- 
+name: lb
+namespace: com.citrix.adc.stylebooks
+version: "1.0"
+display-name: "HTTP/SSL LoadBalancing StyleBook"
+description: "This stylebook defines a typical Load Balanced Application configuration."
+schema-version: "1.0"
+import-stylebooks: 
+  - 
+    namespace: netscaler.nitro.config
+    prefix: ns
+    version: "10.5"
+  - 
+    namespace: com.citrix.adc.commontypes
+    prefix: cmtypes
+    version: "1.0"
+  - 
+    namespace: com.citrix.adc.stylebooks
+    prefix: stlb
+    version: "1.0"
+parameters-default-sources:
+  - cmtypes::lbvserver-params
+  - cmtypes::services-params
+parameters: 
+  - 
+    name: certificates
+    label: "SSL Certificate Settings"
+    description: "Certificates for this virtual server if this load Balanced application is exposed using SSL"
+    type: "cmtypes::certificate[]"
+components: 
+  - 
+    name: lbvserver-comp
+    type: ns::lbvserver
+    properties: 
+      name: $parameters.lb-appname + "-lb"
+      servicetype: $parameters.lb-service-type
+      ipv46: $parameters.lb-virtual-ip
+      port?: $parameters.lb-virtual-port
+      lbmethod?: $parameters.lb-advanced.algorithm
+      persistencetype?: $parameters.lb-advanced.persistence
+      persistencebackup?: $parameters.lb-advanced.persistence-backup
+      backuppersistencetimeout?: $parameters.lb-advanced.backup-persistence-timeout
+      clttimeout?: $parameters.lb-advanced.client-timeout
+      timeout?: $parameters.lb-advanced.timeout
+      insertvserveripport?: $parameters.lb-advanced.insert-vserver-ipport
+      redirurl?: $parameters.lb-advanced.redirect-url
+      somethod?: $parameters.lb-advanced.spillover-method
+      sothreshold?: $parameters.lb-advanced.spillover-threshold
+      httpprofilename?: $parameters.lb-advanced.http-profile
+      downstateflush?: $parameters.lb-advanced.flush-on-state-down
+      authentication?: $parameters.lb-advanced.auth-params.authentication
+      authenticationhost?: $parameters.lb-advanced.auth-params.authentication-host
+      authnvsname?: $parameters.lb-advanced.auth-params.authentication-vserver-name
+      authn401?: $parameters.lb-advanced.auth-params.authentication-http-401
+      appflowlog?: $parameters.lb-advanced.appflow-log
+      comment?: $parameters.lb-advanced.comment
+    components: 
+      - 
+        name: servicegroup-comp
+        type: ns::servicegroup 
+        condition: $parameters.svc-servers
+        properties: 
+          servicegroupname: $parameters.lb-appname + "-svcgrp"
+          servicetype: $parameters.svc-service-type
+          cip?: $parameters.svcg-advanced.svc-client-ip
+          cipheader?: $parameters.svcg-advanced.svc-client-ip-header
+          cka?: $parameters.svcg-advanced.svc-client-keepalive
+          clttimeout?: $parameters.svcg-advanced.svc-client-timeout
+          svrtimeout?: $parameters.svcg-advanced.svc-server-timeout
+          maxclient?: $parameters.svcg-advanced.svc-max-clients
+          maxreq?: $parameters.svcg-advanced.svc-max-requests
+          tcpb?: $parameters.svcg-advanced.svc-tcp-buffering
+          usip?: $parameters.svcg-advanced.svc-use-source-ip
+          useproxyport?: $parameters.svcg-advanced.svc-use-proxy-port
+          cmp?: $parameters.svcg-advanced.svc-compression
+          sc?: $parameters.svcg-advanced.svc-sure-connect
+          sp?: $parameters.svcg-advanced.svc-surge-protection
+          customserverid?: $parameters.svcg-advanced.svc-custom-server-id
+          downstateflush?: $parameters.svcg-advanced.svc-downstate-flush
+          state?: $parameters.svcg-advanced.svc-state
+          healthmonitor?: $parameters.svcg-advanced.svc-enable-health-monitor
+          comment?: $parameters.svcg-advanced.svc-comment
+        components: 
+          - 
+            name: lbvserver-svg-binding
+            type: ns::lbvserver_servicegroup_binding
+            properties: 
+              name: $parent.parent.properties.name
+              servicegroupname: $parent.properties.servicegroupname
+          -
+            name: server-members
+            type: ns::server
+            repeat: $parameters.svc-servers
+            repeat-item: server
+            repeat-condition: $server.add-server
+            properties:
+              name: str($server.ip)
+              ipaddress: $server.ip
+          - 
+            name: svg-ip-members
+            type: ns::servicegroup_servicegroupmember_binding
+            repeat: $parameters.svc-servers
+            repeat-item: server
+            properties: 
+              ip: $server.ip
+              port: $server.port
+              servicegroupname: $parent.properties.servicegroupname
+      -  
+        name: server-members
+        type: ns::server
+        condition: $parameters.svc-server-domains
+        repeat: $parameters.svc-server-domains
+        repeat-item: server
+        properties: 
+          name: $server.domain + "-server"
+          domain: $server.domain
+      -
+        name: service-members
+        type: ns::service
+        condition: $parameters.svc-server-domains
+        repeat: $parameters.svc-server-domains
+        repeat-item: server
+        properties: 
+           name: $server.domain + "-service"
+           servername: $server.domain + "-server"
+           servicetype: $parameters.svc-service-type
+           port: $server.port
+        components:
+           -
+              name: lbvserver-service-binding
+              type: ns::lbvserver_service_binding
+              properties: 
+                 name: $parent.parent.properties.name
+                 servicename: $parent.properties.name
+      - 
+        name: vserver-certs-bindings
+        type: stlb::vserver-certs-binds
+        condition: "$parameters.certificates and ($parameters.lb-service-type == \"SSL\")"
+        properties: 
+          certificates: $parameters.certificates
+          vserver-name: $parent.properties.name
+outputs: 
+  - 
+    name: lbvserver
+    value: $components.lbvserver-comp
+  - 
+    name: servicegroup
+    condition:  $parameters.svc-servers
+    value: $components.lbvserver-comp.components.servicegroup-comp
+  - 
+    name: service-members
+    condition: $parameters.svc-server-domains
+    value: $components.lbvserver-comp.components.service-members

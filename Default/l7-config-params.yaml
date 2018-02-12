@@ -1,0 +1,27 @@
+name: l7-config-params
+namespace: com.citrix.adc.commontypes
+version: "1.0"
+display-name: Rewrite Configuration
+private: true
+schema-version: "1.0"
+import-stylebooks: 
+  - 
+    namespace: com.citrix.adc.commontypes
+    version: "1.0"
+    prefix: cmtypes
+parameters:
+    -
+        name: appname
+        type: string
+        required: true
+    -
+        name: vserver-name
+        type: string
+        required: true
+    -
+        name: vserver-type
+        type: string
+        required: true
+        allowed-values:
+            - CSVSERVER
+            - LBVSERVER

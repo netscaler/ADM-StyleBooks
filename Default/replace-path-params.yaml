@@ -1,0 +1,19 @@
+name: replace-path-params
+namespace: com.citrix.adc.commontypes
+version: "1.0"
+display-name: Replace URL Path Parameters
+private: true
+schema-version: "1.0"
+parameters:
+  -
+    name: path-value
+    type: string
+    label: New URL Path
+    description: The NetScaler Policy expression that contains the new URL Path that replaces the existing path
+    required: true
+  -
+    name: pattern
+    type: string
+    label: Request Filter (Policy Expression)
+    description: The NetScaler Policy Expression used to select requests that get their URL path changed. To change all requests, keep the default value of "true".
+    default: "true"

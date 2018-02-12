@@ -1,0 +1,112 @@
+--- 
+name: ldap-policy
+namespace: com.citrix.adc.stylebooks
+version: "1.0"
+description: This StyleBook configures an LDAP policy
+schema-version: "1.0"
+private: true
+import-stylebooks: 
+    - 
+        namespace: netscaler.nitro.config
+        version: "10.5"
+        prefix: ns
+    -
+        namespace: com.citrix.adc.commontypes
+        version: "1.0"
+        prefix: cmtypes
+parameters:
+    -
+        name: appname
+        type: string
+        label: "Application Domain"
+        description: "The Application Name"
+        required: true
+    -
+        name: rule
+        type: string
+        label: "NetScaler PI Rule for when to apply the Active Directory LDAP Policy"
+        description: "The Application Rule"
+        default: "true"
+    -
+        name: ldap-settings
+        type: object
+        label: "ADFSProxy Active Directory Authentication for External Users"
+        description: "Parameters for configuring AD Auth for ADFSProxy"
+        required: true
+        parameters-default-sources:
+            - cmtypes::ldap-base-params
+
+substitutions:
+    authentication-setting:
+        true: DISABLED
+        false: ENABLED
+    tls-sectype: $parameters.ldap-settings.is-secure-connection and $parameters.ldap-settings.ssl-protocol == "TLS"
+    ssl-sectype: $parameters.ldap-settings.is-secure-connection and $parameters.ldap-settings.ssl-protocol == "SSL"
+    ssl-setting:
+        true: SSL
+        false: PLAINTEXT
+    sectype-setting:
+        true: TLS
+        false: $substitutions.ssl-setting[$substitutions.ssl-sectype]
+    servercert-setting:
+        true: "YES"
+        false: "NO"
+    validate-cert: $parameters.ldap-settings.host-name and $parameters.ldap-settings.validate-ldap-cert
+    ldap-type(is-ad): if-then-else($is-ad, "AD")
+    passwdchange-setting:
+        true: ENABLED
+        false: DISABLED
+    referrals-setting:
+        true: "ON"
+        false: "OFF"
+    non-default-ldap-port: bool($parameters.ldap-settings.server-port)
+    default-ldap-port:
+        true: 
+        false: 389
+    server-port:
+        true: $parameters.ldap-settings.server-port
+        false: $substitutions.default-ldap-port[$parameters.ldap-settings.is-secure-connection]
+    default-ad-user-attribute: 
+        true: samaccountname
+        false: $parameters.ldap-settings.user-attribute-name
+    use-default-ad-user-attribute: $parameters.ldap-settings.is-activedirectory and not bool($parameters.ldap-settings.user-attribute-name)
+components:
+    -
+        name: ldap-action-comp
+        type: ns::authenticationldapaction
+        properties:
+            name: "%{$parameters.appname}%-ldap-action"
+            servername?: $parameters.ldap-settings.server-name
+            serverip?: $parameters.ldap-settings.server-ip
+            serverport: $substitutions.server-port[$substitutions.non-default-ldap-port]
+            authtimeout?: $parameters.ldap-settings.auth-timeout
+            ldapbase: $parameters.ldap-settings.ldap-base
+            ldapbinddn: $parameters.ldap-settings.bind-dn
+            ldapbinddnpassword: $parameters.ldap-settings.bind-dn-password
+            ldaploginname?: $substitutions.default-ad-user-attribute[$substitutions.use-default-ad-user-attribute]
+            groupattrname?: $parameters.ldap-settings.group-attribute-name
+            subattributename?: $parameters.ldap-settings.group-subattribute-name
+            ssonameattribute?: $parameters.ldap-settings.sso-attribute-name
+            sectype?: $substitutions.sectype-setting[$substitutions.tls-sectype]
+            svrtype?: $substitutions.ldap-type($parameters.ldap-settings.is-activedirectory)
+            ldaphostname?: $parameters.ldap-settings.host-name
+            validateservercert?: $substitutions.servercert-setting[$substitutions.validate-cert]
+            authentication?: $substitutions.authentication-setting[$parameters.ldap-settings.disable-authentication]
+            defaultauthenticationgroup?: $parameters.ldap-settings.default-group
+            passwdchange?: $substitutions.passwdchange-setting[$parameters.ldap-settings.allow-password-change]
+            followreferrals?: $substitutions.referrals-setting[$parameters.ldap-settings.allow-following-referrals]
+            attribute1?: $parameters.ldap-settings.attribute1-expression
+            attribute2?: $parameters.ldap-settings.attribute2-expression
+            attribute3?: $parameters.ldap-settings.attribute3-expression
+    -
+        name: ldap-policy-comp
+        type: ns::authenticationpolicy
+        properties:
+            name: "%{$parameters.appname}%-ldap-policy"
+            rule: $parameters.rule
+            action: $components.ldap-action-comp.properties.name
+outputs:
+    -
+        name: ldap-auth-policy
+        value: $components.ldap-policy-comp
+        description: The LDAP Policy Component.

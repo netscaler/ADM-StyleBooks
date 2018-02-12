@@ -1,0 +1,101 @@
+---
+name: APIC-HTTP-LB
+namespace: com.citrix.adc.stylebooks
+version: "1.1"
+private: true
+display-name: "Sample StyleBook for APIC Load Balanced Application"
+description: "This is a sample StyleBook for HTTP Load Balanced Application configuration via APIC"
+schema-version: "1.0"
+import-stylebooks: 
+  - 
+    namespace: netscaler.nitro.config
+    prefix: ns
+    version: "10.5"
+  - 
+    namespace: "com.citrix.adc.stylebooks"
+    prefix: "stlb"
+    version: "1.1"
+parameters-default-sources:
+  - stlb::APIC-ROOT
+substitutions:
+  lb-name(appname, port): $appname + "-" + str($port) + "-lb"
+  sg-name(appname, port): $appname + "-" + str($port) + "-sg"
+  healthmonitor[]:
+    true: "NO"
+    false: "YES"
+components: 
+  -
+    name: nsfeatures-comp
+    type: ns::nsfeature
+    meta-properties:
+      action: enable
+    properties:
+      feature:
+        - WL
+        - SP
+        - LB
+        - CS
+        - SSL
+        - IPv6PT
+  -
+    name: nsmode-comp
+    type: ns::nsmode
+    meta-properties:
+      action: enable
+    properties:
+      mode:
+        - FR
+        - L3
+        - Edge
+        - USNIP
+        - PMTUD
+  - 
+    name: lbvserver
+    type: ns::lbvserver
+    repeat: $parameters.app-services
+    repeat-item: app
+    properties: 
+      name: $substitutions.lb-name($parameters.appname, $app.virtual-port)
+      ipv46: $app.virtual-ip
+      port: $app.virtual-port
+      servicetype: $app.protocol
+      lbmethod?: $app.algorithm
+      persistencetype?: $app.persistence
+  - 
+    name: svcgrp
+    type: ns::servicegroup
+    repeat: $parameters.app-services
+    repeat-item: app
+    properties: 
+      servicegroupname: $substitutions.sg-name($parameters.appname, $app.virtual-port)
+      servicetype: $app.protocol
+      useproxyport?: $app.sg-advanced.useproxyport
+      usip?: $app.sg-advanced.usip
+      cip?: $app.sg-advanced.cip
+      cipheader?: $app.sg-advanced.cipheader
+      healthmonitor?: $substitutions.healthmonitor($app.skip_healthmonitor)
+    components: 
+    
+      -
+        name: lbvserver-svg-binding
+        type: ns::lbvserver_servicegroup_binding
+        properties: 
+          name: $substitutions.lb-name($parameters.appname, $app.virtual-port)
+          servicegroupname: $parent.properties.servicegroupname
+      - 
+        name: svg-members
+        type: ns::servicegroup_servicegroupmember_binding
+        condition: $app.server-ips
+        repeat: $app.server-ips
+        repeat-item: serverip
+        properties: 
+          ip: $serverip
+          port: $app.server-port
+          servicegroupname: $parent.properties.servicegroupname
+outputs: 
+  - 
+    name: lbvservers
+    value: $components.lbvserver
+  - 
+    name: servicegroups
+    value: $components.svcgrp

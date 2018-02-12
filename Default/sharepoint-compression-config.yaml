@@ -1,0 +1,147 @@
+--- 
+name: sharepoint-compression-config
+namespace: com.citrix.adc.enterprise.stylebooks
+version: "1.0"
+display-name: Sharepoint Compression Configuration
+description: This stylebook creates Sharepoint compression configuration
+private: true
+schema-version: "1.0"
+import-stylebooks:
+  - 
+    namespace: netscaler.nitro.config
+    version: "10.5"
+    prefix: ns
+  - 
+    namespace: com.citrix.adc.stylebooks
+    prefix: stlb
+    version: "1.0"
+  - 
+    namespace: com.citrix.adc.enterprise.stylebooks
+    prefix: entsb
+    version: "1.0"
+parameters-default-sources:
+  - entsb::sharepoint-feature-config-params
+substitutions:
+  policylabel_binding(policylabel, bindpoint):
+    name: $policylabel
+    type: POLICYLABEL
+    bind-point: $bindpoint
+  policylabel_bindings(request_policylabel, response_policylabel): 
+    - $substitutions.policylabel_binding($request_policylabel, REQUEST)
+    - $substitutions.policylabel_binding($response_policylabel, RESPONSE)
+components:
+  -
+    name: enable-features-comp
+    type: ns::nsfeature
+    description: Enables the Compression Feature
+    meta-properties:
+        action: enable
+    properties:
+        feature: ["cmp"]
+  -
+    name: sharepoint-compression-all-files-comp
+    type: stlb::compression-config
+    description: This component creates the compression policies and policy lables
+    properties:
+        appname: "%{$parameters.appname}%-af"
+        compression-config:
+            cmp-file-suffixes: 
+                - 
+                    file-suffix: bmp
+                - 
+                    file-suffix: dib
+    components:
+      -
+        name: editable-images-cmp-policy-bindings-comp
+        type: stlb::vserver-cmppolicies-bindings
+        description: This component binds Sharepoint's editable images lbvserver to the compression policy label created earlier.
+        properties:
+          vserver-name: $parameters.sharepoint-lbvservers.editable-images-lbvserver-name
+          vserver-type: LBVSERVER
+          policies: $substitutions.policylabel_bindings($parent.outputs.cmp-request-policy-label, $parent.outputs.cmp-response-policy-label)
+      -
+        name: readonly-images-cmp-policy-bindings-comp
+        type: stlb::vserver-cmppolicies-bindings
+        description: This component binds Sharepoint's readonly images lbvserver to the compression policy label created earlier.
+        properties:
+          vserver-name: $parameters.sharepoint-lbvservers.readonly-images-lbvserver-name
+          vserver-type: LBVSERVER
+          policies: $substitutions.policylabel_bindings($parent.outputs.cmp-request-policy-label, $parent.outputs.cmp-response-policy-label)
+  -
+    name: sharepoint-compression-all-but-files-comp
+    type: stlb::compression-config
+    description: This component creates the compression policies and policy lables
+    properties:
+        appname: "%{$parameters.appname}%-abf"
+        compression-config:
+            cmp-all-but-file-suffixes:
+                - 
+                    file-suffix: gz
+    components:
+      -
+        name: docs-cmp-policy-bindings-comp
+        type: stlb::vserver-cmppolicies-bindings
+        description: This component binds Sharepoint's documents lbvserver to the compression policy label created earlier.
+        properties:
+          vserver-name: $parameters.sharepoint-lbvservers.docs-lbvserver-name
+          vserver-type: LBVSERVER
+          policies: $substitutions.policylabel_bindings($parent.outputs.cmp-request-policy-label, $parent.outputs.cmp-response-policy-label)
+  -
+    name: sharepoint-compression-all-but-resources-comp
+    type: stlb::compression-config
+    description: This component creates the compression policies and policy lables
+    properties:
+        appname: "%{$parameters.appname}%-abr"
+        compression-config:
+            cmp-all-but-resource-names:
+                - WebResource.axd
+                - commandui.ashx
+    components:
+      -
+        name: frontpage-cmp-policy-bindings-comp
+        type: stlb::vserver-cmppolicies-bindings
+        description: This component binds Sharepoint's frontpage lbvserver to the compression policy label created by the previous component.
+        properties:
+          vserver-name: $parameters.sharepoint-lbvservers.frontpage-lbvserver-name
+          vserver-type: LBVSERVER
+          policies: $substitutions.policylabel_bindings($parent.outputs.cmp-request-policy-label, $parent.outputs.cmp-response-policy-label)
+      -
+        name: soap-cmp-policy-bindings-comp
+        type: stlb::vserver-cmppolicies-bindings
+        description: This component binds Sharepoint's soap lbvserver to the compression policy label created earlier.
+        properties:
+          vserver-name: $parameters.sharepoint-lbvservers.soap-services-lbvserver-name
+          vserver-type: LBVSERVER
+          policies: $substitutions.policylabel_bindings($parent.outputs.cmp-request-policy-label, $parent.outputs.cmp-response-policy-label)
+      -
+        name: portal-cmp-policy-bindings-comp
+        type: stlb::vserver-cmppolicies-bindings
+        description: This component binds Sharepoint's portal management lbvserver to the compression policy label created earlier.
+        properties:
+          vserver-name: $parameters.sharepoint-lbvservers.portal-management-lbvserver-name
+          vserver-type: LBVSERVER
+          policies: $substitutions.policylabel_bindings($parent.outputs.cmp-request-policy-label, $parent.outputs.cmp-response-policy-label)
+      -
+        name: styles-scripts-cmp-policy-bindings-comp
+        type: stlb::vserver-cmppolicies-bindings
+        description: This component binds Sharepoint's Styles&Scripts lbvserver to the compression policy label created earlier.
+        properties:
+          vserver-name: $parameters.sharepoint-lbvservers.styles-scripts-lbvserver-name
+          vserver-type: LBVSERVER
+          policies: $substitutions.policylabel_bindings($parent.outputs.cmp-request-policy-label, $parent.outputs.cmp-response-policy-label)
+      -
+        name: webservices-definitions-cmp-policy-bindings-comp
+        type: stlb::vserver-cmppolicies-bindings
+        description: This component binds Sharepoint's WebServices definitions lbvserver to the compression policy label created earlier.
+        properties:
+          vserver-name: $parameters.sharepoint-lbvservers.webservices-definitions-lbvserver-name
+          vserver-type: LBVSERVER
+          policies: $substitutions.policylabel_bindings($parent.outputs.cmp-request-policy-label, $parent.outputs.cmp-response-policy-label)
+      -
+        name: webservices-schemas-cmp-policy-bindings-comp
+        type: stlb::vserver-cmppolicies-bindings
+        description: This component binds Sharepoint's WebServices schemas lbvserver to the compression policy label created earlier.
+        properties:
+          vserver-name: $parameters.sharepoint-lbvservers.webservices-schemas-lbvserver-name
+          vserver-type: LBVSERVER
+          policies: $substitutions.policylabel_bindings($parent.outputs.cmp-request-policy-label, $parent.outputs.cmp-response-policy-label)

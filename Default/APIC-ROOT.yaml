@@ -1,0 +1,146 @@
+--- 
+name: APIC-ROOT
+namespace: com.citrix.adc.stylebooks
+version: "1.1"
+private: true
+display-name: "Root StyleBook for APIC's Graph Deployment"
+description: "This is the root StyleBook for all applications deployed with APIC.This contains EPG mapping to ServiceGroup & port Details."
+schema-version: "1.0"
+import-stylebooks: 
+  - 
+    namespace: com.citrix.adc.stylebooks
+    version: "1.1"
+    prefix: stlb
+parameters: 
+  - 
+    name: appname
+    label: "Application Name"
+    description: "Application Name for the ADC (L4-L7) services"
+    type: string
+    required: true
+    key: true
+  - 
+    name: app-services
+    label: "Services (ports) Settings"
+    description: "Settings for EPG & endpoints (ports) defined in the service graph"
+    type: object[]
+    required: true
+    parameters:  
+      - 
+        name: virtual-ip
+        label: "Load Balanced App Virtual IP address"
+        description: "Virtual IP address representing the Load Balanced application"
+        type: ipaddress
+        required: true
+      - 
+        name: virtual-port
+        label: "Load Balanced App Virtual Port"
+        description: "TCP port representing the Load Balanced application"
+        type: tcp-port
+        required: true
+        default: 80
+      - 
+        name: protocol
+        label: "Load Balanced App Protocol"
+        description: "Protocol of Load Balanced application"
+        type: string
+        default: HTTP
+        allowed-values: 
+          - HTTP
+          - TCP
+          - UDP
+          - ANY
+      - 
+        name: algorithm
+        label: "Load Balanced App Algorithm"
+        description: "Load Balancing algorithm used for the application"
+        type: string
+        allowed-values: 
+          - LEASTCONNECTION
+          - ROUNDROBIN
+          - LEASTRESPONSETIME
+        default: LEASTCONNECTION
+      - 
+        name: persistence
+        label: "Load Balanced App Persistence Type"
+        description: "Persistence type used for members of this pool"
+        type: string
+        gui:
+          summary_display: false
+        allowed-values: 
+          - NONE
+          - SOURCEIP
+          - COOKIEINSERT
+          - SRCIPDESTIP
+          - DESTIP          
+      - 
+        name: skip_healthmonitor
+        label: "Should NetScaler monitoring be skipped?"
+        description: "Should monitoring be skipped?"
+        type: boolean
+        gui:
+          summary_display: false
+      - 
+        name: server-ips
+        label: "Server IPs"
+        description: "List of server IPs"
+        type: ipaddress[]
+        gui:
+          summary_display: false
+      - 
+        name: server-port
+        label: "Application Server Port"
+        description: "HTTP port of a server"
+        type: tcp-port
+        default: 80
+        gui:
+          summary_display: false
+      - 
+        name: sg-advanced
+        label: "Advanced Application Server Settings"
+        description: "Advanced LoadBalancing Settings for the Application"
+        type: object
+        gui:
+          summary_display: false
+        updatable: true
+        parameters: 
+          - 
+            name: useproxyport
+            label: "Service Group UseProxyPort"
+            description: "Use the proxy port as the source port when initiating connections with the server."
+            type: string
+            updatable: true
+            allowed-values: 
+              - "NO"
+              - "YES"
+          - 
+            name: usip
+            label: "Preserve Client Source IP (USIP)"
+            description: "Use client's IP address as the source IP address when initiating connection to the server."
+            type: string
+            updatable: true
+            allowed-values: 
+              - "NO"
+              - "YES"
+          - 
+            name: cip
+            label: "CIP Header Insertion"
+            description: "Insert the Client IP header in requests forwarded to the service."
+            type: string
+            updatable: true
+            allowed-values: 
+              - DISABLED
+              - ENABLED
+          - 
+            name: cipheader
+            label: "CIP Header Name"
+            description: "Name of the HTTP header whose value must be set to the IP address of the client. Used with the CIP parameter. "
+            type: string
+            updatable: true
+      -
+        name: monitors
+        label: "Health Monitors"
+        description: "List of NetScaler Health Monitors used to monitor the health of this app"
+        type: object[]
+        parameters-default-sources:
+          - stlb::NS-LBMonitor

@@ -1,0 +1,28 @@
+--- 
+name: server-ip-port-params
+namespace: com.citrix.adc.commontypes
+version: "1.0"
+description: "This stylebook defines a typical server ip port information."
+private: true
+schema-version: "1.0"
+parameters: 
+   - 
+      name:  ip
+      label: "Application Server IP Address"
+      description: "IP Address of a server"
+      type: ipaddress
+      required: true
+   - 
+      name: port
+      label: "Application Server Port"
+      description: "TCP port of a server"
+      type: tcp-port
+      default: 80
+   - 
+      name: add-server
+      label: "Add a server resource"
+      description: "Option to add a server entity explicity and be managed by the stylebook"
+      type: boolean
+      default: true
+      gui:
+        hidden: true    

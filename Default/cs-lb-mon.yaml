@@ -1,0 +1,127 @@
+name: cs-lb-mon
+namespace: com.citrix.adc.stylebooks
+version: "1.0"
+display-name: "HTTP/SSL Content Switched Application with Monitors"
+description: "This StyleBook defines a typical HTTP or SSL Content Switched Application configuration with monitors."
+schema-version: "1.0"
+import-stylebooks: 
+  - 
+    namespace: netscaler.nitro.config
+    prefix: ns
+    version: "10.5"
+  - 
+    namespace: com.citrix.adc.stylebooks
+    prefix: stlb
+    version: "1.0"
+  - 
+    namespace: com.citrix.adc.commontypes
+    prefix: cmtypes
+    version: "1.0"
+substitutions: 
+  cspol-priority(priority): 10100 - 100 * $priority
+  lbname-from-poolname(pool-name): $parameters.appname + "-" + $pool-name
+parameters-default-sources:
+  - cmtypes::csvserver-params
+parameters: 
+  - 
+    name: default-lb-pool
+    label: "Content Switched App Default Server Pool"
+    description: "Details of the Default pool for this application."
+    type: object
+    parameters-default-sources:
+      - stlb::lb-mon
+  - 
+    name: pools
+    label: "Content Switched App Other Server Pools"
+    description: "Details of other server pools for the content switched application."
+    type: "cmtypes::cs-pool[]"
+  - 
+    name: certificates
+    label: "SSL Certificate Settings"
+    description: "Certificates for this virtual server if this Content-Switched application is exposed using SSL"
+    type: "cmtypes::certificate[]"
+components: 
+  - 
+    name: default-lb-mon-comp
+    condition: $parameters.default-lb-pool
+    type: stlb::lb-mon
+    description: "This component is used to generate the only LB Vserver for this config when there are no L7 rules supplied (no Content Switching)."
+    properties-default-sources:
+      - $parameters.default-lb-pool
+    properties: 
+      lb-appname: $parameters.appname + "-lb-default"
+  - 
+    name: csvserver-comp
+    type: ns::csvserver
+    properties: 
+      name: $parameters.appname + "-cs"
+      servicetype: $parameters.cs-service-type
+      ipv46: $parameters.cs-virtual-ip
+      port?: $parameters.cs-virtual-port
+      clttimeout?: $parameters.cs-advanced.client-timeout
+      insertvserveripport?: $parameters.cs-advanced.insert-vserver-ipport
+      redirecturl?: $parameters.cs-advanced.redirect-url
+      somethod?: $parameters.cs-advanced.spillover-method
+      httpprofilename?: $parameters.cs-advanced.http-profile
+      downstateflush?: $parameters.cs-advanced.flush-on-state-down
+      authentication?: $parameters.cs-advanced.auth-params.authentication
+      authenticationhost?: $parameters.cs-advanced.auth-params.authentication-host
+      authnvsname?: $parameters.cs-advanced.auth-params.authentication-vserver-name
+      authn401?: $parameters.cs-advanced.auth-params.authentication-http-401
+      appflowlog?: $parameters.cs-advanced.appflow-log
+      comment?: $parameters.cs-advanced.comment
+    components: 
+      - 
+        name: default-cs-lb-bind-comp
+        type: stlb::cs-lb-bind
+        condition: $parameters.default-lb-pool
+        description: "This component is used to create and bind CS Policy to the CS vserver"
+        properties: 
+          csvserver-name: $parent.properties.name
+          lbvserver-name: $components.default-lb-mon-comp.outputs.lbvserver.properties.name
+          is-default: true
+      - 
+        name: lb-mon-comps
+        type: stlb::lb-mon  
+        condition: $parameters.pools
+        description: "This list of components are used to generate LB Vservers for all the pools used in Content Switching (L7 rules supplied in parameters)"
+        repeat: $parameters.pools
+        repeat-item: pool
+        properties-default-sources:
+          - $pool.lb-pool
+        properties: 
+          lb-appname: $parameters.appname + "-" + $pool.lb-pool.lb-appname
+        components:
+          - 
+            name: cs-lb-bind-comp
+            type: stlb::cs-lb-bind
+            description: "This component is used to create and bind CS Policy to the CS vserver"
+            properties: 
+              csvserver-name: $parent.parent.properties.name
+              lbvserver-name: $parent.outputs.lbvserver.properties.name
+              pool: $pool
+      - 
+        name: csvserver-certs-bindings
+        type: stlb::vserver-certs-binds
+        condition: $parameters.certificates
+        description: "This component is used for uploading and binding a list of certificates to a CS vserver"
+        properties: 
+          vserver-name: $parent.properties.name
+          certificates: $parameters.certificates
+outputs: 
+  - 
+    name: csvserver
+    value: $components.csvserver-comp
+    description: "Exposes the created CS vserver component"    
+  -
+    name: default-lbvserver
+    condition: $parameters.default-lb-pool
+    value: $components.default-lb-mon-comp.outputs.lbvserver
+    description: "The default LBvserver component"
+  -
+    name: non-default-lbvservers
+    condition: $parameters.pools
+    repeat: $components.csvserver-comp.components.lb-mon-comps
+    repeat-item: lb-mon-item 
+    value: $lb-mon-item.outputs.lbvserver
+    description: "The other LBvserver components to which traffic is switched based on rule"

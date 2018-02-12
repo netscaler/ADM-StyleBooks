@@ -1,0 +1,51 @@
+name: replace-path
+namespace: com.citrix.adc.stylebooks
+version: "1.0"
+display-name: Request Path Replacement StyleBook
+private: true
+schema-version: "1.0"
+description: |    
+    This StyleBook replaces an Path component of the URL in requests with a new path.
+import-stylebooks: 
+  - 
+    namespace: netscaler.nitro.config
+    version: "10.5"
+    prefix: ns
+  - 
+    namespace: com.citrix.adc.commontypes
+    version: "1.0"
+    prefix: cmtypes
+parameters:
+    -
+        name: appname
+        type: string
+        label: Application Name
+        description: The Name of the Application
+    -
+        name: path
+        type: object
+        label: New URL Path
+        description: The new path
+        parameters-default-sources:
+            - cmtypes::replace-path-params
+components:
+  -
+    name: replace-path-action-comp
+    type: ns::rewriteaction
+    properties:
+        name: $parameters.appname + "-urlpath-rewrite-action"
+        type: REPLACE
+        target: str("HTTP.REQ.URL.PATH_AND_QUERY")
+        stringbuilderexpr: $parameters.path.path-value
+    components:
+      -
+        name: replace-path-policy-comp
+        type: ns::rewritepolicy
+        properties:
+            name: $parameters.appname + "-" + "urlpath-rewrite-policy"
+            rule: $parameters.path.pattern
+            action: $parent.properties.name
+outputs:
+    -
+        name: replace-path-policy
+        value: $components.replace-path-action-comp.components.replace-path-policy-comp

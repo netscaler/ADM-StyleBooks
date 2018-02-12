@@ -1,0 +1,100 @@
+--- 
+name: certificate
+namespace: com.citrix.adc.commontypes
+version: "1.0"
+description: "This stylebook defines a typical ssl certificate type."
+private: true
+schema-version: "1.0"
+parameters: 
+  - 
+    name: cert-name
+    label: "Certificate Name"
+    description: "Certificate name"
+    type: string
+    gui:
+      updatable: false
+    key: true
+    required: true
+  - 
+    name: cert-file
+    label: "Certificate File"
+    description: "Location of the certificate file"
+    type: certfile
+    required: true
+  - 
+    name: ssl-inform 
+    label: "CertKey Format"    
+    description: "Input format of the certificate and the private-key files."  
+    type: string    
+    default: PEM
+    required: true
+    allowed-values: 
+      - PEM
+      - DER
+  - 
+    name: key-name
+    label: "Certificate Key Name"    
+    description: "Certificate Key Name"
+    gui:
+      updatable: false
+    type: string
+  - 
+    name: key-file
+    label: "Certificate Key File"
+    description: "Location of the certificate key file"
+    type: keyfile
+  - 
+    name: cert-password
+    label: "Private Key Password"
+    description: "Passphrase that was used to encrypt the private-key. Use this option to load encrypted private-keys in PEM format."
+    type: string
+  - 
+    name: cert-advanced
+    label: "Advanced Certificate Settings"
+    description: "Advanced certificate settings"
+    type: object
+    gui: 
+      collapse_pane: true
+      columns: 1
+    parameters: 
+      - 
+        name: expiry-monitor
+        label: "Certificate Expiry Monitor"
+        description: "Issue an alert when the certificate is about to expire."
+        type: string
+        allowed-values: 
+          - DISABLED
+          - ENABLED
+      - 
+        name: notification-period
+        label: "Certificate Expiry Notfication Period"
+        description: "Time, in number of days, before certificate expiration, at which to generate an alert that the certificate is about to expire."
+        type: number
+        min-value: 10
+        max-value: 100
+      - 
+        name: is-ca-cert
+        label: "Is a CA Certificate"
+        description: "True if this is a CA certificate"
+        type: boolean
+        default: false
+      - 
+        name: skip-ca-name
+        label: "Skip CA Name"
+        description: "Skip the CA name"
+        type: boolean
+        default: false
+      - 
+        name: ocsp-check
+        label: "OCSP Check"
+        description: "Enable Certificate OCSP validation check"
+        type: string
+        allowed-values:
+          - Optional
+          - Mandatory
+      -
+        name: sni-cert
+        label: "SNI Certificate"
+        description: "Whether or not it is a SNI cert"
+        type: boolean
+        default: false

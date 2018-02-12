@@ -1,0 +1,72 @@
+--- 
+name: vserver-certs-binds
+namespace: com.citrix.adc.stylebooks
+version: "1.0"
+description: "This StyleBook creates corresponding certkey entities on NetScaler and binds a set of certificates to an existing SSL virtual load balanced seerver."
+schema-version: "1.0"
+private: true
+import-stylebooks: 
+  - 
+    namespace: netscaler.nitro.config
+    prefix: ns
+    version: "10.5"
+  - 
+    namespace: com.citrix.adc.stylebooks
+    prefix: stlb
+    version: "1.0"
+  - 
+    namespace: com.citrix.adc.commontypes
+    prefix: cmtypes
+    version: "1.0"
+parameters: 
+  - 
+    name: vserver-name
+    label: "VServer Name"
+    description: "name of the vserver to which certificates are bound"
+    type: string
+    key: true
+    required: true
+  - 
+    name: certificates
+    label: Certificates
+    description: "Certificates to be bound to this SSL virtual server"
+    type: cmtypes::certificate[]
+    required: true
+components: 
+  - 
+    name: certkeys-comp
+    type: stlb::certkeys
+    description: "This component uploads the certificate files and creates corresponding certkey entities on NetScaler."
+    properties: 
+      certificates: $parameters.certificates
+  - 
+    name: cert-bindings-adv-comp
+    type: ns::sslvserver_sslcertkey_binding 
+    description: "This component binds certkey entities to a vserver with advanced settings."
+    repeat: $parameters.certificates
+    repeat-item: certificate
+    repeat-condition: $certificate.cert-advanced
+    properties: 
+      vservername: $parameters.vserver-name
+      certkeyname: $certificate.cert-name
+      ca?: $certificate.cert-advanced.is-ca-cert
+      skipcaname?: $certificate.cert-advanced.skip-ca-name
+      ocspcheck?: $certificate.cert-advanced.ocsp-check
+  - 
+    name: cert-bindings-comp
+    type: ns::sslvserver_sslcertkey_binding 
+    description: "This component binds certkey entities to a vserver."
+    repeat: $parameters.certificates
+    repeat-item: certificate
+    repeat-condition: not $certificate.cert-advanced
+    properties: 
+      vservername: $parameters.vserver-name
+      certkeyname: $certificate.cert-name
+
+outputs: 
+  - 
+    name: certkeys
+    value: $components.certkeys-comp.outputs.certkeys
+  - 
+    name: ca-certkeys
+    value: $components.certkeys-comp.outputs.ca-certkeys

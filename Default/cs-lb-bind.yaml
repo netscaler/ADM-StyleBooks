@@ -1,0 +1,88 @@
+--- 
+name: cs-lb-bind
+namespace: com.citrix.adc.stylebooks
+version: "1.0"
+description: "This StyleBook is defined to create and bind a set of CS Policies to an existing CS Vserver."
+private: true
+schema-version: "1.0"
+import-stylebooks: 
+  - 
+    namespace: netscaler.nitro.config
+    prefix: ns
+    version: "10.5"
+  - 
+    namespace: com.citrix.adc.commontypes
+    prefix: cmtypes
+    version: "1.0"
+  - 
+    namespace: com.citrix.adc.stylebooks
+    prefix: stlb
+    version: "1.0"
+substitutions: 
+  cs-actionname(poolname): $parameters.csvserver-name + "-" + $poolname + "-csaction"
+  cs-policyname(poolname): $parameters.csvserver-name + "-" + $poolname + "-cspol"
+  cspol-priority(priority): 10100 - 100 * int($priority)
+  lbname-from-poolname(poolname): $parameters.csvserver-name + "-" + $poolname + "-lb"
+parameters: 
+  - 
+    name: csvserver-name
+    description: "Name of the Content Switched application to which policies are bound"
+    label: "Content Switched App Name"
+    type: string
+    key: true
+    required: true
+  - 
+    name: lbvserver-name
+    label: "Content Switch App Server Default LB VServer"
+    description: "Details of the Default LBVServer for this application."
+    type: string
+    required: true
+  - 
+    name: is-default
+    label: "Is Default"
+    description: "Is this the Default LB Vserver for Content-Switching?"
+    type: boolean
+    default: false
+  - 
+    name: pool
+    label: "Server Pool"
+    description: "Details of Server pool for this application."
+    type: cmtypes::cs-pool
+components: 
+  - 
+    name: cs-defaultlb-bind-comp
+    condition: $parameters.is-default
+    type: ns::csvserver_lbvserver_binding
+    description: "This component binds the default LB vserver to the CS vserver"
+    properties: 
+      name: $parameters.csvserver-name
+      lbvserver: $parameters.lbvserver-name
+  - 
+    name: csaction-comp
+    type: ns::csaction 
+    condition: not $parameters.is-default
+    properties: 
+      name: $substitutions.cs-actionname($parameters.pool.lb-pool.lb-appname)
+      targetlbvserver: $parameters.lbvserver-name
+  - 
+    name: cspolicy-comp
+    type: ns::cspolicy
+    condition: not $parameters.is-default
+    properties: 
+      policyname: $substitutions.cs-policyname($parameters.pool.lb-pool.lb-appname)
+      rule: $parameters.pool.rule
+      action: $components.csaction-comp.properties.name
+
+  - 
+    name: cspolicy-binding-comp
+    type: ns::csvserver_cspolicy_binding  
+    condition: not $parameters.is-default
+    properties: 
+      name: $parameters.csvserver-name
+      policyname: $components.cspolicy-comp.properties.policyname
+      priority: $substitutions.cspol-priority($parameters.pool.priority)
+outputs: 
+  - 
+    name: cs-policy 
+    description: "Exposes the default load balanced virtual server"
+    value: $components.cspolicy-comp

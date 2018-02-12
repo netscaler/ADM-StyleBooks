@@ -1,0 +1,145 @@
+--- 
+name: tmtraffic-policy
+namespace: com.citrix.adc.stylebooks
+version: "1.0"
+description: This StyleBook configures a NetScaler Traffic policy
+schema-version: "1.0"
+private: true
+import-stylebooks: 
+    - 
+        namespace: netscaler.nitro.config
+        version: "10.5"
+        prefix: ns
+    -
+        namespace: com.citrix.adc.commontypes
+        version: "1.0"
+        prefix: cmtypes
+    -
+        namespace: com.citrix.adc.stylebooks
+        version: "1.0"
+        prefix: stlb        
+parameters:
+    -
+        name: name
+        type: string
+        label: "Application Name"
+        description: "The Application Name"
+        required: true
+    -
+        name: rule
+        type: string
+        label: "NetScaler PI Rule for when to apply the Active Directory LDAP Policy"
+        description: "The Application Rule"
+        default: "true"
+    -
+        name: traffic-settings
+        type: object
+        label: Traffic Policy Settings
+        description: "Parameters for configuring NetScaler Traffic Policy"
+        required: true
+        parameters-default-sources:
+            - cmtypes::tmtraffic-base-params
+substitutions:
+    onoff-setting:
+        true: "ON"
+        false: "OFF"
+components:
+    -
+        name: webform-sso-action-comp
+        description: This components creates the TM formssoaction config object.
+        type: ns::tmformssoaction
+        condition: $parameters.traffic-settings.sso-settings.sso-form-settings
+        properties:
+            name: $parameters.name + "-tmformsso-action"
+            userfield: $parameters.traffic-settings.sso-settings.sso-form-settings.username-field
+            passwdfield: $parameters.traffic-settings.sso-settings.sso-form-settings.password-field
+            actionurl: $parameters.traffic-settings.sso-settings.sso-form-settings.action-url
+            submitmethod?: $parameters.traffic-settings.sso-settings.sso-form-settings.submit-method
+            ssosuccessrule?: $parameters.traffic-settings.sso-settings.sso-form-settings.success-expr
+            namevaluepair?: $parameters.traffic-settings.sso-settings.sso-form-settings.other-fields
+            responsesize?: $parameters.traffic-settings.sso-settings.sso-form-settings.max-response-size
+    -
+        name: saml-signing-certkey-comp
+        description: This components creates the certkey of the certificate used to sign SAML assertions.
+        type: stlb::certkeys
+        condition: $parameters.traffic-settings.sso-settings.sso-saml-settings
+        properties:
+            certificates:
+                - $parameters.traffic-settings.sso-settings.sso-saml-settings.saml-sso-signing-certificate
+    -
+        name: saml-sso-profile-comp
+        description: This component creates the TM samlssoprofile config object
+        type: ns::tmsamlssoprofile
+        condition: $parameters.traffic-settings.sso-settings.sso-saml-settings
+        properties:
+            name: $parameters.name + "-tmsamlsso-profile"
+            assertionconsumerserviceurl: $parameters.traffic-settings.sso-settings.sso-saml-settings.saml-assertion-consumerservice-url
+            relaystaterule: $parameters.traffic-settings.sso-settings.sso-saml-settings.saml-relaystate-expr
+            samlsigningcertname: $components.saml-signing-certkey-comp.outputs.certkeys[0].properties.certkey
+            samlissuername?: $parameters.traffic-settings.sso-settings.sso-saml-settings.saml-sso-issuer-name
+            nameidexpr?: $parameters.traffic-settings.sso-settings.sso-saml-settings.name-id-expr
+            nameidformat?: $parameters.traffic-settings.sso-settings.sso-saml-settings.name-id-format
+            sendpassword?: $substitutions.onoff-setting[$parameters.traffic-settings.sso-settings.sso-saml-settings.send-password]
+            audience?: $parameters.traffic-settings.sso-settings.sso-saml-settings.audience
+    -
+        name: kerberos-certkey-comp
+        description: This component creates the user certkey used for Kerberos KCD SSO.
+        type: stlb::certkeys
+        condition: $parameters.traffic-settings.sso-settings.sso-kerberos-settings.delegated-user-cert
+        properties:
+            certificates:
+                - $parameters.traffic-settings.sso-settings.sso-kerberos-settings.delegated-user-cert
+    -
+        name: kerberos-ca-certkey-comp
+        description: This component creates the CA certkey used for Kerberos KCD SSO.
+        type: stlb::certkeys
+        condition: $parameters.traffic-settings.sso-settings.sso-kerberos-settings.delegated-user-ca-cert
+        properties:
+            certificates:
+                - $parameters.traffic-settings.sso-settings.sso-kerberos-settings.delegated-user-ca-cert
+    -
+        name: kerberos-sso-account-comp
+        description: This component creates a KCD account config object used by the NetScaler to SSO on behalf of the user.
+        type: ns::aaakcdaccount
+        condition: $parameters.traffic-settings.sso-settings.sso-kerberos-settings
+        properties:
+            kcdaccount: $parameters.name + "-aaa-kcdaccount"
+            keytab?: $parameters.traffic-settings.sso-settings.sso-kerberos-settings.use-keytab.keytab-file
+            realmstr?: $parameters.traffic-settings.sso-settings.sso-kerberos-settings.realm
+            userrealm?: $parameters.traffic-settings.sso-settings.sso-kerberos-settings.user-realm
+            enterpriserealm?: $parameters.traffic-settings.sso-settings.sso-kerberos-settings.enterprise-realm
+            delegateduser?: $parameters.traffic-settings.sso-settings.sso-kerberos-settings.delegated-user
+            kcdpassword?: $parameters.traffic-settings.sso-settings.sso-kerberos-settings.delegated-user-password
+            usercert?: $components.kerberos-certkey-comp.outputs.certkeys[0].properties.certkey
+            cacert?: $components.kerberos-ca-certkey-comp.outputs.certkeys[0].properties.certkey
+            servicespn?: $parameters.traffic-settings.sso-settings.sso-kerberos-settings.service-spn
+    -
+        name: traffic-action-comp
+        description: This component creates the TM traffic action config object
+        type: ns::tmtrafficaction
+        properties:
+            name: $parameters.name + "-tm-traffic-action"
+            persistentcookie?: $substitutions.onoff-setting[$parameters.traffic-settings.use-persistent-cookies]
+            initiatelogout?: $substitutions.onoff-setting[$parameters.traffic-settings.initiate-logout]
+            apptimeout?: $parameters.traffic-settings.app-timeout
+            forcedtimeout?: $parameters.traffic-settings.timeout-timer-action
+            forcedtimeoutval?: $parameters.traffic-settings.timeout-timer-value
+            sso?: $substitutions.onoff-setting[exists($parameters.traffic-settings.sso-settings)]
+            userexpression?: $parameters.traffic-settings.sso-settings.username-expr
+            passwdexpression?: $parameters.traffic-settings.sso-settings.password-expr
+            formssoaction?: $components.webform-sso-action-comp.properties.name
+            samlssoprofile?: $components.saml-sso-profile-comp.properties.name
+            kcdaccount?: $components.kerberos-sso-account-comp.properties.kcdaccount
+    -
+        name: traffic-policy-comp
+        description: This component creates the TM traffic policy config object
+        type: ns::tmtrafficpolicy
+        properties:
+            name: $parameters.name + "-tm-traffic-policy"
+            rule: $parameters.rule
+            action: $components.traffic-action-comp.properties.name
+outputs:
+    -
+        name: traffic-policy
+        value: $components.traffic-policy-comp
+        description: The TM Traffic Policy Component.

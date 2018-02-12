@@ -1,0 +1,50 @@
+---
+name: marathon-http-lb
+namespace: com.citrix.adc.stylebooks
+version: "1.0"
+display-name: "Marathon Load Balanced Application"
+description: "This StyleBook defines a HTTP Load Balanced Application configuration for Marathon"
+schema-version: "1.0"
+import-stylebooks: 
+  - 
+    namespace: netscaler.nitro.config
+    prefix: ns
+    version: "10.5"
+  - 
+    namespace: "com.citrix.adc.stylebooks"
+    prefix: "stlb"
+    version: "1.0"
+parameters-default-sources:
+  - stlb::marathon-root
+substitutions:
+  lb-name(appname, port): $appname + "-" + str($port) + "-lb"
+  sg-name(appname, port): $appname + "-" + str($port) + "-sg"
+  healthmonitor[]:
+    true: "NO"
+    false: "YES"
+components: 
+  - 
+    name: lb-comp
+    type: stlb::lb-mon
+    repeat: $parameters.app-services
+    repeat-item: app
+    properties: 
+      lb-appname: $substitutions.lb-name($parameters.appname, $app.virtual-port)
+      lb-virtual-ip: $app.virtual-ip
+      lb-virtual-port: $app.virtual-port
+      lb-service-type: $app.protocol
+      lb-advanced:
+         algorithm?: $app.algorithm
+         persistence?: $app.persistence
+      svc-servers?: $app.servers
+      svc-service-type?: $app.protocol
+      svcg-advanced:
+         svc-use-proxy-port?: $app.sg-advanced.useproxyport
+         svc-use-source-ip?: $app.sg-advanced.usip
+         svc-client-ip?: $app.sg-advanced.cip
+         svc-client-ip-header?: $app.sg-advanced.cipheader
+         svc-enable-health-monitor?: $substitutions.healthmonitor($app.skip_healthmonitor)
+outputs: 
+  - 
+    name: lb
+    value: $components.lb-comp

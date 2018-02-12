@@ -1,0 +1,154 @@
+---
+name: ldap-auth
+description: This is a sample StyleBook that configures LDAP authentication on NetScaler
+display-name: LDAP Authentication Config
+namespace: com.citrix.adc.stylebooks
+schema-version: "1.0"
+version: "0.1"
+private: true
+import-stylebooks:
+ -
+  namespace: netscaler.nitro.config
+  prefix: ns
+  version: "10.5"
+ -
+  namespace: com.citrix.adc.stylebooks
+  prefix: stlb
+  version: "1.0"
+ -
+  namespace: com.citrix.adc.commontypes
+  prefix: cmtypes
+  version: "1.0"
+parameters:
+  -
+    name: name
+    label: LDAP Config Name
+    description: The name for LDAP Auth config
+    type: string
+    required: true
+  -
+    name: vip
+    label: AD Authentication VIP
+    description: The VIP IP address used for LDAP Auth vserver
+    type: ipaddress
+    required: true
+  -
+    name: port
+    label: AD Authentication Port
+    description: The VIP Port used for LDAP Auth vserver
+    type: tcp-port
+    default: 443
+  -
+    name: server-ip
+    type: ipaddress
+    label: LDAP Server IP
+    description: The LDAP Server IP Addresses
+    required: true
+  -
+    name: base
+    label: LDAP Base String
+    description: The Active Directory LDAP Base string for authentication
+    type: string
+    required: true
+  -
+    name: login-name
+    label: LDAP login name
+    description: LDAP login name
+    type: string
+    required: true
+  -
+    name: group-attribute-name
+    label: LDAP group Attribute Name
+    description: LDAP group Attribute Name
+    type: string
+    required: true
+  -
+    name: sub-attribute-name
+    label: LDAP Sub-Attribute name
+    description: LDAP sub-attribute name
+    type: string
+    required: true
+  -
+    name: auth-domain
+    label: LDAP Authentication Domain
+    description: LDAP Authentication Domain name
+    type: string
+  -
+    name: max-login-attempts
+    label: Max Login Attempts
+    description: Maximum login attempts before login fails
+    type: number
+    default: 255
+  -
+    name: failed-login-timeout
+    label: Timeout for Failed Login
+    description: Timeout period after login failure before allowing user to try again
+    type: number
+    default: 1
+  -
+    name: bind-dn
+    label: Full Distinguished Name
+    description: Full distinguished name (DN) that is used to bind to the LDAP server
+    type: string
+    default: cn=Manager,dc=netscaler,dc=com
+  -
+    name: bind-dn-password
+    label: Bind Password
+    description: Password used to bind to the LDAP server.
+    type: password
+    min-length: 1
+  -
+    name: certificates
+    label: Auth Certificates
+    description: Certificates for this authentication virtual server
+    type: cmtypes::certificate[]
+components:
+    -
+      name: auth-ldap-vserver-comp
+      type: ns::authenticationvserver
+      description: This component creates the LDAP Auth Vserver config entity
+      properties:
+          name: $parameters.name + "-vserver"
+          servicetype: SSL
+          ipv46: $parameters.vip
+          port: $parameters.port
+          authenticationdomain?: $parameters.auth-domain
+          maxloginattempts?: $parameters.max-login-attempts
+          failedlogintimeout?: $parameters.failed-login-timeout
+    -
+      name: auth-ldap-action-comp
+      type: ns::authenticationldapaction
+      description: This component creates the LDAP Auth Action config entity
+      properties:
+          name: $parameters.name + "-action"
+          serverip: $parameters.server-ip
+          ldapbase: $parameters.base
+          ldaploginname: $parameters.login-name
+          groupattrname: $parameters.group-attribute-name
+          subattributename: $parameters.sub-attribute-name
+          ldapbinddn: $parameters.bind-dn
+          ldapbinddnpassword: $parameters.bind-dn-password
+    -
+      name: auth-ldap-policy-comp
+      type: ns::authenticationldappolicy
+      description: This component creates the LDAP Auth Policy config entity
+      properties:
+          name: $parameters.name + "-policy"
+          rule: ns_true
+          reqaction: $components.auth-ldap-action-comp.properties.name
+    -
+      name: auth-vserver-policy-bind-comp
+      type: ns::authenticationvserver_authenticationldappolicy_binding
+      description: This component creates the binding config between the LDAP Auth Policy and the LDAP Action
+      properties:
+          name: $components.auth-ldap-vserver-comp.properties.name
+          policy: $components.auth-ldap-policy-comp.properties.name
+          priority: 100
+
+    -
+      name: auth-vserver-certs-bindings-comp
+      type: stlb::vserver-certs-binds
+      condition: $parameters.certificates
+      properties:
+        certificates: $parameters.certificates
+        vserver-name: $components.auth-ldap-vserver-comp.properties.name 

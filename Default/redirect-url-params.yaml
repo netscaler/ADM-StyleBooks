@@ -1,0 +1,17 @@
+name: redirect-url-params
+namespace: com.citrix.adc.commontypes
+version: "1.0"
+display-name: Redirect URL Parameters
+private: true
+schema-version: "1.0"
+parameters:
+  -
+    name: target-expr
+    type: string
+    label: Policy Expression that specifies what the URL will be replaced with
+  -
+    name: pattern
+    type: string
+    label: Request Filter (Policy Expression)
+    description: The NetScaler Policy Expression used to select requests for which to perform action on the header
+    default: "true"

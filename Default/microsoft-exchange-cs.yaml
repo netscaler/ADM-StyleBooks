@@ -1,0 +1,203 @@
+---
+name: microsoft-exchange-cs
+description: This StyleBook creates the CS and LB Config objects for Microsoft Exchange
+display-name: Microsoft Exchange 2016 Content Switching
+namespace: com.citrix.adc.enterprise.stylebooks
+schema-version: "1.0"
+version: "1.2"
+private: true
+import-stylebooks:
+  -
+    namespace: netscaler.nitro.config
+    prefix: ns
+    version: "10.5"
+  - 
+    namespace: com.citrix.adc.stylebooks
+    prefix: stlb
+    version: "1.0"
+  - 
+    namespace: com.citrix.adc.commontypes
+    prefix: cmtypes
+    version: "1.0"
+parameters:
+  -
+    name: exch-appname
+    label: Exchange Application Name
+    description: The Name of the Microsoft Exchange application
+    type: string
+    required: true
+    key: true
+  -
+    name: exch-vip
+    label: Exchange VIP
+    description: The Virtual IP for the Microsoft Exchange application
+    type: ipaddress
+    required: true
+  -
+    name: server-ips
+    label: Exchange Server IPs
+    description: List of Microsoft Exchange Server IPs
+    type: ipaddress[]
+    required: true
+  -
+    name: exch-certs
+    label: Exchange Certificates 
+    description: Microsoft Exchange SSL certificates
+    type: cmtypes::certificate[]
+    required: true
+  -
+    name: auth-vserver
+    label: Authentication VServer
+    description: The Authentication VServer for Exchange
+    type: string
+    required: true
+substitutions:
+  add-port(server-ip):
+    ip: $server-ip
+    port: 443
+components:
+  -
+    name: cs-exch-comp
+    description: This component builds the CS and LB vservers and services needed for Exchange configuration
+    type: stlb::cs-lb-mon
+    properties:
+      appname: $parameters.exch-appname
+      cs-virtual-ip: $parameters.exch-vip
+      cs-virtual-port: 443
+      cs-service-type: SSL
+      certificates: $parameters.exch-certs
+      cs-advanced: 
+        client-timeout: 180
+      default-lb-pool:
+        lb-appname: default
+        lb-service-type: SSL
+        lb-virtual-ip: 0.0.0.0
+        lb-virtual-port: 0
+        svc-service-type: SSL
+        svc-servers: map($substitutions.add-port, $parameters.server-ips)
+        svcg-advanced:
+            svc-compression: "YES"
+            svc-use-proxy-port: "YES"
+        certificates: $parameters.exch-certs
+      pools:
+        -
+            rule: str("HTTP.REQ.URL.CONTAINS(\"owa\")")
+            lb-pool: 
+              lb-appname: owa
+              lb-service-type: SSL
+              lb-virtual-ip: 0.0.0.0
+              lb-virtual-port: 0
+              lb-advanced:
+                auth-params:
+                  authentication-http-401: "ON"
+                  authentication-vserver-name: $parameters.auth-vserver
+              svc-service-type: SSL
+              svc-servers:  map($substitutions.add-port, $parameters.server-ips)
+              svcg-advanced:
+                svc-compression: "YES"
+                svc-use-proxy-port: "YES"
+              certificates: $parameters.exch-certs
+            priority: 50
+        -
+            rule: str("HTTP.REQ.URL.CONTAINS(\"mapi\")")
+            lb-pool: 
+              lb-appname: mapi
+              lb-service-type: SSL
+              lb-virtual-ip: 0.0.0.0
+              lb-virtual-port: 0
+              svc-service-type: SSL
+              svc-servers:  map($substitutions.add-port, $parameters.server-ips)
+              svcg-advanced:
+                svc-compression: "YES"
+                svc-use-proxy-port: "YES"
+              certificates: $parameters.exch-certs
+            priority: 51
+        -
+            rule: str("HTTP.REQ.URL.CONTAINS(\"Microsoft\")")
+            lb-pool: 
+              lb-appname: activesync
+              lb-service-type: SSL
+              lb-virtual-ip: 0.0.0.0
+              lb-virtual-port: 0
+              svc-service-type: SSL
+              svc-servers:  map($substitutions.add-port, $parameters.server-ips)
+              svcg-advanced:
+                svc-compression: "YES"
+                svc-use-proxy-port: "YES"
+              certificates: $parameters.exch-certs
+            priority: 52
+        -
+            rule: str("HTTP.REQ.URL.CONTAINS(\"rpc\")")
+            lb-pool: 
+              lb-appname: rpc
+              lb-service-type: SSL
+              lb-virtual-ip: 0.0.0.0
+              lb-virtual-port: 0
+              svc-service-type: SSL
+              svc-servers:  map($substitutions.add-port, $parameters.server-ips)
+              svcg-advanced:
+                svc-compression: "YES"
+                svc-use-proxy-port: "YES"
+              certificates: $parameters.exch-certs
+            priority: 53
+        -
+            rule: str("HTTP.REQ.URL.CONTAINS(\"ews\")")
+            lb-pool: 
+              lb-appname: ews
+              lb-service-type: SSL
+              lb-virtual-ip: 0.0.0.0
+              lb-virtual-port: 0
+              svc-service-type: SSL
+              svc-servers:  map($substitutions.add-port, $parameters.server-ips)
+              svcg-advanced:
+                svc-compression: "YES"
+                svc-use-proxy-port: "YES"
+              certificates: $parameters.exch-certs
+            priority: 54
+        -
+            rule: str("HTTP.REQ.URL.CONTAINS(\"autodiscover\")")
+            lb-pool: 
+              lb-appname: autodiscover
+              lb-service-type: SSL
+              lb-virtual-ip: 0.0.0.0
+              lb-virtual-port: 0
+              svc-service-type: SSL
+              svc-servers:  map($substitutions.add-port, $parameters.server-ips)
+              svcg-advanced:
+                svc-compression: "YES"
+                svc-use-proxy-port: "YES"
+              certificates: $parameters.exch-certs
+            priority: 55
+outputs:
+    -
+        name: csvserver
+        description: The component representing Exchange CS VServer
+        value: $components.cs-exch-comp.outputs.csvserver
+    -
+        name: default-lbvserver
+        description: The component representing Exchange Default LB VServer
+        value: $components.cs-exch-comp.outputs.default-lbvserver
+    -
+        name: owa-lbvserver
+        description: The component representing Exchange OWA LB VServer
+        value: $components.cs-exch-comp.outputs.non-default-lbvservers[0]
+    -
+        name: mapi-lbvserver
+        description: The component representing Exchange MAPI LB VServer
+        value: $components.cs-exch-comp.outputs.non-default-lbvservers[1]
+    -
+        name: activesync-lbvserver
+        description: The component representing Exchange ActiveSync LB VServer
+        value: $components.cs-exch-comp.outputs.non-default-lbvservers[2]
+    -
+        name: rpc-lbvserver
+        description: The component representing Exchange RPC LB VServer
+        value: $components.cs-exch-comp.outputs.non-default-lbvservers[3]
+    -
+        name: ews-lbvserver
+        description: The component representing Exchange EWS LB VServer
+        value: $components.cs-exch-comp.outputs.non-default-lbvservers[4]
+    -
+        name: autodiscover-lbvserver
+        description: The component representing Exchange AutoDiscover LB VServer
+        value: $components.cs-exch-comp.outputs.non-default-lbvservers[5]

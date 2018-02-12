@@ -1,0 +1,38 @@
+name: cache-selector-config
+namespace: com.citrix.adc.stylebooks
+version: "1.0"
+display-name: Cache Selector Config
+private: true
+schema-version: "1.0"
+import-stylebooks: 
+  - 
+    namespace: netscaler.nitro.config
+    prefix: ns
+    version: "10.5"
+parameters:
+  -
+    name: selectorname
+    type: string
+    label: Cache Selector Name
+    description: The name for the Selector
+    required: true
+  -
+    name: rule
+    type: string[]
+    label: Selector Expressions
+    description: List of PI expressions used to select cached objects
+    required: true
+
+components:
+  -
+    name: cache-selector-comp
+    type: ns::cacheselector
+    description: Component for creation of cache selector
+    properties: 
+      selectorname: truncate($parameters.selectorname, 31)
+      rule: $parameters.rule
+
+outputs:
+  -
+    name: selectorname
+    value: $components.cache-selector-comp.properties.selectorname

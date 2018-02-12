@@ -1,0 +1,47 @@
+--- 
+name: cs-pool
+namespace: com.citrix.adc.commontypes
+version: "1.0"
+description: "This stylebook defines a typical Content-Switching Pool of Servers."
+private: true
+schema-version: "1.0"
+import-stylebooks:
+  -
+    namespace: com.citrix.adc.stylebooks
+    prefix: stlb
+    version: "1.0"
+  - 
+    namespace: com.citrix.adc.commontypes
+    prefix: cmtypes
+    version: "1.0"
+parameters: 
+  -
+    name: rule
+    label: "L7 NetScaler PI Rule Expression"
+    description: "The NetScaler PI Policy Expression to use for this server pool (L7 Rule)"
+    type: string
+    required: true
+    gui: 
+      summary_display: true
+  - 
+    name: priority
+    label: "Priority"
+    description: "Priority of this L7 rule. The higher the number, the more prioritized the rule."
+    type: number
+    required: true
+    min-value: 1
+    max-value: 100
+    gui: 
+      summary_display: true
+
+  - 
+    name: lb-pool
+    label: "Pool Details"
+    description: "Name of additional server pool"
+    type: object
+    required: true
+    gui: 
+      summary_display: true
+      collapse_pane: false
+    parameters-default-sources:
+      - stlb::lb-mon

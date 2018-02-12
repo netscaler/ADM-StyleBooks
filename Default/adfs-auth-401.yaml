@@ -1,0 +1,156 @@
+--- 
+name: adfs-auth-401
+namespace: com.citrix.adc.stylebooks
+version: "1.0"
+description: This stylebook configures the ADFS Authentication VServer and its session policies
+schema-version: "1.0"
+private: true
+import-stylebooks: 
+    - 
+        namespace: netscaler.nitro.config
+        version: "10.5"
+        prefix: ns
+    - 
+        namespace: com.citrix.adc.commontypes
+        version: "1.0"
+        prefix: cmt
+    - 
+        namespace: com.citrix.adc.stylebooks
+        version: "1.0"
+        prefix: stlb
+parameters:
+    -
+        name: adfs-appname
+        type: string
+        label: "Application Domain"
+        description: "The Application Name"
+        required: true
+    -
+        name: auth-domain
+        type: string
+        label: "Authentication Domain"
+        description: "The DNS domain associated with the Auth VIP"
+        required: true
+    -
+        name: auth-info
+        type: object
+        label: "ADFSProxy Internal Users Authentication"
+        description: "Parameters for configuring Internal Users Authentication to ADFS (AD Negotiate + SSO to ADFS)"
+        required: true    
+        parameters:
+            -
+                name: auth-vip
+                type: ipaddress
+                label: "ADFSProxy Internal Authentication VIP"
+                description: "The VIP IP address on NetScaler for the Authentication VServer to which Internal Users are redirected"
+                required: true
+            -
+                name: service-account-username
+                type: string
+                label: "Service Account Username"
+                description: "Service Account username used by NetScaler to authenticate users to AD"
+                required: true
+            -
+                name: service-account-password
+                type: string
+                label: "Service Account Password"
+                description: "Service Account password used by NetScaler to authenticate users to AD"
+                required: true 
+            - 
+                name: delegate-username
+                type: string
+                label: "Kerberos Delegate Username"
+                description: "The User Account Username used for Kerberos Constrained Delegation to impersonate users and enable SSO"
+                required: true
+            - 
+                name: delegate-password
+                type: string
+                label: "Kerberos Delegate Password"
+                description: "The User Account Password used for Kerberos Constrained Delegation to to impersonate users and enable SSO"
+                required: true
+    -
+        name: cert
+        type: cmt::certificate
+        label: "Certificate File path"
+        required: true
+    -
+        name: ca-cert
+        type: cmt::certificate
+        label: "CA Certificate File path"
+        description: "CA Certificate file"
+components:
+    -
+        name: adfs-auth-negotiate-comp
+        type: stlb::activedirectory-negotiate-policy
+        properties:
+            appname: $parameters.adfs-appname
+            service-account:
+                auth-domain: upper($parameters.auth-domain)
+                username: $parameters.auth-info.service-account-username
+                password: $parameters.auth-info.service-account-password
+    -
+        name: auth-tmsession-comp
+        type: stlb::tmsession-policy
+        properties:
+            appname: $parameters.adfs-appname + "-adfs-auth401"
+            session-info:
+                auth-domain: upper($parameters.auth-domain)
+                enable-sso: true
+                delegate-username: $parameters.auth-info.delegate-username
+                delegate-password: $parameters.auth-info.delegate-password
+                enable-persistent-cookie: true
+                persistent-cookie-timeout: 3
+    -
+        name: adfs-auth-comp
+        type: stlb::auth
+        description: This component creates the Authentication vserver and binds AAA policies to it.
+        properties:
+            name: $parameters.adfs-appname + '-adfs-auth401'
+            vip: $parameters.auth-info.auth-vip
+            certificates: 
+                - $parameters.cert
+                - $parameters.ca-cert
+            auth-settings:
+                auth-domain: $parameters.auth-domain
+            aaa-policies:
+                negotiate-policies:
+                    - $components.adfs-auth-negotiate-comp.outputs.auth-negotiate-policy.properties.name
+                session-policies:
+                    - $components.auth-tmsession-comp.outputs.tmsession-policy.properties.name
+    # -
+    #     name: adfs-auth-vserver-comp
+    #     type: ns::authenticationvserver
+    #     description: "The Auth vserver"
+    #     properties:
+    #         name: $parameters.adfs-appname + "-adfs-auth401-vserver"
+    #         servicetype: SSL
+    #         ipv46: $parameters.auth-info.auth-vip
+    #         port: 443
+    #         authenticationdomain: $parameters.auth-domain
+    # -
+    #     name: adfs-auth-certs-comp
+    #     description: "This component uploads the cert files and binds them to the passed vserver"
+    #     type: stlb::vserver-certs-binds
+    #     properties:
+    #         vserver-name: $components.adfs-auth-vserver-comp.properties.name
+    #         certificates: [$parameters.cert, $parameters.ca-cert]
+    # -
+    #     name: adfs-auth-vserver-negotiate-policy-bind-comp
+    #     type: ns::authenticationvserver_authenticationnegotiatepolicy_binding
+    #     properties:
+    #         name: $components.adfs-auth-vserver-comp.properties.name
+    #         policy: $components.adfs-auth-negotiate-comp.outputs.auth-negotiate-policy.properties.name
+    #         priority: 100
+    # -
+    #     name: adfs-auth-vserver-401-tmsession-policy-bind-comp
+    #     type: ns::authenticationvserver_tmsessionpolicy_binding
+    #     properties:
+    #         name: $components.adfs-auth-vserver-comp.properties.name
+    #         policy: $components.auth-tmsession-comp.outputs.tmsession-policy.properties.name
+    #         priority: 200
+
+outputs:
+    -
+        name: auth-vserver
+        value: $components.adfs-auth-comp.outputs.auth-vserver
+        description: "The Authentication vserver component"

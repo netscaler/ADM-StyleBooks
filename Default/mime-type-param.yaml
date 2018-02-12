@@ -1,0 +1,57 @@
+name: mime-type-param
+namespace: com.citrix.adc.commontypes
+version: "1.0"
+display-name: Possible MIME types in a response Content-Type header
+schema-version: "1.0"
+private: true
+parameters:
+    -
+        name: mime-type
+        type: string
+        label: MIME types to compress
+        description: List of Possible MIME types
+        allowed-values:
+            - application/base64
+            - application/excel
+            - application/java
+            - application/javascript
+            - application/json
+            - application/mspowerpoint
+            - application/msword                    
+            - application/octet-stream
+            - application/pkcs-12
+            - application/pkcs7-mime
+            - application/postscript
+            - application/vnd.ms-excel
+            - application/vnd.ms-powerpoint
+            - application/vnd.ms-project
+            - application/x-excel
+            - application/x-msexcel
+            - application/x-tar
+            - application/xml
+            - application/zip
+            - audio/aiff
+            - audio/basic
+            - audio/mpeg
+            - audio/mpeg3
+            - audio/wav
+            - image/bmp
+            - image/gif
+            - image/jpeg
+            - image/png
+            - image/x-windows-bmp
+            - multipart/x-zip
+            - text/css
+            - text/html
+            - text/javascript                    
+            - text/plain
+            - text/richtext
+            - text/xml
+            - text/yaml
+            - application/rtf
+            - text/x-script.phyton
+            - video/avi
+            - video/mpeg
+            - video/msvideo
+            - video/quicktime
+            - windows/metafile

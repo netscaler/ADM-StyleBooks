@@ -1,0 +1,54 @@
+name: vserver-policies-bindings-params
+namespace: com.citrix.adc.commontypes
+version: "1.0"
+display-name: Rewrite Configuration
+private: true
+schema-version: "1.0"
+parameters:
+  -
+    name: vserver-name
+    type: string
+    label: Name of the VServer
+    required: true
+  -
+    name: vserver-type
+    type: string
+    label: Type of the VServer
+    required: true
+    allowed-values:
+      - LBVSERVER
+      - CSVSERVER
+  -
+    name: policies
+    type: object[]
+    description: Names of responder Policies and Policy labels to be bound to the vserver-name.
+    required: true
+    parameters:
+      -
+        name: name
+        type: string
+        description: Name of the policy or the policylabel
+        required: true
+      -
+        name: type
+        type: string
+        description: Does the name refer to a policy or a policylabel ?
+        allowed-values:
+          - POLICY
+          - POLICYLABEL
+        required: true
+      -
+        name: bind-point
+        type: string
+        label: Binding Point
+        description: Specifies the binding point (request or response binding)
+        allowed-values:
+          - REQUEST
+          - RESPONSE
+        required: true
+      -
+        name: continue
+        type: boolean
+        label: Continue to Next Policy?
+        description: Specifies whether evaluation of policies continues even after a match
+        default: false

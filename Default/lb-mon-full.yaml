@@ -1,0 +1,107 @@
+name: lb-mon-full
+namespace: com.citrix.adc.stylebooks
+version: "1.0"
+display-name: Load Balancing StyleBook with L7 Features
+description: |    
+    This StyleBook builds on, and augments the lb-mon StyleBook by adding the ability    
+    to make use of rewrite, responder, compression and SSL ciphers features of the NetScaler
+schema-version: "1.0"
+import-stylebooks: 
+  - 
+    namespace: com.citrix.adc.stylebooks
+    prefix: stlb
+    version: "1.0"
+  - 
+    namespace: com.citrix.adc.commontypes
+    prefix: cmtypes
+    version: "1.0"
+parameters-default-sources:
+    - stlb::lb-mon
+    - cmtypes::rewrite-config-params
+    - cmtypes::responder-config-params
+    - cmtypes::compression-config-params
+    - cmtypes::ssl-config-params
+components:
+  -
+    name: lb-config-comp
+    type: stlb::lb-mon
+    properties-default-sources:
+      - $parameters
+  -
+    name: rewrite-config-comp
+    type: stlb::rewrite-config
+    condition: $parameters.rewrite-config
+    properties-default-sources:
+      - $parameters
+    properties:
+      appname: $parameters.lb-appname
+  -
+    name: rewrite-policies-bindings-comp
+    type: stlb::vserver-rewritepolicies-bindings
+    condition: $parameters.rewrite-config
+    properties:
+        vserver-name: $components.lb-config-comp.outputs.lbvserver.properties.name
+        vserver-type: LBVSERVER
+        policies:
+          -
+            name: $components.rewrite-config-comp.outputs.rewrite-request-policy-label
+            type: POLICYLABEL
+            bind-point: REQUEST
+          -
+            name: $components.rewrite-config-comp.outputs.rewrite-response-policy-label
+            type: POLICYLABEL
+            bind-point: RESPONSE
+  -
+    name: responder-config-comp
+    type: stlb::responder-config
+    condition: $parameters.responder-config
+    properties-default-sources:
+      - $parameters
+    properties:
+      appname: $parameters.lb-appname
+  -
+    name: responder-policies-bindings-comp
+    type: stlb::vserver-responderpolicies-bindings
+    condition: $parameters.responder-config
+    properties:
+        vserver-name: $components.lb-config-comp.outputs.lbvserver.properties.name
+        vserver-type: LBVSERVER
+        policies:
+          -
+            name: $components.responder-config-comp.outputs.responder-policy-label
+            type: POLICYLABEL
+            bind-point: REQUEST
+  -
+    name: ssl-config-comp
+    type: stlb::ssl-config
+    condition: $parameters.lb-service-type == SSL
+    properties-default-sources:
+      - $parameters
+    properties:
+        appname: $parameters.lb-appname
+        vserver-name: $components.lb-config-comp.outputs.lbvserver.properties.name
+        vserver-type: LBVSERVER
+  -
+    name: compression-config-comp
+    type: stlb::compression-config
+    condition: $parameters.compression-config
+    properties-default-sources:
+      - $parameters
+    properties:
+      appname: $parameters.lb-appname
+  -
+    name: compression-policies-bindings-comp
+    type: stlb::vserver-cmppolicies-bindings
+    condition: $parameters.compression-config
+    properties:
+        vserver-name: $components.lb-config-comp.outputs.lbvserver.properties.name
+        vserver-type: LBVSERVER
+        policies:
+          -
+            name: $components.compression-config-comp.outputs.cmp-request-policy-label
+            type: POLICYLABEL
+            bind-point: REQUEST
+          -
+            name: $components.compression-config-comp.outputs.cmp-response-policy-label
+            type: POLICYLABEL
+            bind-point: RESPONSE

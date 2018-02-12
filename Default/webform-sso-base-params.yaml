@@ -1,0 +1,54 @@
+--- 
+name: webform-sso-base-params
+namespace: com.citrix.adc.commontypes
+version: "1.0"
+description: This StyleBook define the base parameters for WebForm-based SSO configurations in NetScaler.
+schema-version: "1.0"
+private: true
+parameters:
+    -
+        name: username-field
+        label: Form Username Field
+        description: The name of the field (not the ID) in the webform that contains the username of the user.
+        type: string
+        required: true
+    -
+        name: password-field
+        label: Form Password Field
+        description: The name of the field (not the ID) in the webform that contains the password of the user.
+        type: string
+        required: true
+    -
+        name: other-fields
+        label: Other Form Fields
+        description: |
+            Any other form fields that need to be sent when submitting the form. 
+            This string should be in the form "field1-name=field1-value&field2-name=field2-value&..." 
+        type: string
+    -
+        name: action-url
+        label: Form Action URL
+        description: The URL to submit the webform.
+        type: string
+        required: true
+    -
+        name: submit-method
+        label: Form Submit HTTP Method
+        description: The HTTP method (GET or POST) used to submit the webform to the action URL.
+        type: string
+        allowed-values:
+            - GET
+            - POST
+        default: GET
+    -
+        name: success-expr
+        label: Success Policy Expression
+        description: | 
+            A NetScaler Policy Expression (PI) on the response payload that evaluates to true 
+            if the web form authentication was successful (e.g. HTTP.RES.HEADER("Set-Cookie").CONTAINS("acme-auth="))
+        type: string
+    -
+        name: max-response-size
+        label: Maximum Response Size (in bytes)
+        description: The maximum response size expected from the server after submitting the webform.
+        type: number

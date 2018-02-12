@@ -1,0 +1,519 @@
+--- 
+name: sharepoint-cache-config
+namespace: com.citrix.adc.enterprise.stylebooks
+version: "1.0"
+display-name: Sharepoint Cache Configuration
+description: This stylebook creates Sharepoint Cache Config
+private: true
+schema-version: "1.0"
+import-stylebooks: 
+  - 
+    namespace: netscaler.nitro.config
+    prefix: ns
+    version: "10.5"
+  - 
+    namespace: com.citrix.adc.stylebooks
+    prefix: stlb
+    version: "1.0"
+  - 
+    namespace: com.citrix.adc.enterprise.stylebooks
+    prefix: entsb
+    version: "1.0"
+parameters-default-sources:
+  - entsb::sharepoint-feature-config-params
+substitutions:
+  byteranges-patset: ["Range", "If-Range", "Unless-Modified-Since"]
+components:
+  -
+    name: enable-feature-comp
+    type: ns::nsfeature
+    description: Enables the CACHE feature on NetScaler
+    meta-properties:
+        action: enable
+    properties:
+        feature: ["IC"]
+#Patsets
+  -
+    name: byteranges-policy-patset-comp
+    type: ns::policypatset
+    properties:
+      name: replace($parameters.appname, "-", "_") + "_byterangeheaders_patset"
+    components:
+      -
+        name: byteranges-patset-bindings-comp
+        type: ns::policypatset_pattern_binding
+        repeat: $substitutions.byteranges-patset
+        repeat-item: byteranges-str
+        properties:
+          name: $parent.properties.name
+          String: $byteranges-str
+
+# Cache Selectors
+  -
+    name: selector-query-source-url-comp
+    type: stlb::cache-selector-config
+    properties:
+      selectorname: $parameters.appname + "-query-srcurl-sel"
+      rule:
+        - str("HTTP.REQ.URL.QUERY.VALUE(%{quotewrap(SourceUrl)}%).TO_UPPER.TYPECAST_HTTP_URL_T.PATH.SUBSTR(1,255)")
+  -
+    name: selector-body-getdocname-comp
+    type: stlb::cache-selector-config
+    properties:
+      selectorname: $parameters.appname + "-docname-sel"
+      rule:
+        - str("HTTP.REQ.BODY(1000).SET_TEXT_MODE(URLENCODED).AFTER_STR(%{quotewrap(document%5fname=)}%).BEFORE_STR(%{quotewrap(&old%5ftheme%5fhtml=false)}%).SET_TEXT_MODE(URLENCODED).TO_UPPER")
+  -
+    name: selector-path-comp
+    type: stlb::cache-selector-config
+    properties:
+      selectorname: $parameters.appname + "-path-sel"
+      rule:
+        - str("HTTP.REQ.URL.PATH.TO_UPPER")
+  -
+    name: selector-hostname-comp
+    type: stlb::cache-selector-config
+    properties:
+      selectorname: $parameters.appname + "-hostname-sel"
+      rule:
+        - str("HTTP.REQ.URL.PATH")
+        - str("HTTP.REQ.HOSTNAME")
+  -
+    name: selector-body-upld-docname-comp
+    type: stlb::cache-selector-config
+    properties:
+      selectorname: $parameters.appname + "-upld-doc-sel"
+      rule:
+        - str("HTTP.REQ.BODY(10000).SET_TEXT_MODE(URLENCODED).AFTER_STR(\"name=\\\"destination\\\"\\r\\n\\r\\n/\").BEFORE_STR(\"\\r\\n-----------------------------\").SET_TEXT_MODE(URLENCODED).TO_UPPER + HTTP.REQ.URL.PATH.PREFIX(1) +  HTTP.REQ.BODY(10000).SET_TEXT_MODE(URLENCODED).AFTER_STR(\"filename=\\\"\").BEFORE_STR(\"\\\"\\r\\nContent-Type:\").SUFFIX('\\\\',0).SET_TEXT_MODE(URLENCODED).TO_UPPER")
+
+  -
+    name: selector-body-putdocname-comp
+    type: stlb::cache-selector-config
+    properties:
+      selectorname: $parameters.appname + "-put-doc-sel"
+      rule:
+        - str("HTTP.REQ.BODY(1000).SET_TEXT_MODE(URLENCODED).AFTER_STR(\"document=%5bdocument%5fname%3d\").BEFORE_STR(\"%3bmeta%5finfo%3d%5\").SET_TEXT_MODE(URLENCODED).TO_UPPER")
+  -
+    name: selector-path-nostart-sla-comp
+    type: stlb::cache-selector-config
+    properties:
+      selectorname: $parameters.appname + "-path-nostar-sel"
+      rule:
+        - str("HTTP.REQ.URL.PATH.SUBSTR(1,255).TO_UPPER")
+
+# Cache ContentGroups
+  -
+    name: content-group-downloaded-docs-comp
+    type: stlb::cache-content-group-config
+    properties:
+      name: $parameters.appname + "-dld-docs"
+      relative-expiry-time: 3600000
+      max-response-size: 10000
+      max-mem-limit: 4095
+      hit-selector: $components.selector-query-source-url-comp.outputs.selectorname
+      invalidation-selector: $components.selector-query-source-url-comp.outputs.selectorname
+  -
+    name: content-group-frontpage-docs-comp
+    type: stlb::cache-content-group-config
+    properties:
+      name: $parameters.appname + "-frontpage-docs"
+      relative-expiry-time: 3600000
+      max-response-size: 10000
+      max-mem-limit: 4095
+      hit-selector: $components.selector-body-getdocname-comp.outputs.selectorname
+      invalidation-selector: $components.selector-body-getdocname-comp.outputs.selectorname
+  -
+    name: content-group-documents-comp
+    type: stlb::cache-content-group-config
+    properties:
+      name: $parameters.appname + "-documents"
+      relative-expiry-time: 3600000
+      max-response-size: 10000
+      max-mem-limit: 4095
+      hit-selector: $components.selector-path-comp.outputs.selectorname
+      invalidation-selector: $components.selector-path-comp.outputs.selectorname
+      poll-every-time: str("YES")
+  -
+    name: content-group-images-comp
+    type: stlb::cache-content-group-config
+    properties:
+      name: $parameters.appname + "-images"
+      max-response-size: 4000
+      max-mem-limit: 4095
+      hit-selector: $components.selector-hostname-comp.outputs.selectorname
+      invalidation-selector: $components.selector-hostname-comp.outputs.selectorname
+  -
+    name: content-group-scripts-comp
+    type: stlb::cache-content-group-config
+    properties:
+      name: $parameters.appname + "-scripts"
+      max-response-size: 4000
+      max-mem-limit: 4095
+      hit-selector: $components.selector-hostname-comp.outputs.selectorname
+      invalidation-selector: $components.selector-hostname-comp.outputs.selectorname
+  -
+    name: content-group-videos-comp
+    type: stlb::cache-content-group-config
+    properties:
+      name: $parameters.appname + "-videos" 
+      min-response-size: 10
+      max-response-size: 102400
+      max-mem-limit: 655360
+  -
+    name: content-group-audio-comp
+    type: stlb::cache-content-group-config
+    properties:
+      name: $parameters.appname + "-audio"
+      min-response-size: 10
+      max-response-size: 102400
+      max-mem-limit: 655360
+
+# Cache Policies
+  -
+    name: cache-sharepoint-documents-policy-comp
+    type: stlb::cache-policy-config
+    properties:
+      policyname: $parameters.appname + "-sharepoint-docs-cachepolicy"
+      rule: str("HTTP.REQ.METHOD.EQ(GET)")
+      action: CACHE
+      cachegroup: $components.content-group-documents-comp.outputs.contentgroup-name
+  -
+    name: cache-sharepoint-documents-inval-policy-comp
+    type: stlb::cache-policy-config
+    properties:
+      policyname: $parameters.appname + "-sharepoint-docs-inval-cachepolicy"
+      rule: str("HTTP.REQ.METHOD.CONTAINS(%{quotewrap(LOCK)}%) && !HTTP.REQ.USER.NAME.EQ(\"\")")
+      action: INVAL
+      invalobjects: 
+        -
+          #cachegroup: $components.content-group-temp-documents-comp.properties.name
+          $components.content-group-documents-comp.outputs.contentgroup-name
+  -
+    name: cache-downloaded-documents-policy-comp
+    type: stlb::cache-policy-config
+    properties:
+      policyname: $parameters.appname + "-downloaded-docs-cachepolicy"
+      rule: str("HTTP.REQ.METHOD.EQ(GET) && HTTP.REQ.URL.PATH.EQ(%{quotewrap(/_layouts/download.aspx)}%)" )
+      action: CACHE
+      cachegroup: $components.content-group-downloaded-docs-comp.outputs.contentgroup-name
+  -
+    name: cache-frontpage-documents-policy-comp
+    type: stlb::cache-policy-config
+    properties:
+      policyname: $parameters.appname + "-frontpage-docs-cachepolicy"
+      rule: str("HTTP.REQ.METHOD.EQ(POST) && HTTP.REQ.URL.PATH.EQ(%{quotewrap(/_vti_bin/_vti_aut/author.dll)}%) && HTTP.REQ.BODY(1000).STARTSWITH(%{quotewrap(method=get+document)}%)")
+      action: CACHE
+      cachegroup: $components.content-group-frontpage-docs-comp.outputs.contentgroup-name
+  -
+    name: cache-frontpage-documents-inval-policy-comp
+    type: stlb::cache-policy-config
+    properties:
+      policyname: $parameters.appname + "-frontpage-docs-inval-cachepolicy"
+      rule: str("HTTP.REQ.METHOD.CONTAINS(%{quotewrap(PUT)}%) || (HTTP.REQ.METHOD.EQ(POST) && HTTP.REQ.URL.PATH.EQ(%{quotewrap(/_vti_bin/_vti_aut/author.dll)}%)  && HTTP.REQ.BODY(1000).STARTSWITH(%{quotewrap(method=put+document)}%))  || (HTTP.REQ.METHOD.EQ(POST) && HTTP.REQ.URL.PATH.EQ(%{quotewrap(/_layouts/Upload.aspx)}%))")
+      action: INVAL
+      invalgroups: 
+        - $components.content-group-documents-comp.outputs.contentgroup-name
+        - $components.content-group-frontpage-docs-comp.outputs.contentgroup-name
+      invalobjects:
+        - 
+          #cachegroup: $components.content-group-frontpage-docs-comp.properties.name
+          #inval-selector: $components.selector-path-nostart-sla-comp.outputs.selectorname
+          $components.content-group-frontpage-docs-comp.outputs.contentgroup-name + "," + $components.selector-path-nostart-sla-comp.outputs.selectorname
+        - 
+          #cachegroup: $components.content-group-frontpage-docs-comp.properties.name
+          #inval-selector: $components.selector-body-upld-docname-comp.outputs.selectorname
+          $components.content-group-frontpage-docs-comp.outputs.contentgroup-name + "," + $components.selector-body-upld-docname-comp.outputs.selectorname
+
+        - 
+          #cachegroup: $components.content-group-frontpage-docs-comp.properties.name
+          #inval-selector: $components.selector-body-putdocname-comp.outputs.selectorname
+          $components.content-group-frontpage-docs-comp.outputs.contentgroup-name + "," + $components.selector-body-putdocname-comp.outputs.selectorname
+
+        - 
+          #cachegroup: $components.content-group-downloaded-docs-comp.properties.name
+          #inval-selector: $components.selector-path-nostart-sla-comp.outputs.selectorname
+          $components.content-group-downloaded-docs-comp.outputs.contentgroup-name + "," + $components.selector-path-nostart-sla-comp.outputs.selectorname
+
+        - 
+          #cachegroup: $components.content-group-downloaded-docs-comp.properties.name
+          #inval-selector: $components.selector-body-upld-docname-comp.outputs.selectorname
+          $components.content-group-downloaded-docs-comp.outputs.contentgroup-name + "," + $components.selector-body-upld-docname-comp.outputs.selectorname
+
+        - 
+          #cachegroup: $components.content-group-downloaded-docs-comp.properties.name
+          #inval-selector: $components.selector-body-putdocname-comp.outputs.selectorname
+          $components.content-group-downloaded-docs-comp.outputs.contentgroup-name + "," + $components.selector-body-putdocname-comp.outputs.selectorname
+  -
+    name: cache-images-policy-comp
+    type: stlb::cache-policy-config
+    properties:
+      policyname: $parameters.appname + "-images-cachepolicy"
+      rule: str("HTTP.REQ.METHOD.EQ(GET)")
+      action: CACHE
+      cachegroup: $components.content-group-images-comp.outputs.contentgroup-name
+  -
+    name: cache-scripts-policy-comp
+    type: stlb::cache-policy-config
+    properties:
+      policyname: $parameters.appname + "-scripts-cachepolicy"
+      rule: str("HTTP.REQ.METHOD.EQ(GET)")
+      action: CACHE
+      cachegroup: $components.content-group-scripts-comp.outputs.contentgroup-name
+
+# Needed to break the below policy rule expression of byterangerequests as Nitro complains that it exceeed 255 characters.
+# Breaking it into 3 NOCACHE policies should be equivalent to the original NOCACHE policy as the rule constituents are grouped with 
+# the PI "||" operator, which means if the first policy is not matched, the next policy in the same label is evaluated. So in the end
+# if any of the policy rules match, the NOCACHE action is taken.
+  -
+    name: cache-rangerequests-nocache-policy-comp
+    type: stlb::cache-policy-config
+    properties:
+      policyname: $parameters.appname + "-rangerequests-nocachepolicy"
+      rule: str("HTTP.REQ.FULL_HEADER.CONTAINS_ANY(%{quotewrap($components.byteranges-policy-patset-comp.properties.name)}%)")
+      action: NOCACHE
+  -
+    name: cache-axd-nocache-policy-comp
+    type: stlb::cache-policy-config
+    properties:
+      policyname: $parameters.appname + "-axd-nocachepolicy"
+      rule: str("HTTP.REQ.URL.SUFFIX.SET_TEXT_MODE(IGNORECASE).EQ(%{quotewrap(axd)}%)")
+      action: NOCACHE
+  -
+    name: cache-ashx-nocache-policy-comp
+    type: stlb::cache-policy-config
+    properties:
+      policyname: $parameters.appname + "-ashx-nocachepolicy"
+      rule: str("HTTP.REQ.URL.PATH.GET_REVERSE(0).SET_TEXT_MODE(Ignorecase).EQ(%{quotewrap(commandui.ashx)}%) || HTTP.REQ.URL.PATH.GET_REVERSE(0).SET_TEXT_MODE(Ignorecase).EQ(%{quotewrap(ScriptResx.ashx)}%)")
+      action: NOCACHE
+  -
+    name: cache-videos-policy-comp
+    type: stlb::cache-policy-config
+    properties:
+      policyname: $parameters.appname + "-videos-cachepolicy"
+      rule: str("HTTP.REQ.METHOD.EQ(GET)")
+      action: CACHE
+      cachegroup: $components.content-group-videos-comp.outputs.contentgroup-name
+  -
+    name: cache-audio-policy-comp
+    type: stlb::cache-policy-config
+    properties:
+      policyname: $parameters.appname + "-audio-cachepolicy"
+      rule: str("HTTP.REQ.METHOD.EQ(GET)")
+      action: CACHE
+      cachegroup: $components.content-group-audio-comp.outputs.contentgroup-name
+
+#Policy labels
+# This label is builtin and is not required (if we try to create 2 configpacks of sharepoint, creating this builtin will fail as it would already exist)
+  # -
+  #   name: cache-builtin-default-req-policylabel-comp
+  #   type: stlb::cache-policylabel-config
+  #   properties:
+  #     name: _reqBuiltinDefaults
+  -
+    name: cache-sharepoint-documents-policylabel-comp
+    type: stlb::cache-policylabel-config
+    properties:
+      name: $parameters.appname + "-documents"
+      policynames: 
+        - $components.cache-sharepoint-documents-inval-policy-comp.properties.policyname
+        - $components.cache-sharepoint-documents-policy-comp.properties.policyname
+  -
+    name: cache-sharepoint-frontpage-policylabel-comp
+    type: stlb::cache-policylabel-config
+    properties:
+      name: $parameters.appname + "-frontpage"
+      policynames: 
+        - $components.cache-frontpage-documents-inval-policy-comp.properties.policyname
+        - $components.cache-frontpage-documents-policy-comp.properties.policyname
+        - $components.cache-downloaded-documents-policy-comp.properties.policyname
+  -
+    name: cache-sharepoint-images-policylabel-comp
+    type: stlb::cache-policylabel-config
+    properties:
+      name: $parameters.appname + "-images"
+      policynames: 
+        - $components.cache-images-policy-comp.properties.policyname
+  -
+    name: cache-sharepoint-scripts-policylabel-comp
+    type: stlb::cache-policylabel-config
+    properties:
+      name: $parameters.appname + "-scripts"
+      policynames: 
+        - $components.cache-scripts-policy-comp.properties.policyname
+  -
+    name: cache-sharepoint-byterange-policylabel-comp
+    type: stlb::cache-policylabel-config
+    properties:
+      name: $parameters.appname + "-byterangesreq"
+      policynames: 
+        - $components.cache-rangerequests-nocache-policy-comp.properties.policyname
+        - $components.cache-axd-nocache-policy-comp.properties.policyname
+        - $components.cache-ashx-nocache-policy-comp.properties.policyname
+  -
+    name: cache-sharepoint-req-videos-policylabel-comp
+    type: stlb::cache-policylabel-config
+    properties:
+      name: $parameters.appname + "-videos"
+      policynames: 
+        - $components.cache-videos-policy-comp.properties.policyname
+  -
+    name: cache-sharepoint-res-videos-policylabel-comp
+    type: stlb::cache-policylabel-config
+    properties:
+      name: $parameters.appname + "-videos"
+      response-label: true
+      policynames: 
+        - $components.cache-videos-policy-comp.properties.policyname
+  -
+    name: cache-sharepoint-req-audio-policylabel-comp
+    type: stlb::cache-policylabel-config
+    properties:
+      name: $parameters.appname + "-audio"
+      policynames: 
+        - $components.cache-audio-policy-comp.properties.policyname
+  -
+    name: cache-sharepoint-res-audio-policylabel-comp
+    type: stlb::cache-policylabel-config
+    properties:
+      name: $parameters.appname + "-audio"
+      response-label: true
+      policynames: 
+        - $components.cache-audio-policy-comp.properties.policyname
+
+# Bindings of Policies and PolicyLabels to Sharepoint's lbvservers.
+  -
+    name: default-cache-policy-bindings-comp
+    type: stlb::vserver-cachepolicies-bindings
+    properties:
+      vserver-name: $parameters.sharepoint-lbvservers.default-lbvserver-name
+      vserver-type: LBVSERVER
+      policies:
+        -
+          name: $components.cache-sharepoint-byterange-policylabel-comp.outputs.labelname
+          type: POLICYLABEL
+          bind-point: REQUEST
+  -
+    name: frontpage-cache-policy-bindings-comp
+    type: stlb::vserver-cachepolicies-bindings
+    properties:
+      vserver-name: $parameters.sharepoint-lbvservers.frontpage-lbvserver-name
+      vserver-type: LBVSERVER
+      policies:
+        -
+          name: $components.cache-sharepoint-frontpage-policylabel-comp.outputs.labelname
+          type: POLICYLABEL
+          bind-point: REQUEST
+  -
+    name: portal-management-cache-policy-bindings-comp
+    type: stlb::vserver-cachepolicies-bindings
+    properties:
+      vserver-name: $parameters.sharepoint-lbvservers.portal-management-lbvserver-name
+      vserver-type: LBVSERVER
+      policies:
+        -
+          name: $components.cache-sharepoint-byterange-policylabel-comp.outputs.labelname
+          type: POLICYLABEL
+          bind-point: REQUEST
+        -
+          name: $components.cache-sharepoint-frontpage-policylabel-comp.outputs.labelname
+          type: POLICYLABEL
+          bind-point: REQUEST
+  -
+    name: documents-cache-policy-bindings-comp
+    type: stlb::vserver-cachepolicies-bindings
+    properties:
+      vserver-name: $parameters.sharepoint-lbvservers.docs-lbvserver-name
+      vserver-type: LBVSERVER
+      policies:
+        -
+          name: $components.cache-sharepoint-byterange-policylabel-comp.outputs.labelname
+          type: POLICYLABEL
+          bind-point: REQUEST
+        -
+          name: $components.cache-sharepoint-frontpage-policylabel-comp.outputs.labelname
+          type: POLICYLABEL
+          bind-point: REQUEST
+        -
+          name: $components.cache-sharepoint-documents-policylabel-comp.outputs.labelname
+          type: POLICYLABEL
+          bind-point: REQUEST
+  -
+    name: editable-images-cache-policy-bindings-comp
+    type: stlb::vserver-cachepolicies-bindings
+    properties:
+      vserver-name: $parameters.sharepoint-lbvservers.editable-images-lbvserver-name
+      vserver-type: LBVSERVER
+      policies:
+        -
+          name: $components.cache-sharepoint-byterange-policylabel-comp.outputs.labelname
+          type: POLICYLABEL
+          bind-point: REQUEST
+        -
+          name: $components.cache-sharepoint-frontpage-policylabel-comp.outputs.labelname
+          type: POLICYLABEL
+          bind-point: REQUEST
+        -
+          name: $components.cache-sharepoint-documents-policylabel-comp.outputs.labelname
+          type: POLICYLABEL
+          bind-point: REQUEST
+  -
+    name: readonly-images-cache-policy-bindings-comp
+    type: stlb::vserver-cachepolicies-bindings
+    properties:
+      vserver-name: $parameters.sharepoint-lbvservers.readonly-images-lbvserver-name
+      vserver-type: LBVSERVER
+      policies:
+        -
+          name: $components.cache-sharepoint-byterange-policylabel-comp.outputs.labelname
+          type: POLICYLABEL
+          bind-point: REQUEST
+        -
+          name: $components.cache-sharepoint-images-policylabel-comp.outputs.labelname
+          type: POLICYLABEL
+          bind-point: REQUEST
+  -
+    name: videos-cache-policy-bindings-comp
+    type: stlb::vserver-cachepolicies-bindings
+    properties:
+      vserver-name: $parameters.sharepoint-lbvservers.videos-lbvserver-name
+      vserver-type: LBVSERVER
+      policies:
+        -
+          name: $components.cache-sharepoint-req-videos-policylabel-comp.outputs.labelname
+          type: POLICYLABEL
+          bind-point: REQUEST
+        -
+          name: $components.cache-sharepoint-res-videos-policylabel-comp.outputs.labelname
+          type: POLICYLABEL
+          bind-point: RESPONSE
+  -
+    name: audio-cache-policy-bindings-comp
+    type: stlb::vserver-cachepolicies-bindings
+    properties:
+      vserver-name: $parameters.sharepoint-lbvservers.audio-lbvserver-name
+      vserver-type: LBVSERVER
+      policies:
+        -
+          name: $components.cache-sharepoint-req-audio-policylabel-comp.outputs.labelname
+          type: POLICYLABEL
+          bind-point: REQUEST
+        -
+          name: $components.cache-sharepoint-res-audio-policylabel-comp.outputs.labelname
+          type: POLICYLABEL
+          bind-point: RESPONSE
+  -
+    name: styles-scripts-cache-policy-bindings-comp
+    type: stlb::vserver-cachepolicies-bindings
+    properties:
+      vserver-name: $parameters.sharepoint-lbvservers.styles-scripts-lbvserver-name
+      vserver-type: LBVSERVER
+      policies:
+        -
+          name: $components.cache-sharepoint-byterange-policylabel-comp.outputs.labelname
+          type: POLICYLABEL
+          bind-point: REQUEST
+        -
+          name: $components.cache-sharepoint-scripts-policylabel-comp.outputs.labelname
+          type: POLICYLABEL
+          bind-point: REQUEST
+

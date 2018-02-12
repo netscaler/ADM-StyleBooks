@@ -1,0 +1,376 @@
+name: multicloud-glb
+namespace: com.citrix.adc.stylebooks
+version: "1.0"
+display-name: Multi-cloud GLB StyleBook
+description: |
+    This StyleBook is used to configure GLB for an application which is deployed in multiple cloud and on-premises data centers.
+    this stylebook assumes the following configuration is done on each of the netscaler appliance used in this stylebook
+     - the SNIP/GSLBSITE IP needs to be configured on each of the GLB netscaler appliance
+     - ADNS/ADNS-TCP service must be configured on each of the GLB netscaler appliance to recieve the DNS traffic
+     - required LB configurations are done
+     - required firewall/security groups in cloud service providers are done to allow GLB appliance to recieve DNS (port 53) and MEP traffic (3009) 
+schema-version: "1.0"
+private: true
+import-stylebooks: 
+  - 
+    namespace: netscaler.nitro.config
+    version: "10.5"
+    prefix: ns
+parameters:
+    -
+        name: appname
+        label: Application Name
+        description: Name of the GLB application
+        type: string
+        required: true
+        key: true
+    -
+        name: algorithm
+        label: GLB Algorithm
+        description: Global Load Balancing Algorithm
+        type: string
+        default: ROUNDROBIN
+        allowed-values: 
+          - ROUNDROBIN
+          - STATICPROXIMITY
+          - SOURCEIPHASH
+          - RTT
+    - 
+        name: dbfile
+        label: Geo Database File
+        default: /var/netscaler/inbuilt_db/Citrix_Netscaler_InBuilt_GeoIP_DB.csv
+        description: LocationFile for the STATICPROXIMITY GLB method. Make sure specified dbfile is copied to all the GLB instances to the specified path.
+        type: string
+    -
+        name: protocol
+        label: Protocol
+        description: The protocol of the GLB application. 
+        type: string
+        default: HTTP
+        allowed-values:
+            - HTTP
+            - FTP
+            - TCP
+            - UDP
+            - SSL
+            - SSL_BRIDGE
+            - SSL_TCP
+            - NNTP
+            - ANY
+            - SIP_UDP
+            - SIP_TCP
+            - SIP_SSL
+            - RADIUS
+            - RDP
+            - RTSP
+            - MYSQL
+            - MSSQL
+            - ORACLE
+    -
+        name: persistencetypes
+        label: Persistence Type
+        description: Select SOURCEIP if stickiness is required for the GLB application. 
+        type: string
+        default: NONE
+        allowed-values:
+            - SOURCEIP
+            - NONE
+    -
+        name: persistenceids
+        label: Persistence ID
+        description: If SOURCEIP stickiness is selected provide a unique integral identifier. Make sure the identifier is not used for any other GLB application.Possible value (1-65535).  
+        type: number
+    -
+        name: persistencetimeouts
+        label: Persistence Timeout
+        description: If SOURCEIP stickiness is selected provide an Idle timeout, in minutes, after which a stickiness session is cleared. Minimum value = 2 and Maximum value = 1440  
+        type: number
+        default: 2
+    -
+        name: monitor
+        label: LB Health Check
+        description: Health check of LB instances.
+        type: object
+        required: true
+        parameters:
+            -
+                name: monitor-type
+                label: Health Check Type
+                type: string
+                required: true
+                allowed-values:
+                  - PING
+                  - TCP
+                  - HTTP
+                  - HTTP-ECV
+                  - TCP-ECV
+                  - HTTP-INLINE
+            -
+                name: secure
+                label: Secure mode
+                description: Enable this parameter if SSL based health check is required.
+                type: string
+                allowed-values:
+                  - "YES"
+                  - "NO"
+            -
+                name: http-request
+                label: HTTP Request
+                description: HTTP Request sent by the health check. Provide only if health check type is HTTP.
+                type: string
+            -
+                name: response-codes
+                label: List of HTTP Status Response Codes
+                description: Expected HTTP Status Response Code for the health check to succeed. Provide only if health check type is HTTP.
+                type: string[]
+    -
+        name: domains
+        label: GLB Domain Names
+        description: GLB DNS Domain Names
+        type: object[]
+        required: true
+        parameters:
+            -
+                name: domain-name
+                label: Domain Name
+                description: DNS domain name for the application.
+                type: string
+                required: true
+    -
+        name: sites
+        label: GLB Sites
+        description: Provide information about the GLB Sites 
+        type: object[]
+        required: true
+        parameters:
+            -
+                name: site-name
+                label: Site Name
+                type: string
+                required: true
+            -
+                name: site-ipaddress
+                label: Site IP Address
+                description: The IP Address of this Site. Use a SNIP/GSLBSITE IP address on the site's appliance.
+                type: ipaddress
+                required: true
+            -
+                name: public-ipaddress
+                label: Site Public IP Address
+                description: The Public IP Address of this Site if the GLB instance is behind a NAT.
+                type: ipaddress
+    -
+        name: services
+        label: Active GLB Services
+        description: Provide information about the LB instances (vservers). 
+        type: object[]
+        required: true
+        parameters:
+            -
+                name: virtual-ip
+                label: Site VIP IP
+                description: The IP Address of the LB instance in this site.
+                type: ipaddress
+                required: true
+            -
+                name: public-ipaddress
+                label: Service Public IP Address
+                description: The Public IP Address of the LB instance if it is behind a NAT.
+                type: ipaddress
+            -
+                name: virtual-port
+                label: Site VIP Port
+                description: The port number of the LB instance. 
+                type: tcp-port
+                default: 80
+            -
+                name: weight
+                label: Service Weight
+                description: Weight to assign to the LB instance.
+                type: number
+                default: 1
+            -
+                name: site-name
+                label: Site Name
+                type: string
+                required: true
+    -
+        name: backup-services
+        label: Passive GLB Service
+        description: Provide information about the Backup LB instances. 
+        type: object[]
+        required: true
+        parameters:
+            -
+                name: virtual-ip
+                label: Site VIP IP
+                description: The IP Address of the Backup LB instance in this site.
+                type: ipaddress
+                required: true
+            -
+                name: public-ipaddress
+                label: Service Public IP Address
+                description: The Public IP Address of the Backup LB instance if it is behind a NAT.
+                type: ipaddress
+            -
+                name: virtual-port
+                label: Site VIP Port
+                description: The port number of the Backup LB instance. 
+                type: tcp-port
+                default: 80
+            -
+                name: weight
+                label: Service Weight
+                description: Weight to assign to the Backup LB instance.
+                type: number
+                default: 1
+            -
+                name: site-name
+                label: Site Name
+                type: string
+                required: true
+substitutions:
+   ipchange(ip1,ip2): if-then-else($ip1, $ip1, $ip2)
+components:
+    -
+        name: enable-gslb-comp
+        type: ns::nsfeature
+        description: Enables the GSLB feature
+        meta-properties:
+            action: enable
+        properties:
+            feature: ["GSLB", "LB"]
+    -
+        name: locationfile-comp
+        type: ns::locationfile
+        description: Adding LocationFile for the GSLB feature
+        condition:  $parameters.algorithm == "STATICPROXIMITY"
+        properties:
+            Locationfile: $parameters.dbfile
+    -
+        name: ldnsprobe-order
+        type: ns::gslbparameter
+        description: ldns probe order
+        condition:  $parameters.algorithm == "RTT"
+        properties:
+            ldnsprobeorder: ["DNS", "TCP", "PING"]
+    -
+        name: gslb-monitor-comp
+        type: ns::lbmonitor
+        properties:
+            monitorname: $parameters.appname + "-" + $parameters.monitor.monitor-type + "-gslbmon"
+            type: $parameters.monitor.monitor-type
+            secure?: $parameters.monitor.secure
+            httprequest?: $parameters.monitor.http-request
+            respcode?: $parameters.monitor.response-codes
+    -
+        name: gslb-backupvserver-comp
+        type: ns::gslbvserver
+        description: Creates a GSLB Backup VServer config object
+        condition: $parameters.backup-services
+        properties:
+            name: $parameters.appname + "-gslbbackupvserver"
+            servicetype: $parameters.protocol
+            lbmethod: $parameters.algorithm
+    -
+        name: gslb-vserver-comp
+        type: ns::gslbvserver
+        description: Creates a GSLB VServer config object
+        properties:
+            name: $parameters.appname + "-gslbvserver"
+            servicetype: $parameters.protocol
+            lbmethod: $parameters.algorithm
+            backupvserver?: $components.gslb-backupvserver-comp.properties.name
+            persistencetype?: $parameters.persistencetypes
+            persistenceid?: $parameters.persistenceids
+            timeout?: $parameters.persistencetimeouts
+        components:
+            -
+                name: gslb-domain-comp
+                type: ns::gslbvserver_domain_binding
+                repeat: $parameters.domains
+                repeat-item: domain
+                properties:
+                  name: $parent.properties.name
+                  domainname: $domain.domain-name
+                  ttl: 30
+    -
+        name: gslb-site-comp
+        type: ns::gslbsite
+        description: Creates a GSLB Site config object
+        repeat: $parameters.sites
+        repeat-item: site
+        properties:
+            sitename: $parameters.appname + "-" + $site.site-name + "-gslbsite"
+            triggermonitor: MEPDOWN
+            siteipaddress: $site.site-ipaddress
+            publicip?: $site.public-ipaddress
+    -
+        name: gslb-rpc-comp
+        type: ns::nsrpcnode
+        description: Setting rpcnode to secure
+        repeat: $parameters.sites
+        repeat-item: sites
+        properties:
+            ipaddress: $substitutions.ipchange($sites.public-ipaddress, $sites.site-ipaddress)
+            secure: "YES"
+    -
+        name: gslb-service-comp
+        type: ns::gslbservice
+        description: Creates a GSLB Service
+        repeat: $parameters.services
+        repeat-item: service
+        properties:
+            servicename: $parameters.appname + "-" + $service.site-name + "-gslbservice" + "-" + str($service.virtual-ip) + "-" + str($service.virtual-port)
+            ip: $service.virtual-ip
+            publicip?: $service.public-ipaddress
+            servicetype: $parameters.protocol
+            port: $service.virtual-port
+            sitename: $parameters.appname + "-" + $service.site-name + "-gslbsite"
+        components:
+            -
+                name: gslb-vserver-service-binding-comp
+                type: ns::gslbvserver_gslbservice_binding
+                description: Creates a Binding between the GSLB vserver and the GSLB Service
+                properties:
+                  name: $components.gslb-vserver-comp.properties.name
+                  servicename: $parent.properties.servicename
+                  weight: $service.weight
+            - 
+                name: gslb-service-monitor-binding-comp
+                type: ns::gslbservice_lbmonitor_binding
+                description: Creates a Binding between the GSLB service and the GSLB monitor
+                condition: $parameters.monitor
+                properties:
+                  servicename: $parent.properties.servicename
+                  monitor_name: $components.gslb-monitor-comp.properties.monitorname
+    -
+        name: gslb-backupservice-comp
+        type: ns::gslbservice
+        description: Creates a GSLB Backup Service
+        repeat: $parameters.backup-services
+        repeat-item: backup-service
+        properties:
+            servicename: $parameters.appname + "-" + $backup-service.site-name + "-gslbbackupservice" + "-" + str($backup-service.virtual-ip) + "-" + str($backup-service.virtual-port)
+            ip: $backup-service.virtual-ip
+            publicip?: $backup-service.public-ipaddress
+            servicetype: $parameters.protocol
+            port: $backup-service.virtual-port
+            sitename: $parameters.appname + "-" + $backup-service.site-name + "-gslbsite"
+        components:
+            -
+                name: gslb-backupvserver-service-binding-comp
+                type: ns::gslbvserver_gslbservice_binding
+                description: Creates a Binding between the GSLB backup vserver and the GSLB backup service
+                properties:
+                  name: $components.gslb-backupvserver-comp.properties.name
+                  servicename: $parent.properties.servicename
+                  weight: $backup-service.weight
+            - 
+                name: gslb-backupservice-monitor-binding-comp
+                type: ns::gslbservice_lbmonitor_binding
+                description: Creates a Binding between the GSLB backup service and the GSLB monitor
+                condition: $parameters.monitor
+                properties:
+                  servicename: $parent.properties.servicename
+                  monitor_name: $components.gslb-monitor-comp.properties.monitorname

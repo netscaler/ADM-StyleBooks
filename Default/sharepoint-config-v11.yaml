@@ -1,0 +1,139 @@
+---
+name: sharepoint-config
+display-name: SharePoint Config StyleBook
+namespace: com.citrix.adc.enterprise.stylebooks
+schema-version: "1.0"
+version: "1.1"
+private: true
+import-stylebooks:
+  - 
+    namespace: com.citrix.adc.enterprise.stylebooks
+    prefix: entsb11
+    version: "1.1"
+  - 
+    namespace: com.citrix.adc.enterprise.stylebooks
+    prefix: entsb
+    version: "1.0"
+parameters-default-sources:
+  - entsb11::sharepoint-cs-config
+parameters:
+  - 
+    name: sharepoint-advanced
+    type: object
+    label: Sharepoint Advanced Settings
+    description: Options to selectively enable configurations of features for Sharepoint
+    gui:
+      collapse_pane: true
+    parameters:
+      - 
+        name: enable-responder
+        type: boolean
+        label: Enable Responder Configuration
+        description: If this parameter is checked, responder is configured for this deployment
+        default: true
+      - 
+        name: enable-rewrite
+        type: boolean
+        label: Enable Rewrite Configuration
+        description: If this parameter is checked, rewrite is configured for this deployment
+        default: true
+      - 
+        name: enable-compression
+        type: boolean
+        label: Enable Compression Configuration
+        description: If this parameter is checked, compression is configured for this deployment
+        default: true
+      - 
+        name: enable-caching
+        type: boolean
+        label: Enable Caching Configuration
+        description: If this parameter is checked, caching is configured for this deployment
+        default: true
+components:
+  -
+    name: sharepoint-content-switching-comp
+    type: entsb11::sharepoint-cs-config
+    properties-default-sources:
+      - $parameters
+  -
+    name: sharepoint-responder-config-comp
+    type: entsb::sharepoint-responder-config
+    condition: (not exists($parameters.sharepoint-advanced)) or $parameters.sharepoint-advanced.enable-responder
+    properties:
+        appname: $parameters.sharepoint-appname
+        server-ips: $parameters.sharepoint-servers-ips
+        sharepoint-lbvservers:
+          default-lbvserver-name: $components.sharepoint-content-switching-comp.outputs.default-lbvserver.properties.name
+          frontpage-lbvserver-name: $components.sharepoint-content-switching-comp.outputs.frontpage-lbvserver.properties.name
+          docs-lbvserver-name: $components.sharepoint-content-switching-comp.outputs.docs-lbvserver.properties.name
+          editable-images-lbvserver-name: $components.sharepoint-content-switching-comp.outputs.editable-images-lbvserver.properties.name
+          readonly-images-lbvserver-name: $components.sharepoint-content-switching-comp.outputs.readonly-images-lbvserver.properties.name
+          videos-lbvserver-name: $components.sharepoint-content-switching-comp.outputs.videos-lbvserver.properties.name
+          audio-lbvserver-name: $components.sharepoint-content-switching-comp.outputs.audio-lbvserver.properties.name
+          styles-scripts-lbvserver-name: $components.sharepoint-content-switching-comp.outputs.styles-scripts-lbvserver.properties.name
+          soap-services-lbvserver-name: $components.sharepoint-content-switching-comp.outputs.soap-lbvserver.properties.name
+          portal-management-lbvserver-name: $components.sharepoint-content-switching-comp.outputs.portal-lbvserver.properties.name  
+          webservices-definitions-lbvserver-name: $components.sharepoint-content-switching-comp.outputs.webservices-definitions-lbvserver.properties.name  
+          webservices-schemas-lbvserver-name: $components.sharepoint-content-switching-comp.outputs.webservices-schemas-lbvserver.properties.name 
+  -
+    name: sharepoint-rewrite-config-comp
+    type: entsb11::sharepoint-rewrite-config
+    condition: (not exists($parameters.sharepoint-advanced)) or $parameters.sharepoint-advanced.enable-rewrite
+    properties:
+        sharepoint-appname: $parameters.sharepoint-appname
+        sharepoint-servers-ips: $parameters.sharepoint-servers-ips
+        sharepoint-csvserver-name: $components.sharepoint-content-switching-comp.outputs.csvserver.properties.name 
+        sharepoint-vip-protocol: $parameters.sharepoint-vip-protocol
+        sharepoint-lbvservers:
+          default-lbvserver-name: $components.sharepoint-content-switching-comp.outputs.default-lbvserver.properties.name
+          frontpage-lbvserver-name: $components.sharepoint-content-switching-comp.outputs.frontpage-lbvserver.properties.name
+          docs-lbvserver-name: $components.sharepoint-content-switching-comp.outputs.docs-lbvserver.properties.name
+          editable-images-lbvserver-name: $components.sharepoint-content-switching-comp.outputs.editable-images-lbvserver.properties.name
+          readonly-images-lbvserver-name: $components.sharepoint-content-switching-comp.outputs.readonly-images-lbvserver.properties.name
+          videos-lbvserver-name: $components.sharepoint-content-switching-comp.outputs.videos-lbvserver.properties.name
+          audio-lbvserver-name: $components.sharepoint-content-switching-comp.outputs.audio-lbvserver.properties.name
+          styles-scripts-lbvserver-name: $components.sharepoint-content-switching-comp.outputs.styles-scripts-lbvserver.properties.name
+          soap-services-lbvserver-name: $components.sharepoint-content-switching-comp.outputs.soap-lbvserver.properties.name
+          portal-management-lbvserver-name: $components.sharepoint-content-switching-comp.outputs.portal-lbvserver.properties.name  
+          webservices-definitions-lbvserver-name: $components.sharepoint-content-switching-comp.outputs.webservices-definitions-lbvserver.properties.name  
+          webservices-schemas-lbvserver-name: $components.sharepoint-content-switching-comp.outputs.webservices-schemas-lbvserver.properties.name  
+  -
+    name: sharepoint-compress-config-comp
+    type: entsb::sharepoint-compression-config
+    condition: (not exists($parameters.sharepoint-advanced)) or $parameters.sharepoint-advanced.enable-compression
+    properties:
+        appname: $parameters.sharepoint-appname
+        server-ips: $parameters.sharepoint-servers-ips
+        sharepoint-lbvservers:
+          default-lbvserver-name: $components.sharepoint-content-switching-comp.outputs.default-lbvserver.properties.name
+          frontpage-lbvserver-name: $components.sharepoint-content-switching-comp.outputs.frontpage-lbvserver.properties.name
+          docs-lbvserver-name: $components.sharepoint-content-switching-comp.outputs.docs-lbvserver.properties.name
+          editable-images-lbvserver-name: $components.sharepoint-content-switching-comp.outputs.editable-images-lbvserver.properties.name
+          readonly-images-lbvserver-name: $components.sharepoint-content-switching-comp.outputs.readonly-images-lbvserver.properties.name
+          videos-lbvserver-name: $components.sharepoint-content-switching-comp.outputs.videos-lbvserver.properties.name
+          audio-lbvserver-name: $components.sharepoint-content-switching-comp.outputs.audio-lbvserver.properties.name
+          styles-scripts-lbvserver-name: $components.sharepoint-content-switching-comp.outputs.styles-scripts-lbvserver.properties.name  
+          soap-services-lbvserver-name: $components.sharepoint-content-switching-comp.outputs.soap-lbvserver.properties.name
+          portal-management-lbvserver-name: $components.sharepoint-content-switching-comp.outputs.portal-lbvserver.properties.name  
+          webservices-definitions-lbvserver-name: $components.sharepoint-content-switching-comp.outputs.webservices-definitions-lbvserver.properties.name  
+          webservices-schemas-lbvserver-name: $components.sharepoint-content-switching-comp.outputs.webservices-schemas-lbvserver.properties.name 
+  -
+    name: sharepoint-cache-config-comp
+    type: entsb::sharepoint-cache-config
+    condition: (not exists($parameters.sharepoint-advanced)) or $parameters.sharepoint-advanced.enable-caching  
+    properties:
+        appname: $parameters.sharepoint-appname
+        server-ips: $parameters.sharepoint-servers-ips
+        sharepoint-lbvservers:
+          default-lbvserver-name: $components.sharepoint-content-switching-comp.outputs.default-lbvserver.properties.name
+          frontpage-lbvserver-name: $components.sharepoint-content-switching-comp.outputs.frontpage-lbvserver.properties.name
+          docs-lbvserver-name: $components.sharepoint-content-switching-comp.outputs.docs-lbvserver.properties.name
+          editable-images-lbvserver-name: $components.sharepoint-content-switching-comp.outputs.editable-images-lbvserver.properties.name
+          readonly-images-lbvserver-name: $components.sharepoint-content-switching-comp.outputs.readonly-images-lbvserver.properties.name
+          videos-lbvserver-name: $components.sharepoint-content-switching-comp.outputs.videos-lbvserver.properties.name
+          audio-lbvserver-name: $components.sharepoint-content-switching-comp.outputs.audio-lbvserver.properties.name
+          styles-scripts-lbvserver-name: $components.sharepoint-content-switching-comp.outputs.styles-scripts-lbvserver.properties.name  
+          soap-services-lbvserver-name: $components.sharepoint-content-switching-comp.outputs.soap-lbvserver.properties.name
+          portal-management-lbvserver-name: $components.sharepoint-content-switching-comp.outputs.portal-lbvserver.properties.name  
+          webservices-definitions-lbvserver-name: $components.sharepoint-content-switching-comp.outputs.webservices-definitions-lbvserver.properties.name  
+          webservices-schemas-lbvserver-name: $components.sharepoint-content-switching-comp.outputs.webservices-schemas-lbvserver.properties.name

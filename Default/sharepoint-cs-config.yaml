@@ -1,0 +1,573 @@
+--- 
+name: sharepoint-cs-config
+description: "This stylebook creates content switching configuration for the sharepoint application"
+display-name: "Content Switching Stylebook for MS SharePoint"
+namespace: com.citrix.adc.enterprise.stylebooks
+schema-version: "1.0"
+version: "1.0"
+private: true
+import-stylebooks: 
+  - 
+    namespace: netscaler.nitro.config
+    prefix: ns
+    version: "10.5"
+  - 
+    namespace: com.citrix.adc.stylebooks
+    prefix: stlb
+    version: "1.0"
+parameters:
+  -
+    name: appname
+    label: SharePoint Application Name
+    description: The Name of this Sharepoint Application
+    type: string
+    required: true
+    key: true
+  -
+    name: sharepoint-vip
+    label: SharePoint Content-Switching VIP
+    description: The Virtual IP for the Microsoft SharePoint application
+    type: ipaddress
+    required: true
+  -
+    name: server-ips
+    label: Sharepoint Server IPs
+    description: List of Microsoft SharePoint Server IPs
+    type: ipaddress[]
+    required: true
+  -
+    name: server-port
+    label: Sharepoint Servers TCP Port
+    description: The TCP port used by Sharepoint Servers
+    type: tcp-port
+    default: 80
+substitutions:
+  http-post-method: POST
+  dll-docs: "dll"
+  axd-docs: "axd"
+  css-docs: "css"
+  js-docs: "js"
+  layouts-docs: "_layouts"
+  blank-html-doc: "blank.htm"
+  axd-webresource-doc: "WebResource.axd"
+  vermeer-content-type-header: "X-Vermeer-Content-Type"
+  soap-action-header: "soapaction"
+  wsdl-query-string: str("?wsdl")
+  wsil-query-string: str("?wsil")
+  wsdl-file-suffix: "wsdl"
+  wsil-file-suffix: "wsil"
+  xml-file-suffix: "xml"
+  xsd-file-suffix: "xsd"
+
+  #patset strings
+  portalpages-patset: ["asp","aspx"]
+  htmls-patset: ["htm","html","mht","mhtml","xhtm","xml"]
+  docs-patset: ["pdf","csv","prn","xsn","xls","xlsx","xlt","xltx","xlsb","xlsm","xltm","dif","slk","xlam","xla","doc","docx","ppt","pptx","dot","dotx","docm","dotm","rtf","txt","wps","pot","potx","pptm","potm","thmx","ppsx","ppsm","pps","ppam","mpp","mppx","gz", "exe"]
+  vtbins-patset: ["bin","_app_bin","_vti_bin"]
+  images-patset: ["gif","jpg","jpeg","tiff","tif","png","bmp","emf","wmf","wbmp","ico","dib"]
+  videos-patset: ["wmv","mpeg","mp4"]
+  audio-patset: ["mp3","wma","wav"]
+  style-scripts-patset: ["css", "js"]
+
+
+  #patset names
+  portal-pages-patset-name: replace($parameters.appname, "-", "_") + "_portalpages_patset"
+  html-docs-patset-name: replace($parameters.appname, "-", "_") + "_htmls_patset"
+  docs-patset-name: replace($parameters.appname, "-", "_") + "_documents_patset"
+  vtibins-docs-patset-name: replace($parameters.appname, "-", "_") + "_vtibins_patset"
+  images-patset-name: replace($parameters.appname, "-", "_") + "_images_patset"
+  videos-patset-name: replace($parameters.appname, "-", "_") + "_videos_patset"
+  audio-patset-name: replace($parameters.appname, "-", "_") + "_audio_patset"
+  styles-scripts-patset-name: replace($parameters.appname, "-", "_") + "_scripts_patset"
+
+
+  # real expressions
+  sp-dll-docs-expr: str("HTTP.REQ.URL.SUFFIX.SET_TEXT_MODE(IGNORECASE).EQ(%{quotewrap($substitutions.dll-docs)}%)")
+  sp-axd-docs-expr: str("HTTP.REQ.URL.SUFFIX.SET_TEXT_MODE(IGNORECASE).EQ(%{quotewrap($substitutions.axd-docs)}%)")
+  sp-axd-webresource-doc-expr: str("HTTP.REQ.URL.PATH.GET_REVERSE(0).SET_TEXT_MODE(IGNORECASE).EQ(%{quotewrap($substitutions.axd-webresource-doc)}%)")
+  sp-layouts-docs-expr: str("HTTP.REQ.URL.PATH.GET(1).SET_TEXT_MODE(IGNORECASE).EQ(%{quotewrap($substitutions.layouts-docs)}%)")
+  sp-not-layouts-docs-expr: str("!") + $substitutions.sp-layouts-docs-expr
+  sp-css-docs-expr: str("HTTP.REQ.URL.SUFFIX.SET_TEXT_MODE(IGNORECASE).EQ(%{quotewrap($substitutions.css-docs)}%)")
+  sp-js-docs-expr: str("HTTP.REQ.URL.SUFFIX.SET_TEXT_MODE(IGNORECASE).EQ(%{quotewrap($substitutions.js-docs)}%)")
+  sp-blank-page-expr: str("HTTP.REQ.URL.PATH.GET_REVERSE(0).SET_TEXT_MODE(IGNORECASE).EQ(%{quotewrap($substitutions.blank-html-doc)}%)")
+  sp-layouts-docs-reverse-expr: str("HTTP.REQ.URL.PATH.GET_REVERSE(1).SET_TEXT_MODE(IGNORECASE).EQ(%{quotewrap($substitutions.layouts-docs)}%)")
+  sp-blank-and-layout-reverse-expr: $substitutions.sp-blank-page-expr + str(" && ") + $substitutions.sp-layouts-docs-reverse-expr
+  sp-wsdl-query-string-expr: str("HTTP.REQ.URL.SET_TEXT_MODE(IGNORECASE).CONTAINS(%{quotewrap($substitutions.wsdl-query-string)}%)")
+  sp-wsdl-file-suffix-expr: str("HTTP.REQ.URL.SUFFIX.SET_TEXT_MODE(IGNORECASE).EQ(%{quotewrap($substitutions.wsdl-file-suffix)}%)")
+  sp-wsil-query-string-expr: str("HTTP.REQ.URL.SET_TEXT_MODE(IGNORECASE).CONTAINS(%{quotewrap($substitutions.wsil-query-string)}%)")
+  sp-wsil-file-suffix-expr: str("HTTP.REQ.URL.SUFFIX.SET_TEXT_MODE(IGNORECASE).EQ(%{quotewrap($substitutions.wsil-file-suffix)}%)")
+  sp-axd-not-webresource-expr: $substitutions.sp-axd-docs-expr + str(" && !") + $substitutions.sp-axd-webresource-doc-expr
+  sp-css-or-js-docs-expr: $substitutions.sp-css-docs-expr + str(" || ") + $substitutions.sp-js-docs-expr
+  sp-not-layouts-and-css-or-js-expr: $substitutions.sp-not-layouts-docs-expr + str(" && (") + $substitutions.sp-css-or-js-docs-expr + str(")")
+  sp-axd-not-webresource-or-not-layouts-and-css-js-expr: str("(") + $substitutions.sp-axd-not-webresource-expr + str(") || ( ") + $substitutions.sp-not-layouts-and-css-or-js-expr + str(")")
+  sp-wsdl-expr: $substitutions.sp-wsdl-query-string-expr + str(" || ") + $substitutions.sp-wsdl-file-suffix-expr
+  sp-wsil-expr: $substitutions.sp-wsil-query-string-expr + str(" || ") + $substitutions.sp-wsil-file-suffix-expr
+  sp-xml-file-suffix-expr: str("HTTP.REQ.URL.SUFFIX.SET_TEXT_MODE(IGNORECASE).EQ(%{quotewrap($substitutions.xml-file-suffix)}%)")
+  sp-xsd-file-suffix-expr: str("HTTP.REQ.URL.SUFFIX.SET_TEXT_MODE(IGNORECASE).EQ(%{quotewrap($substitutions.xsd-file-suffix)}%)")
+
+
+  # Forming complex expressions used in the content switching rules
+  sp-frontpage-services-expr: str("HTTP.REQ.HEADER(%{quotewrap($substitutions.vermeer-content-type-header)}%).EXISTS")
+  sp-soap-services-expr: str("HTTP.REQ.METHOD.EQ(POST) && HTTP.REQ.HEADER(%{quotewrap($substitutions.soap-action-header)}%).EXISTS")
+  sp-portal-management-expr: str("HTTP.REQ.URL.SUFFIX.SET_TEXT_MODE(IGNORECASE).EQUALS_ANY(%{quotewrap($substitutions.portal-pages-patset-name)}%)")
+  sp-vtibin-docs-expr: str("HTTP.REQ.URL.PATH.GET(1).SET_TEXT_MODE(IGNORECASE).EQUALS_ANY(%{quotewrap($substitutions.vtibins-docs-patset-name)}%)")
+  sp-dll-not-expr: $substitutions.sp-dll-docs-expr + str(" && !") + $substitutions.sp-vtibin-docs-expr
+  sp-sharepoint-docs-expr: str("HTTP.REQ.URL.SUFFIX.SET_TEXT_MODE(IGNORECASE).EQUALS_ANY(%{quotewrap($substitutions.docs-patset-name)}%)")
+  sp-docs-or-dll-not-expr: $substitutions.sp-sharepoint-docs-expr + str(" || (") + $substitutions.sp-dll-not-expr + str(")")
+  sp-doc-management-first-expr: $substitutions.sp-docs-or-dll-not-expr + str(" || (") + $substitutions.sp-axd-not-webresource-or-not-layouts-and-css-js-expr + str(")")
+  sp-htmls-expr: str("HTTP.REQ.URL.SUFFIX.SET_TEXT_MODE(IGNORECASE).EQUALS_ANY(%{quotewrap($substitutions.html-docs-patset-name)}%)")
+  sp-doc-management-second-expr: $substitutions.sp-htmls-expr + str(" && !(") + $substitutions.sp-blank-and-layout-reverse-expr + str(")")
+  sp-images-expr: str("HTTP.REQ.URL.SUFFIX.SET_TEXT_MODE(IGNORECASE).EQUALS_ANY(%{quotewrap($substitutions.images-patset-name)}%)")
+  sp-video-management-expr: str("HTTP.REQ.URL.SUFFIX.SET_TEXT_MODE(IGNORECASE).CONTAINS_ANY(%{quotewrap($substitutions.videos-patset-name)}%)")
+  sp-audio-management-expr: str("HTTP.REQ.URL.SUFFIX.SET_TEXT_MODE(IGNORECASE).CONTAINS_ANY(%{quotewrap($substitutions.audio-patset-name)}%)")
+  sp-styles-and-scripts-expr: str("HTTP.REQ.URL.SUFFIX.SET_TEXT_MODE(IGNORECASE).EQUALS_ANY(%{quotewrap($substitutions.styles-scripts-patset-name)}%)")
+
+  # Content Switching rules
+  sp-frontpage-services-rule: $substitutions.sp-frontpage-services-expr
+  sp-soap-services-rule: $substitutions.sp-soap-services-expr
+  sp-portal-management-rule: $substitutions.sp-portal-management-expr
+  sp-documents-management-rule: $substitutions.sp-doc-management-first-expr + str(" || (") + $substitutions.sp-doc-management-second-expr + str(")")
+  sp-editable-image-management-rule: $substitutions.sp-not-layouts-docs-expr + str(" && ") + $substitutions.sp-images-expr
+  sp-readonly-image-management-rule: $substitutions.sp-layouts-docs-expr + str(" && ") + $substitutions.sp-images-expr
+  sp-video-management-rule: $substitutions.sp-video-management-expr
+  sp-audio-management-rule: $substitutions.sp-audio-management-expr
+  sp-styles-and-scripts-rule: $substitutions.sp-layouts-docs-expr + str(" && ") + $substitutions.sp-styles-and-scripts-expr
+  sp-webservice-definitions-rule: $substitutions.sp-wsdl-expr + str(" || ") + $substitutions.sp-wsil-expr + str(" || ") + $substitutions.sp-xml-file-suffix-expr
+  sp-webservice-schemas-rule: $substitutions.sp-xsd-file-suffix-expr
+
+  # transforms a server IP parameter to an object that contains an ip and port.
+  # This format is what cs-lb-mon requires for each service
+  add-port(server-ip): 
+    ip : $server-ip
+    port: $parameters.server-port
+
+components:
+  -
+    name: enable-features-comp
+    type: ns::nsfeature
+    description: Enables the Content Switching, Load Balancing and Surge Protection Features
+    meta-properties:
+        action: enable
+    properties:
+        feature: ["cs", "lb", "sp"]
+#Patsets
+  -
+    name: portalpages-policy-patset-comp
+    type: ns::policypatset
+    properties:
+      name: $substitutions.portal-pages-patset-name
+    components:
+      -
+        name: portalpages-patset-bindings-comp
+        type: ns::policypatset_pattern_binding
+        repeat: $substitutions.portalpages-patset
+        repeat-item: portalpages-str
+        properties:
+          name: $parent.properties.name
+          String: $portalpages-str
+  -
+    name: htmls-patset-comp
+    type: ns::policypatset
+    properties:
+      name: $substitutions.html-docs-patset-name
+    components:
+      -
+        name: htmls-patset-bindings-comp
+        type: ns::policypatset_pattern_binding
+        repeat: $substitutions.htmls-patset
+        repeat-item: html-str
+        properties:
+          name: $parent.properties.name
+          String: $html-str
+  -
+    name: docs-policy-patset-comp
+    type: ns::policypatset
+    properties:
+      name: $substitutions.docs-patset-name
+    components:
+      -
+        name: docs-patset-bindings-comp
+        type: ns::policypatset_pattern_binding
+        repeat: $substitutions.docs-patset
+        repeat-item: docs-str
+        properties:
+          name: $parent.properties.name
+          String: $docs-str
+  -
+    name: vtbins-patset-comp
+    type: ns::policypatset
+    properties:
+      name: $substitutions.vtibins-docs-patset-name
+    components:
+      -
+        name: vtbins-patset-bindings-comp
+        type: ns::policypatset_pattern_binding
+        repeat: $substitutions.vtbins-patset
+        repeat-item: vtbin-str
+        properties:
+          name: $parent.properties.name
+          String: $vtbin-str
+  -
+    name: images-patset-comp
+    type: ns::policypatset
+    properties:
+      name: $substitutions.images-patset-name
+    components:
+      -
+        name: image-patset-bindings-comp
+        type: ns::policypatset_pattern_binding
+        repeat: $substitutions.images-patset
+        repeat-item: image-str
+        properties:
+          name: $parent.properties.name
+          String: $image-str
+  -
+    name: videos-patset-comp
+    type: ns::policypatset
+    properties:
+      name: $substitutions.videos-patset-name
+    components:
+      -
+        name: videos-patset-bindings-comp
+        type: ns::policypatset_pattern_binding
+        repeat: $substitutions.videos-patset
+        repeat-item: video-str
+        properties:
+          name: $parent.properties.name
+          String: $video-str
+  -
+    name: audio-patset-comp
+    type: ns::policypatset
+    properties:
+      name: $substitutions.audio-patset-name
+    components:
+      -
+        name: audio-patset-bindings-comp
+        type: ns::policypatset_pattern_binding
+        repeat: $substitutions.audio-patset
+        repeat-item: audio-str
+        properties:
+          name: $parent.properties.name
+          String: $audio-str
+  -
+    name: style-scripts-patset-comp
+    type: ns::policypatset
+    properties:
+      name: $substitutions.styles-scripts-patset-name
+    components:
+      -
+        name: style-scripts-patset-bindings-comp
+        type: ns::policypatset_pattern_binding
+        repeat: $substitutions.style-scripts-patset
+        repeat-item: script-str
+        properties:
+          name: $parent.properties.name
+          String: $script-str
+
+#Content-Switching Config
+  -
+    name: sharepoint-cs-comp
+    description: This component builds the CS and LB vservers and services needed for SharePoint configuration
+    type: stlb::cs-lb-mon
+    properties:
+      appname: $parameters.appname
+      cs-virtual-ip: $parameters.sharepoint-vip
+      cs-virtual-port: 80
+      cs-service-type: HTTP
+      cs-advanced: 
+        client-timeout: 10
+      default-lb-pool:
+        lb-appname: $parameters.appname + "-default"
+        lb-service-type: HTTP
+        lb-virtual-ip: 0.0.0.0
+        lb-virtual-port: 0
+        lb-advanced:
+                persistence: COOKIEINSERT
+                persistence-backup: SOURCEIP
+                timeout: 20
+                backup-persistence-timeout: 20
+                flush-on-state-down: DISABLED
+                appflow-log: DISABLED
+        svc-service-type: HTTP
+        svc-servers: map($substitutions.add-port, $parameters.server-ips)
+      pools:
+        -
+            rule: $substitutions.sp-frontpage-services-rule
+            lb-pool: 
+              lb-appname: frontpage-services
+              lb-service-type: HTTP
+              lb-virtual-ip: 0.0.0.0
+              lb-virtual-port: 0
+              lb-advanced:
+                persistence: COOKIEINSERT
+                persistence-backup: SOURCEIP
+                timeout: 20
+                backup-persistence-timeout: 20
+                flush-on-state-down: DISABLED
+                appflow-log: DISABLED
+              svc-service-type: HTTP
+              svc-servers: map($substitutions.add-port, $parameters.server-ips)
+              svcg-advanced:
+                svc-client-keepalive: "YES"
+                svc-surge-protection: "ON"
+            priority: 100
+        -
+            rule: $substitutions.sp-soap-services-rule
+            lb-pool: 
+              lb-appname: soap-services
+              lb-service-type: HTTP
+              lb-virtual-ip: 0.0.0.0
+              lb-virtual-port: 0
+              lb-advanced:
+                persistence: COOKIEINSERT
+                persistence-backup: SOURCEIP
+                timeout: 20
+                backup-persistence-timeout: 20
+                flush-on-state-down: DISABLED
+                appflow-log: DISABLED
+              svc-service-type: HTTP
+              svc-servers: map($substitutions.add-port, $parameters.server-ips)
+              svcg-advanced:
+                svc-client-keepalive: "YES"
+                svc-surge-protection: "ON"
+            priority: 95
+        -
+            rule: $substitutions.sp-portal-management-rule
+            lb-pool: 
+              lb-appname: portal-management
+              lb-service-type: HTTP
+              lb-virtual-ip: 0.0.0.0
+              lb-virtual-port: 0
+              lb-advanced:
+                algorithm: ROUNDROBIN
+                persistence: COOKIEINSERT
+                persistence-backup: SOURCEIP
+                timeout: 20
+                backup-persistence-timeout: 20
+                flush-on-state-down: DISABLED
+                appflow-log: DISABLED
+              svc-service-type: HTTP
+              svc-servers: map($substitutions.add-port, $parameters.server-ips)
+              svcg-advanced:
+                svc-client-keepalive: "YES"
+                svc-surge-protection: "ON"
+            priority: 90
+        -
+            rule: $substitutions.sp-documents-management-rule
+            lb-pool: 
+              lb-appname: documents-management
+              lb-service-type: HTTP
+              lb-virtual-ip: 0.0.0.0
+              lb-virtual-port: 0
+              lb-advanced:
+                persistence: COOKIEINSERT
+                persistence-backup: SOURCEIP
+                timeout: 20
+                backup-persistence-timeout: 20
+                flush-on-state-down: DISABLED
+                appflow-log: DISABLED
+              svc-service-type: HTTP
+              svc-servers: map($substitutions.add-port, $parameters.server-ips)
+              svcg-advanced:
+                svc-client-keepalive: "YES"
+                svc-surge-protection: "ON"
+            priority: 85
+        -
+            rule: $substitutions.sp-editable-image-management-rule
+            lb-pool: 
+              lb-appname: editable-image-management
+              lb-service-type: HTTP
+              lb-virtual-ip: 0.0.0.0
+              lb-virtual-port: 0
+              lb-advanced:
+                persistence: COOKIEINSERT
+                persistence-backup: SOURCEIP
+                timeout: 20
+                backup-persistence-timeout: 20
+                flush-on-state-down: DISABLED
+                appflow-log: DISABLED
+              svc-service-type: HTTP
+              svc-servers: map($substitutions.add-port, $parameters.server-ips)
+              svcg-advanced:
+                svc-client-keepalive: "YES"
+                svc-surge-protection: "ON"
+            priority: 80
+        -
+            rule: $substitutions.sp-readonly-image-management-rule
+            lb-pool: 
+              lb-appname: readonly-image-management
+              lb-service-type: HTTP
+              lb-virtual-ip: 0.0.0.0
+              lb-virtual-port: 0
+              lb-advanced:
+                persistence: COOKIEINSERT
+                persistence-backup: SOURCEIP
+                timeout: 20
+                backup-persistence-timeout: 20
+                flush-on-state-down: DISABLED
+                appflow-log: DISABLED
+              svc-service-type: HTTP
+              svc-servers: map($substitutions.add-port, $parameters.server-ips)
+              svcg-advanced:
+                svc-client-keepalive: "YES"
+                svc-surge-protection: "ON"
+            priority: 75
+        -
+            rule: $substitutions.sp-video-management-rule
+            lb-pool: 
+              lb-appname: videos-management
+              lb-service-type: HTTP
+              lb-virtual-ip: 0.0.0.0
+              lb-virtual-port: 0
+              lb-advanced:
+                persistence: COOKIEINSERT
+                persistence-backup: SOURCEIP
+                timeout: 20
+                backup-persistence-timeout: 20
+                flush-on-state-down: DISABLED
+                appflow-log: DISABLED
+              svc-service-type: HTTP
+              svc-servers: map($substitutions.add-port, $parameters.server-ips)
+              svcg-advanced:
+                svc-client-keepalive: "YES"
+                svc-surge-protection: "ON"
+            priority: 70
+        -
+            rule: $substitutions.sp-audio-management-rule
+            lb-pool: 
+              lb-appname: audio-management
+              lb-service-type: HTTP
+              lb-virtual-ip: 0.0.0.0
+              lb-virtual-port: 0
+              lb-advanced:
+                persistence: COOKIEINSERT
+                persistence-backup: SOURCEIP
+                timeout: 20
+                backup-persistence-timeout: 20
+                flush-on-state-down: DISABLED
+                appflow-log: DISABLED
+              svc-service-type: HTTP
+              svc-servers: map($substitutions.add-port, $parameters.server-ips)
+              svcg-advanced:
+                svc-client-keepalive: "YES"
+                svc-surge-protection: "ON"
+            priority: 65
+        -
+            rule: $substitutions.sp-styles-and-scripts-rule        
+            lb-pool: 
+              lb-appname: styles-and-scripts
+              lb-service-type: HTTP
+              lb-virtual-ip: 0.0.0.0
+              lb-virtual-port: 0
+              lb-advanced:
+                persistence: COOKIEINSERT
+                persistence-backup: SOURCEIP
+                timeout: 20
+                backup-persistence-timeout: 20
+                flush-on-state-down: DISABLED
+                appflow-log: DISABLED
+              svc-service-type: HTTP
+              svc-servers: map($substitutions.add-port, $parameters.server-ips)
+              svcg-advanced:
+                svc-client-keepalive: "YES"
+                svc-surge-protection: "ON"
+            priority: 60
+        -
+            rule: $substitutions.sp-webservice-definitions-rule
+            lb-pool: 
+              lb-appname: webservices-definitions
+              lb-service-type: HTTP
+              lb-virtual-ip: 0.0.0.0
+              lb-virtual-port: 0
+              lb-advanced:
+                algorithm: ROUNDROBIN
+                persistence: COOKIEINSERT
+                persistence-backup: SOURCEIP
+                timeout: 20
+                backup-persistence-timeout: 20
+                flush-on-state-down: DISABLED
+                appflow-log: DISABLED
+              svc-service-type: HTTP
+              svc-servers: map($substitutions.add-port, $parameters.server-ips)
+              svcg-advanced:
+                svc-client-keepalive: "YES"
+                svc-surge-protection: "ON"
+            priority: 55
+        -
+            rule: $substitutions.sp-webservice-schemas-rule
+            lb-pool: 
+              lb-appname: webservices-schemas
+              lb-service-type: HTTP
+              lb-virtual-ip: 0.0.0.0
+              lb-virtual-port: 0
+              lb-advanced:
+                algorithm: ROUNDROBIN
+                persistence: COOKIEINSERT
+                persistence-backup: SOURCEIP
+                timeout: 20
+                backup-persistence-timeout: 20
+                flush-on-state-down: DISABLED
+                appflow-log: DISABLED
+              svc-service-type: HTTP
+              svc-servers: map($substitutions.add-port, $parameters.server-ips)
+              svcg-advanced:
+                svc-client-keepalive: "YES"
+                svc-surge-protection: "ON"
+            priority: 50
+
+#TODO: In future, we can use a filter builtin function for selecting each lbvserver comp from the list of non-default lbvservers
+# rather than relying on list indexes which might shift if components are re-ordered in this StyleBook.
+#  filter($substitutions.frontpage-filter, $components.sharepoint-cs-comp.outputs.non-default-lbvservers)[0]
+outputs: 
+  - 
+    name: csvserver
+    value: $components.sharepoint-cs-comp.outputs.csvserver
+    description: "Exposes the created CS vserver component"    
+  -
+    name: default-lbvserver
+    value: $components.sharepoint-cs-comp.outputs.default-lbvserver
+    description: "The default LBvserver component"
+  -
+    name: frontpage-lbvserver
+    value: $components.sharepoint-cs-comp.outputs.non-default-lbvservers[0]
+    description: "The frontpage services lbvserver component"
+  -
+    name: soap-lbvserver
+    value: $components.sharepoint-cs-comp.outputs.non-default-lbvservers[1]
+    description: "The SOAP services lbvserver component"
+  -
+    name: portal-lbvserver
+    value: $components.sharepoint-cs-comp.outputs.non-default-lbvservers[2]
+    description: "The Portal Management lbvserver component"
+  -
+    name: docs-lbvserver
+    value: $components.sharepoint-cs-comp.outputs.non-default-lbvservers[3]
+    description: "The docs lbvserver component"
+  -
+    name: editable-images-lbvserver
+    value: $components.sharepoint-cs-comp.outputs.non-default-lbvservers[4]
+    description: "The editable images lbvserver component"
+  -
+    name: readonly-images-lbvserver
+    value: $components.sharepoint-cs-comp.outputs.non-default-lbvservers[5]
+    description: "The read-only images lbvserver component"
+  -
+    name: videos-lbvserver
+    value: $components.sharepoint-cs-comp.outputs.non-default-lbvservers[6]
+    description: "The videos lbvserver component"
+  -
+    name: audio-lbvserver
+    value: $components.sharepoint-cs-comp.outputs.non-default-lbvservers[7]
+    description: "The audio lbvserver component"
+  -
+    name: styles-scripts-lbvserver
+    value: $components.sharepoint-cs-comp.outputs.non-default-lbvservers[8]
+    description: "The styles and scripts lbvserver component"
+  -
+    name: webservices-definitions-lbvserver
+    value: $components.sharepoint-cs-comp.outputs.non-default-lbvservers[9]
+    description: "The web services definitions lbvserver component"
+  -
+    name: webservices-schemas-lbvserver
+    value: $components.sharepoint-cs-comp.outputs.non-default-lbvservers[10]
+    description: "The web services schemas lbvserver component"

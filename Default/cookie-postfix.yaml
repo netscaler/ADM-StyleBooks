@@ -1,0 +1,74 @@
+---
+name: cookie-postfix
+description: This StyleBook appends a string to a Cookie header in requests that have URLs contain a specific string.
+display-name: Cookie Postfix Rewrite 
+namespace: com.citrix.adc.stylebooks
+schema-version: "1.0"
+private: true
+version: "1.0"
+import-stylebooks:
+ -
+  namespace: netscaler.nitro.config
+  prefix: ns
+  version: "10.5"
+parameters:
+   -
+     name: appname
+     label: Application Name
+     description: The Name of the application
+     type: string
+     required: true
+     key: true
+   -
+     name: vserver-name
+     label: Virtual server name
+     description: Virtual server name to which the rewrite policy is bound
+     type: string
+     required: true
+   -
+     name: url-string
+     label: URL String
+     description: The URL substring used to identify requests whose cookie is rewritten
+     type: string
+     required: true
+   -
+     name: cookie-name
+     label: Cookie Name
+     description: The name of the Cookie in the request to rewrite
+     type: string
+     required: true
+   -
+     name: cookie-postfix
+     label: Cookie Postfix String
+     description: The Postfix String to append at the end of the cookie value
+     type: string
+     required: true
+
+substitutions:
+  str-esc(val): str("\"") + $val + str("\"")
+  policy-rule(func, name): $func + "(" + $substitutions.str-esc($name) + ")"
+components:
+  -
+    name: rewrite-action
+    type: ns::rewriteaction
+    properties:
+       name: "%{$parameters.appname}%-exch-rewrite-action"
+       type: insert_after 
+       target: $substitutions.policy-rule("HTTP.REQ.COOKIE.VALUE", $parameters.cookie-name)
+       stringbuilderexpr: $substitutions.str-esc($parameters.cookie-postfix)
+  -
+    name: rewrite-policy
+    type: ns::rewritepolicy
+    properties:
+      name: "%{$parameters.appname}%-exch-rewrite-policy"
+      rule: $substitutions.policy-rule("HTTP.REQ.URL.CONTAINS", $parameters.url-string)
+      action: $components.rewrite-action.properties.name
+  -
+    name: rewrite-policy-binding
+    type: ns::lbvserver_rewritepolicy_binding
+    properties:
+      name: $parameters.vserver-name
+      policyname: $components.rewrite-policy.properties.name
+      priority: 100
+      gotopriorityexpression: END
+      bindpoint: REQUEST

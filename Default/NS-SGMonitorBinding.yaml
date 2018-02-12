@@ -1,0 +1,38 @@
+
+--- 
+name: NS-SGMonitorBinding
+namespace: com.citrix.adc.stylebooks
+version: "1.1"
+private: true
+display-name: "LBVServer and Monitor Association"
+description: "This StyleBook defines the binding of a monitor to servicegroup"
+schema-version: "1.0"
+import-stylebooks: 
+  - 
+    namespace: netscaler.nitro.config
+    prefix: ns
+    version: "10.5"
+parameters: 
+    - 
+      name: monitorname
+      label: "Monitor Name"
+      description: "Name of the monitor"
+      type: string
+      required: true
+    -
+      name: servicegroupname
+      label: "Service Group Name"
+      description: "Name of the servicegroup"
+      type: string
+      required: true
+components:
+  -
+    name: monitor-svcgrp-binding
+    type: ns::servicegroup_lbmonitor_binding
+    properties:
+      servicegroupname: $parameters.servicegroupname
+      monitor_name: $parameters.monitorname
+outputs:
+  - 
+    name: monitor-svcgrp-binding
+    value: $components.monitor-svcgrp-binding

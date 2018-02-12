@@ -1,0 +1,88 @@
+--- 
+name: lb-mon
+namespace: com.citrix.adc.stylebooks
+version: "0.1"
+description: "This stylebook defines a typical Load Balanced Application configuration with monitors."
+display-name: "HTTP/SSL LoadBalancing (with Monitors) StyleBook"
+schema-version: "1.0"
+private: true
+import-stylebooks: 
+  - 
+    namespace: netscaler.nitro.config
+    prefix: ns
+    version: "10.5"
+  - 
+    namespace: com.citrix.adc.stylebooks
+    prefix: stlb-custom
+    version: "0.1"
+  - 
+    namespace: com.citrix.adc.commontypes
+    prefix: cmtypes
+    version: "1.0"
+parameters-default-sources: 
+  - stlb-custom::lb
+parameters:
+  -
+    name: monitors
+    label: "List of Monitors"
+    description: "List of Monitors to monitor Application Servers"
+    type: cmtypes::monitor[]
+substitutions:
+  mon-name(appname, monname): $appname + "-" + $monname + "-mon"
+components: 
+  - 
+    name: lb-comp
+    type: stlb-custom::lb 
+    properties:
+      lb-appname: $parameters.lb-appname
+      lb-service-type: $parameters.lb-service-type
+      lb-virtual-ip: $parameters.lb-virtual-ip
+      lb-virtual-port: $parameters.lb-virtual-port
+      svc-server-ips: $parameters.svc-server-ips
+      svc-server-port: $parameters.svc-server-port
+      lb-advanced?: $parameters.lb-advanced
+      svc-service-type?: $parameters.svc-service-type
+      svcg-advanced?: $parameters.svcg-advanced 
+      certificates?: $parameters.certificates
+  -
+    name: monitors-comp
+    type: cmtypes::monitor
+    condition: $parameters.monitors
+    repeat: $parameters.monitors
+    repeat-item: mon
+    repeat-index: ndx
+    description: "Builds a list of NetScaler monitor objects and binds them to the servicegroup of this LB config"
+    properties:
+        monitorname: $substitutions.mon-name($parameters.lb-appname, $mon.monitorname)
+        type: $mon.type
+        destip?: $mon.destip
+        destport?: $mon.destport
+        httprequest?: $mon.httprequest
+        send?: $mon.send
+        customheaders?: $mon.customheaders
+        respcodes?: $mon.respcodes
+        recv?: $mon.recv
+        lrtm?: $mon.lrtm
+        secure?: $mon.secure
+        interval?: $mon.interval
+        interval_units?: $mon.interval_units
+        resptimeout?: $mon.resptimeout
+        retries?: $mon.retries
+        downtime?: $mon.downtime
+    components:
+      -
+        name: monitor-svcg-binding-comp
+        type: ns::servicegroup_lbmonitor_binding
+        properties:
+          servicegroupname: $components.lb-comp.outputs.servicegroup.properties.servicegroupname
+          monitor_name: $parent.properties.monitorname
+outputs: 
+  - 
+    name: lbvserver
+    value: $components.lb-comp.outputs.lbvserver
+  - 
+    name: servicegroup
+    value: $components.lb-comp.outputs.servicegroup
+  - 
+    name: monitors
+    value: $components.monitors-comp

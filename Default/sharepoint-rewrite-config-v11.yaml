@@ -1,0 +1,180 @@
+--- 
+name: sharepoint-rewrite-config
+namespace: com.citrix.adc.enterprise.stylebooks
+version: "1.1"
+display-name: Sharepoint Rewrite Configuration
+description: This stylebook creates Sharepoint rewrite configuration
+private: true
+schema-version: "1.0"
+import-stylebooks:
+  - 
+    namespace: netscaler.nitro.config
+    version: "10.5"
+    prefix: ns
+  - 
+    namespace: com.citrix.adc.stylebooks
+    prefix: stlb11
+    version: "1.1"
+  - 
+    namespace: com.citrix.adc.stylebooks
+    prefix: stlb
+    version: "1.0"
+  - 
+    namespace: com.citrix.adc.enterprise.stylebooks
+    prefix: entsb11
+    version: "1.1"
+parameters-default-sources:
+  - entsb11::sharepoint-feature-config-params
+components:
+  -
+    name: enable-features-comp
+    type: ns::nsfeature
+    description: Enables the Rewrite Feature
+    meta-properties:
+        action: enable
+    properties:
+        feature: ["rewrite"]
+  -
+    name: sharepoint-lb-rewrite-config-comp
+    type: stlb11::rewrite-config
+    description: This component creates the rewrite policies and policy lables
+    properties:
+        appname: $parameters.sharepoint-appname + "-lb"
+        rewrite-config:
+          remove-headers: 
+            -
+              name: "Accept-Encoding"
+  -
+    name: sharepoint-cs-rewrite-config-comp
+    type: stlb11::rewrite-config
+    description: This component creates the rewrite policies and policy lables
+    condition: $parameters.sharepoint-vip-protocol == "SSL"
+    properties:
+        appname: $parameters.sharepoint-appname + "-cs"
+        rewrite-config:
+          new-headers: 
+            -
+              name: Front-End-Https
+              pattern: HTTP.REQ.IS_VALID
+              value: "ON"
+  -
+    name: frontpage-rewrite-policy-bindings-comp
+    type: stlb::vserver-rewritepolicies-bindings
+    description: This component binds Sharepoint's frontpage lbvserver to the rewrite policy label created by the previous component.
+    properties:
+      vserver-name: $parameters.sharepoint-lbvservers.frontpage-lbvserver-name
+      vserver-type: LBVSERVER
+      policies:
+        -
+          name: $components.sharepoint-lb-rewrite-config-comp.outputs.rewrite-request-policy-label
+          type: POLICYLABEL
+          bind-point: REQUEST
+  -
+    name: soap-rewrite-policy-bindings-comp
+    type: stlb::vserver-rewritepolicies-bindings
+    description: This component binds Sharepoint's soap lbvserver to the rewrite policy label created earlier.
+    properties:
+      vserver-name: $parameters.sharepoint-lbvservers.soap-services-lbvserver-name
+      vserver-type: LBVSERVER
+      policies:
+        -
+          name: $components.sharepoint-lb-rewrite-config-comp.outputs.rewrite-request-policy-label
+          type: POLICYLABEL
+          bind-point: REQUEST
+  -
+    name: portal-rewrite-policy-bindings-comp
+    type: stlb::vserver-rewritepolicies-bindings
+    description: This component binds Sharepoint's portal management lbvserver to the rewrite policy label created earlier.
+    properties:
+      vserver-name: $parameters.sharepoint-lbvservers.portal-management-lbvserver-name
+      vserver-type: LBVSERVER
+      policies:
+        -
+          name: $components.sharepoint-lb-rewrite-config-comp.outputs.rewrite-request-policy-label
+          type: POLICYLABEL
+          bind-point: REQUEST
+  -
+    name: docs-rewrite-policy-bindings-comp
+    type: stlb::vserver-rewritepolicies-bindings
+    description: This component binds Sharepoint's documents lbvserver to the rewrite policy label created earlier.
+    properties:
+      vserver-name: $parameters.sharepoint-lbvservers.docs-lbvserver-name
+      vserver-type: LBVSERVER
+      policies:
+        -
+          name: $components.sharepoint-lb-rewrite-config-comp.outputs.rewrite-request-policy-label
+          type: POLICYLABEL
+          bind-point: REQUEST
+  -
+    name: editable-images-rewrite-policy-bindings-comp
+    type: stlb::vserver-rewritepolicies-bindings
+    description: This component binds Sharepoint's editable images lbvserver to the rewrite policy label created earlier.
+    properties:
+      vserver-name: $parameters.sharepoint-lbvservers.editable-images-lbvserver-name
+      vserver-type: LBVSERVER
+      policies:
+        -
+          name: $components.sharepoint-lb-rewrite-config-comp.outputs.rewrite-request-policy-label
+          type: POLICYLABEL
+          bind-point: REQUEST
+  -
+    name: readonly-images-rewrite-policy-bindings-comp
+    type: stlb::vserver-rewritepolicies-bindings
+    description: This component binds Sharepoint's readonly images lbvserver to the rewrite policy label created earlier.
+    properties:
+      vserver-name: $parameters.sharepoint-lbvservers.readonly-images-lbvserver-name
+      vserver-type: LBVSERVER
+      policies:
+        -
+          name: $components.sharepoint-lb-rewrite-config-comp.outputs.rewrite-request-policy-label
+          type: POLICYLABEL
+          bind-point: REQUEST
+  -
+    name: styles-scripts-rewrite-policy-bindings-comp
+    type: stlb::vserver-rewritepolicies-bindings
+    description: This component binds Sharepoint's Styles&Scripts lbvserver to the rewrite policy label created earlier.
+    properties:
+      vserver-name: $parameters.sharepoint-lbvservers.styles-scripts-lbvserver-name
+      vserver-type: LBVSERVER
+      policies:
+        -
+          name: $components.sharepoint-lb-rewrite-config-comp.outputs.rewrite-request-policy-label
+          type: POLICYLABEL
+          bind-point: REQUEST
+  -
+    name: webservices-definitions-rewrite-policy-bindings-comp
+    type: stlb::vserver-rewritepolicies-bindings
+    description: This component binds Sharepoint's WebServices definitions lbvserver to the rewrite policy label created earlier.
+    properties:
+      vserver-name: $parameters.sharepoint-lbvservers.webservices-definitions-lbvserver-name
+      vserver-type: LBVSERVER
+      policies:
+        -
+          name: $components.sharepoint-lb-rewrite-config-comp.outputs.rewrite-request-policy-label
+          type: POLICYLABEL
+          bind-point: REQUEST
+  -
+    name: webservices-schemas-rewrite-policy-bindings-comp
+    type: stlb::vserver-rewritepolicies-bindings
+    description: This component binds Sharepoint's WebServices schemas lbvserver to the rewrite policy label created earlier.
+    properties:
+      vserver-name: $parameters.sharepoint-lbvservers.webservices-schemas-lbvserver-name
+      vserver-type: LBVSERVER
+      policies:
+        -
+          name: $components.sharepoint-lb-rewrite-config-comp.outputs.rewrite-request-policy-label
+          type: POLICYLABEL
+          bind-point: REQUEST
+  -
+    name: cs-rewrite-policy-bindings-comp
+    type: stlb::vserver-rewritepolicies-bindings
+    description: This component binds Sharepoint's rewrite policy label for inserting a header to the CS VServer of Sharepoint
+    condition: $parameters.sharepoint-vip-protocol == "SSL"
+    properties:
+      vserver-name: $parameters.sharepoint-csvserver-name
+      vserver-type: CSVSERVER
+      policies:
+        -
+          name: $components.sharepoint-cs-rewrite-config-comp.outputs.rewrite-request-policy-label
+          type: POLICYLABEL
+          bind-point: REQUEST

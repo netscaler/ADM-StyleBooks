@@ -1,0 +1,62 @@
+name: ssl-config
+namespace: com.citrix.adc.stylebooks
+version: "1.0"
+display-name: SSL Config of a VServer
+private: true
+description: Creates an SSL Profile and binds it to the vserver passed in the parameters
+schema-version: "1.0"
+import-stylebooks: 
+  - 
+    namespace: netscaler.nitro.config
+    version: "10.5"
+    prefix: ns
+  - 
+    namespace: com.citrix.adc.commontypes
+    version: "1.0"
+    prefix: cmtypes
+parameters-default-sources:
+    - cmtypes::l7-config-params
+    - cmtypes::ssl-config-params
+substitutions:
+  state:
+    true: ENABLED
+    false: DISABLED
+components:
+  -
+    name: cipher-comp
+    type: ns::sslcipher
+    properties:
+      ciphergroupname: $parameters.appname + "-ciphers"
+    components:
+      -
+        name: cipher-bindings
+        type: ns::sslcipher_sslciphersuite_binding
+        repeat: $parameters.ssl-config.ssl-ciphers
+        repeat-item: cipher
+        properties:
+          ciphergroupname: $parent.properties.ciphergroupname
+          ciphername: $cipher
+  -
+    name: ssl-prof-comp
+    type: ns::sslprofile
+    properties:
+        name: $parameters.appname + "-sslprofile"
+        sslprofiletype: FrontEnd
+        ssl3: $substitutions.state[$parameters.ssl-config.ssl-protocols.ssl3]
+        tls1: $substitutions.state[$parameters.ssl-config.ssl-protocols.tls1]
+        tls11: $substitutions.state[$parameters.ssl-config.ssl-protocols.tls11]
+        tls12: $substitutions.state[$parameters.ssl-config.ssl-protocols.tls12]
+        snienable: ENABLED
+  -
+    name: sslvserver-comp
+    type: ns::sslvserver
+    properties:
+      vservername: $parameters.vserver-name
+      sslprofile: $components.ssl-prof-comp.properties.name
+    components:
+      -
+        name: sslvserver-sslcipher-comp
+        type: ns::sslvserver_sslcipher_binding
+        properties:
+          vservername: $parent.properties.vservername
+          ciphername: $components.cipher-comp.properties.ciphergroupname

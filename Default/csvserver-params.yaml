@@ -1,0 +1,61 @@
+--- 
+name: csvserver-params
+namespace: com.citrix.adc.commontypes
+version: "1.0"
+description: "This stylebook defines the parameters for a content switching virtual server."
+private: true
+schema-version: "1.0"
+import-stylebooks:
+  - 
+    namespace: com.citrix.adc.commontypes
+    prefix: cmtypes
+    version: "1.0"
+parameters: 
+  - 
+    name: appname
+    label: "Content Switched Application Name"
+    description: "Name of the Content Switched application"
+    type: string
+    key: true
+    gui:
+      updatable: false
+    required: true
+  - 
+    name: cs-virtual-ip
+    label: "Content Switched App Virtual IP address"
+    description: "Virtual IP address representing the Content Switched application"
+    type: ipaddress
+    required: true
+  - 
+    name: cs-virtual-port
+    label: "Content Switched App Virtual Port"
+    description: "TCP port representing the Content Switched application"
+    type: tcp-port
+    gui:
+      updatable: false
+    default: 80
+    required: true
+  - 
+    name: cs-service-type
+    label: "Content Switched App Protocol"
+    description: "Protocol used for the Content Switched application."
+    type: string
+    default: HTTP    
+    required: true
+    gui:
+      updatable: false
+    allowed-values: 
+      - HTTP
+      - SSL
+      - TCP
+      - UDP
+      - ANY
+  - 
+    name: cs-advanced
+    label: "Advanced Content Switched App Settings"
+    description: "Advanced Content Switched App settings"
+    type: object
+    gui: 
+      collapse_pane: true  
+    parameters-default-sources:
+      - cmtypes::vserver-advanced-params 

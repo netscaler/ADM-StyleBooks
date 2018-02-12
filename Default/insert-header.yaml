@@ -1,0 +1,52 @@
+name: insert-header
+namespace: com.citrix.adc.stylebooks
+version: "1.0"
+display-name: Request Header Insertion StyleBook
+private: true
+schema-version: "1.0"
+description: |    
+    This StyleBook inserts an HTTP header in the request or response stream. For each header, the user 
+    specifies the header name, the header value, and optionally a NetScaler Policy expression for selecting a subset of the requests    
+    for which the header is inserted (defaults to "true").
+import-stylebooks: 
+  - 
+    namespace: netscaler.nitro.config
+    version: "10.5"
+    prefix: ns
+  - 
+    namespace: com.citrix.adc.commontypes
+    version: "1.0"
+    prefix: cmtypes
+parameters:
+    -
+        name: appname
+        type: string
+        label: Application Name
+        description: The Name of the Application
+    -
+        name: header
+        type: object
+        description: The header to insert
+        parameters-default-sources:
+            - cmtypes::insert-header-params
+components:
+  -
+    name: insert-header-action-comp
+    type: ns::rewriteaction
+    properties:
+        name: $parameters.appname + "-" + $parameters.header.name + "-rewrite-action"
+        type: INSERT_HTTP_HEADER
+        target: $parameters.header.name
+        stringbuilderexpr: str("\"") + $parameters.header.value + str("\"")
+    components:
+      -
+        name: insert-header-policy-comp
+        type: ns::rewritepolicy
+        properties:
+            name: $parameters.appname + "-" + $parameters.header.name + "-rewrite-policy"
+            rule: $parameters.header.pattern
+            action: $parent.properties.name
+outputs:
+    -
+        name: insert-header-policy
+        value: $components.insert-header-action-comp.components.insert-header-policy-comp

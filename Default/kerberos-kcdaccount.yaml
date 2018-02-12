@@ -1,0 +1,76 @@
+--- 
+name: kerberos-kcdaccount
+namespace: com.citrix.adc.commontypes
+version: "1.0"
+description: |
+    This StyleBook define the base parameters for Kerberos KCD account used by NetScaler for constrained delegation.
+schema-version: "1.0"
+private: true
+import-stylebooks:
+    -
+        namespace: com.citrix.adc.commontypes
+        version: "1.0"
+        prefix: cmtypes
+parameters:
+    -
+        name: use-keytab
+        label: Use KeyTab file
+        description: Take the settings of the KCD Account from the keytab file rather than from settings in this section.
+        type: object
+        parameters:
+            -
+                name: keytab-file
+                label: Keytab File path
+                description: The absolute path on the NetScaler for the keytab file to use
+                type: string
+                required: true
+    -
+        name: realm
+        label: Kerberos Realm
+        description: Kerberos realm. Usually the domain of the accessed service in Active Directory (e.g. "acme.com")
+        type: string
+    -
+        name: user-realm
+        label: User Realm
+        description: User realm used for constrained delegation authentication. Usually the domain of the user in Active Directory.
+        type: string
+    -
+        name: enterprise-realm
+        label: Enterprise Realm
+        description: |
+            Enterprise realm for the user. Only needed in certain KDC (Active Directory) deployments where KDC 
+            expects Enterprise username instead of Principal Name.
+        type: string
+    -
+        name: delegated-user
+        label: Delegated User Name
+        description: |
+            The username that NetScaler uses to obtain a TGT ticket from Kerberos KDC (Active Directory).
+            The username can be simple (e.g. root) or specified in the SPN format (e.g. host/webacct.example.com)
+        type: string
+    -
+        name: delegated-user-password
+        label: Delegated User Password
+        description: The password of the Delegated User.
+        type: password
+    -
+        name: delegated-user-cert
+        label: Delegated User Certificate
+        description: |
+            If the delegated user is authenticating through a client certificate (rather than a password) 
+            to get a TGT ticket from Active Directory, specify the user's client certificate.
+        type: cmtypes::certificate
+    -
+        name: delegated-user-ca-cert
+        label: Delegated User CA Certificate
+        description: |
+            If the delegated user is authenticating through a client certificate (rather than a password) 
+            to get a TGT ticket from Active Directory, specify the user's client CA certificate if required.
+        type: cmtypes::certificate
+    -
+        name: service-spn
+        label: Service Principal Name (SPN)
+        description: |
+            When specified, this will be used to fetch kerberos tickets for backend services (e.g. HTTP/app.acme.com). If not specified, Netscaler will 
+            construct SPN using the accessed service FQDN.
+        type: string

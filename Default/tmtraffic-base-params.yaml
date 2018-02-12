@@ -1,0 +1,89 @@
+--- 
+name: tmtraffic-base-params
+namespace: com.citrix.adc.commontypes
+version: "1.0"
+description: This StyleBook define the base parameters for NetScaler TM Traffic configurations.
+schema-version: "1.0"
+private: true
+import-stylebooks:
+    -
+        namespace: com.citrix.adc.commontypes
+        version: "1.0"
+        prefix: cmtypes
+parameters:
+    -
+        name: use-persistent-cookies
+        label: Use Persistent Cookies
+        description: Use Persistent Cookies for the traffic management (TM) session.
+        type: boolean
+        default: false
+    -
+        name: initiate-logout
+        label: Initiate Logout
+        description: |
+            Initiate logout for the traffic management (TM) session. 
+            The session is then terminated after two minutes.
+        type: boolean
+        default: false
+    -
+        name: app-timeout
+        label: Application Timeout (mns)
+        description: |
+          Maximum amount of time, in minutes, a user can stay connected to application after inactivity.
+        type: number
+    -
+        name: timeout-timer-action
+        label: START, STOP or RESET TIMEOUT TIMER
+        description: |
+            This settings set the timer for forced timeouts of the TM session regardless of user activity.
+            It either starts the timer, stops it, or resets it.
+        type: string
+        allowed-values:
+            - START
+            - STOP
+            - RESET
+    -
+        name: timeout-timer-value
+        label: Timeout Timer Period (mns)
+        type: number
+        description: |
+             The time in minutes for which the Timeout Timer is set. When this period
+             has elapsed, the user TM session is terminated.
+    -
+        name: sso-settings
+        label: Enable Single Signon (SSO) Settings to the Backend App Servers 
+        description: |
+            Enable Single Signon to the web application servers using of SSO methods supported by the NetScaler
+            (Basic Auth SSO, NTLM SSO, WebForm SSO, Kerberos SSO, SAML SSO).
+        type: object
+        parameters:
+            -
+                name: username-expr
+                label: Expression to Extract Username
+                description: |
+                    The NetScaler policy expression to use to extract the username sent to the backend application
+                    if it is different than the username used to authenticate to the NetScaler
+
+                type: string
+            -
+                name: password-expr
+                label: Expression to Extract User Password
+                description: |
+                    The NetScaler policy expression to use to extract the password sent to the backend application
+                    if it is different than the password (or other credential) used to authenticate to the NetScaler.
+                type: string
+            -
+                name: sso-form-settings
+                label: SSO WebForm Settings
+                description: Settings for SSO to the backend servers based on Web Form Authentication
+                type: cmtypes::webform-sso-base-params
+            -
+                name: sso-saml-settings
+                label: SSO SAML Settings
+                description: Settings for SSO to the backend servers based on SAML
+                type: cmtypes::saml-sso-base-params
+            -
+                name: sso-kerberos-settings
+                label: SSO Kerberos Settings (KCD Delegation)
+                description: Kerberos Constrained Delegation Authentication Settings for SSO to backend application.
+                type: cmtypes::kerberos-kcdaccount

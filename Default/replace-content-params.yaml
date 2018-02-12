@@ -1,0 +1,54 @@
+name: replace-content-params
+namespace: com.citrix.adc.commontypes
+version: "1.0"
+display-name: Replace Text Content in Response
+private: true
+schema-version: "1.0"
+parameters:
+  -
+    name: name
+    type: string
+    label: Name
+    description: Name of this text replacement config
+    required: true
+  -
+    name: text-to-replace
+    type: string
+    label: Text String to Replace
+    description: The Text String that you want to replace in the response body. This can also be a regular expression.
+    required: true
+  -
+    name: replacement-text
+    type: string
+    label: Replacement Text
+    description: The text string that will replace occurrences of matched text in the response.
+    required: true
+  -
+    name: replace-all
+    type: string
+    label: Occurrences to replace
+    description: |
+        Do you want the NetScaler to replace all occurrences of the text in the response body or just the first occurrence.
+    default: "All Occurrences"
+    allowed-values:
+        - "All Occurrences"
+        - "First Occurrence"
+    required: true
+  -
+    name: max-lookup-size
+    type: number
+    label: Max Response Size (KB)
+    description: |
+        How deep in a response body should the NetScaler look to identify text strings to replace. 
+        If the text string you want to replace, can occur anywhere in the response body, then you have
+        to estimate what is the maximum size (in KiloBytes) of your responses. 
+        Note that the bigger the response size you specify, the more impact on the NetScaler performance 
+        and memory this has, as the NetScaler needs to buffer responses in order to search them.
+    required: true
+    default: 5
+  -
+    name: pattern
+    type: string
+    label: Request Filter (Policy Expression)
+    description: The NetScaler Policy Expression used to select requests for which to perform the text replacement. If the value is "true" (default), then the action is applied to all requests.
+    default: "true"

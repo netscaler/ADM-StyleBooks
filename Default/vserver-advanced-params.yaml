@@ -1,0 +1,106 @@
+--- 
+name: vserver-advanced-params
+namespace: com.citrix.adc.commontypes
+version: "1.0"
+description: "This StyleBook defines advanced settings for CS or LB Vservers."
+private: true
+schema-version: "1.0"
+parameters:      
+      - 
+        name: client-timeout
+        label: "Load Balanced App Client Timeout"
+        description: "Client connection timeout after inactivity in seconds"
+        type: number
+      - 
+        name: timeout
+        label: "Load Balanced App Persistence Timeout"
+        description: "Time period for which a persistence session is in effect."
+        type: number
+      - 
+        name: insert-vserver-ipport
+        label: "Load Balanced App HTTP header"
+        description: "Insert an HTTP header, whose value is the IP address and port number of the virtual server, before forwarding a request to the server."
+        type: string
+        allowed-values: 
+          - "OFF"
+          - VIPADDR        
+      - 
+        name: redirect-url
+        label: "Load Balanced App URL Redirect"
+        description: "URL to which to redirect traffic if the virtual server becomes unavailable."
+        type: string
+      - 
+        name: spillover-method
+        label: "Load Balanced App Threshold Type"
+        description: "Type of threshold that, when exceeded, triggers spillover."
+        type: string
+        allowed-values: 
+          - NONE
+          - CONNECTION
+          - DYNAMICCONNECTION
+          - BANDWIDTH
+          - HEALTH  
+      - 
+        name: spillover-threshold
+        label: "Load Balanced App Threshold"
+        description: "Value of the thershold, when exceeded, triggers spillover."
+        type: number       
+      - 
+        name: comment
+        label: "Load Balanced App Comment"
+        description: "Any comments that you might want to associate with the virtual server."
+        type: string
+      -
+        name: http-profile
+        label: "Name of HTTP Profile"
+        description: "Name of HTTP Profile to use for this VIP"
+        type: string
+      -
+        name: flush-on-state-down
+        label: "Cleanup Connections when down"
+        description: "Cleanup all connections on this VIP when it goes down"
+        type: string
+        default: ENABLED
+        allowed-values:
+            - ENABLED
+            - DISABLED
+      -
+        name: auth-params
+        label: "Authentication Parameters"
+        description: "Parameters related to enabling authentication on this virtual IP"
+        type: object
+        parameters:
+            -
+                name: authentication
+                label: "Enable Authentication"
+                description: "Authenticate users who request a connection to this virtual IP"
+                type: string
+                default: "OFF"
+                allowed-values:
+                    - "ON"
+                    - "OFF"
+            -
+                name: authentication-host
+                label: "FQDN of Auth VServer"
+                description: "The Authentication VServer FQDN to which users to this VIP are redirected to for authentication"
+                type: string
+            - 
+                name: authentication-vserver-name
+                label: "Name of Auth VServer"
+                type: string
+            - 
+                name: authentication-http-401
+                label: "Enable HTTP 401 Auth"
+                type: string
+                default: "OFF"
+                allowed-values:
+                    - "ON"
+                    - "OFF"
+      -
+          name: appflow-log
+          label: "Enable AppFlow"
+          type: string
+          default: ENABLED
+          allowed-values:
+              - ENABLED
+              - DISABLED

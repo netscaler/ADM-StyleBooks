@@ -1,0 +1,13 @@
+name: remove-header-params
+namespace: com.citrix.adc.commontypes
+version: "1.0"
+display-name: Base Header Parameters
+private: true
+schema-version: "1.0"
+import-stylebooks: 
+  - 
+    namespace: com.citrix.adc.commontypes
+    version: "1.0"
+    prefix: cmtypes
+parameters-default-sources:
+  - cmtypes::base-header-params

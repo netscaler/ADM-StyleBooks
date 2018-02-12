@@ -1,0 +1,243 @@
+name: multicloud-glb-lb-node
+namespace: com.citrix.adc.stylebooks
+version: "1.1"
+display-name: Multi-cloud GLB StyleBook for LB Node
+description: |
+    This StyleBook is used to configure Child Sites' Netscaler appliances in hierarchical GLB deployment.
+    This StyleBook configures one child site at a time.
+    For configuring the parent sites one has to invoke the "Multi-cloud GLB stylebook"
+    This StyleBook make the following assumptions:
+     - A SNIP address or a GLB site IP address is configured
+     - The required firewall and security groups are configured in the cloud service providers. 
+schema-version: "1.0"
+import-stylebooks: 
+  - 
+    namespace: netscaler.nitro.config
+    version: "10.5"
+    prefix: ns
+parameters:
+    -
+        name: appname
+        label: Application Name
+        description: Name of the GLB application
+        type: string
+        required: true
+        key: true
+    -
+        name: protocol
+        label: Protocol
+        description: The protocol of the GLB application. 
+        type: string
+        default: HTTP
+        allowed-values:
+            - HTTP
+            - FTP
+            - TCP
+            - UDP
+            - SSL
+            - SSL_BRIDGE
+            - SSL_TCP
+            - NNTP
+            - ANY
+            - SIP_UDP
+            - SIP_TCP
+            - SIP_SSL
+            - RADIUS
+            - RDP
+            - RTSP
+            - MYSQL
+            - MSSQL
+            - ORACLE        
+    -
+        name: monitor
+        label: LB Health Check
+        description: Health check of GLB service end points.
+        type: object
+        parameters:
+            -
+                name: monitor-type
+                label: Health Check Type
+                type: string
+                required: true
+                allowed-values:
+                  - PING
+                  - TCP
+                  - HTTP
+                  - HTTP-ECV
+                  - TCP-ECV
+                  - HTTP-INLINE
+            -
+                name: secure
+                label: Secure mode
+                description: Enable this parameter if SSL based health check is required.This is not applicable for PING and TCP monitors.
+                type: string
+                allowed-values:
+                  - "YES"
+                  - "NO"
+            -
+                name: http-request
+                label: HTTP Request
+                description: HTTP Request sent by the health check. Provide only if health check type is HTTP.
+                type: string
+            -
+                name: response-codes
+                label: List of HTTP Status Response Codes
+                description: Expected HTTP Status Response Code for the health check to succeed. Provide only if health check type is HTTP.
+                type: string[]
+    -
+        name: site
+        label: Parent Site
+        description: Provide information about the Parent GLB Site. 
+        type: object
+        required: true
+        parameters:
+            -
+                name: name
+                label: Site Name
+                type: string
+                required: true
+            -
+                name: ipaddress
+                label: Site IP Address
+                description: IP Address of the Parent GLB Site.
+                type: ipaddress
+                required: true
+            -
+                name: public-ipaddress
+                label: Site Public IP Address
+                description: Public IP Address of the Parent GLB Site if the GLB instance is behind a NAT.
+                type: ipaddress
+            -
+                name: child-site
+                label: Child Site
+                description: Local GLB site.
+                type: object
+                required: true
+                parameters:
+                    -
+                        name: name
+                        label: Site name
+                        type: string
+                        required: true
+                    - 
+                        name: ipaddress
+                        label: Site IP Address
+                        description: IP Address of this Site. Use a SNIP/GSLBSITE IP address on the site's appliance.
+                        type: ipaddress
+                        required: true
+                    -
+                        name: public-ipaddress
+                        label: Site Public IP Address
+                        description: Public IP Address of the Child Site if it is behind a NAT.
+                        type: ipaddress
+    -
+        name: services
+        label: Active GLB Services
+        description: Provide information about the GLB Service end points(LB/CS/CR/VPN vservers). 
+        type: object[]
+        required: true
+        parameters:
+            -
+                name: virtual-ip
+                label: Service IP
+                description: IP Address of the GLB service end-point.
+                type: ipaddress
+                required: true
+            -
+                name: public-ipaddress
+                label: Service Public IP Address
+                description: Public IP Address of the GLB service end-point if it is behind a NAT.
+                type: ipaddress
+            -
+                name: virtual-port
+                label: Service Port
+                description: Port number of the GLB service end-point. 
+                type: tcp-port
+                default: 80
+            -
+                name: site-name
+                label: Site Name
+                description: Site Name of the GLB Service
+                type: string
+                required: true
+                
+substitutions:
+    ipchange(ip1,ip2): if-then-else($ip1, $ip1, $ip2)  
+components:
+    -
+        name: enable-gslb-comp
+        type: ns::nsfeature
+        description: Enables the GSLB feature
+        meta-properties:
+            action: enable
+        properties:
+            feature: ["GSLB", "LB"]
+    -
+        name: gslb-monitor-comp
+        type: ns::lbmonitor
+        description: Creating a Monitor for the GLB Services
+        condition: $parameters.monitor
+        properties:
+            monitorname: $parameters.appname + "-" + $parameters.monitor.monitor-type + "-gslbmon"
+            type: $parameters.monitor.monitor-type
+            secure?: $parameters.monitor.secure
+            httprequest?: $parameters.monitor.http-request
+            respcode?: $parameters.monitor.response-codes
+    -
+        name: gslb-site-comp
+        type: ns::gslbsite
+        description: Creates the GLB Sites 
+        properties:
+            sitename: $parameters.site.name
+            triggermonitor: MEPDOWN
+            siteipaddress: $parameters.site.ipaddress
+            publicip?: $parameters.site.public-ipaddress
+        components:
+             -
+                name: gslb-rpc-comp
+                type: ns::nsrpcnode
+                description: Creating an rpcnode for the current Site and setting it to secure
+                properties:
+                    ipaddress: $substitutions.ipchange($parameters.site.public-ipaddress, $parameters.site.ipaddress)
+                    secure: "YES"
+             -
+                name: gslb-child-site-comp
+                type: ns::gslbsite
+                description: Creates a GSLB child Site config object
+                properties:
+                    sitename: $parameters.site.child-site.name
+                    triggermonitor: MEPDOWN
+                    siteipaddress: $parameters.site.child-site.ipaddress
+                    publicip?: $parameters.site.child-site.public-ipaddress
+                    parentsite: $parameters.site.name
+                components:
+                    -
+                        name: gslb-child-rpc-comp
+                        type: ns::nsrpcnode
+                        description: Creating an rpcnode for each Child Site and setting it to secure
+                        properties:
+                            ipaddress: $substitutions.ipchange($parameters.site.child-site.public-ipaddress, $parameters.site.child-site.ipaddress)
+                            secure: "YES"
+
+    -
+        name: gslb-service-comp
+        type: ns::gslbservice
+        description: Creates the GLB Service
+        repeat: $parameters.services
+        repeat-item: service
+        properties:
+            servicename: $parameters.appname + "-" + $service.site-name + "-gslbservice" + "-" + str($service.virtual-ip) + "-" + str($service.virtual-port)
+            ip: $service.virtual-ip
+            publicip?: $service.public-ipaddress
+            servicetype: $parameters.protocol
+            port: $service.virtual-port
+            sitename: $service.site-name
+        components:
+            - 
+                name: gslb-service-monitor-binding-comp
+                type: ns::gslbservice_lbmonitor_binding
+                description: Creates a Binding between the GSLB service and the GSLB monitor
+                condition: $parameters.monitor
+                properties:
+                  servicename: $parent.properties.servicename
+                  monitor_name: $components.gslb-monitor-comp.properties.monitorname

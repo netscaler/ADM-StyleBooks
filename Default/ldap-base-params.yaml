@@ -1,0 +1,142 @@
+--- 
+name: ldap-base-params
+namespace: com.citrix.adc.commontypes
+version: "1.0"
+description: This StyleBook define the base parameters for LDAP configurations in NetScaler.
+schema-version: "1.0"
+private: true
+parameters:
+    -
+        name: ldap-base
+        label:  LDAP (Active Directory) Base
+        description: The LDAP Base string for authentication. For example dc=netscaler,dc=com
+        type: string
+        required: true
+    -
+        name: bind-dn
+        label: LDAP (Active Directory) Bind DN
+        description: |
+          LDAP Bind Distinguished Name (DN) used to bind to the LDAP server (AD). For example cn=Manager,dc=netscaler,dc=com
+        type: string
+        required: true
+    -
+        name: bind-dn-password
+        label: LDAP (Active Directory) Bind DN Password
+        description: LDAP Bind Distinguished Name (DN) password for Authentication
+        type: password
+        required: true
+    -
+        name: server-ip
+        label: LDAP Server (Active Direcory) IP
+        description: |
+          The LDAP Server IP Address that NetScaler connects to for authenticating users.
+        type: ipaddress
+    -
+        name: server-name
+        label: "LDAP Server FQDN name"
+        description: |
+            The LDAP Server's fully qualified domain name (e.g. "server.acme.com"). 
+            This is mutually-exclusive with server-ip parameter.
+        type: string
+    -
+        name: server-port
+        label: LDAP Server (Active Directory) Port
+        description: The LDAP Server port that NetScaler connects to for authenticating users
+        type: tcp-port
+        default: 389
+    -
+        name: host-name
+        type: string
+        label: "LDAP Host name"
+        description: "The LDAP Server hostname. Used to validate LDAP server certificate if validation is turned on."
+    -
+        name: is-activedirectory
+        label: Active Directory LDAP
+        description: The LDAP Server is Active Directory
+        type: boolean
+    -
+        name: validate-ldap-cert
+        type: boolean
+        label: "Validate LDAP Certificate"
+        description: "If true, the server name found in the LDAP Server certificate is compared to the LDAP hostname."
+        default: false
+    -
+        name: user-attribute-name
+        label: LDAP (Active Directory) Login username
+        description: AD Login name. The NetScaler appliance uses this username to query external LDAP (Active Directory) Servers
+        type: string
+        default: samAccountname
+    -
+        name: group-attribute-name
+        label: LDAP (Active Directory) Group Attribute Name
+        description: LDAP Group Attribute Name used for User's groups extraction
+        type: string
+    -
+        name: group-subattribute-name
+        label: LDAP (Active Directory) Group Sub-Attribute username
+        description: LDAP Group Sub-attribute Name used for User's groups extraction
+        type: string
+    -
+        name: default-group
+        label: LDAP (Active Directory) default group
+        description: The Default LDAP Group that is added to the extracted user's groups
+        type: string
+    -
+        name: sso-attribute-name
+        label: LDAP (Active Directory) SSO Attribute
+        description: LDAP SSO Attribute Name to query LDAP for an alternative username
+        type: string
+        default: userPrincipalName 
+    -
+        name: is-secure-connection
+        label: Secure LDAP (Active Directory) Connection using SSL or TLS
+        description: Set to true to secure the LDAP connection using SSL (using LDAPS)
+        type: boolean
+        default: false
+    -
+        name: ssl-protocol
+        label: SSL Protocol
+        description: Choose the SSL protocol to use for connecting to LDAP (Active Directory) Directory
+        type: string
+        default: SSL
+        allowed-values:
+            - SSL
+            - TLS
+    -
+        name: auth-timeout
+        type: number
+        label: Authentication Timeout (seconds)
+        description: Timeout in seconds for connecting to LDAP (Active Directory) for Authentication
+    -
+        name: allow-password-change
+        label: Allow Password Change
+        description: Allow Password Change Requests to LDAP
+        type: boolean
+        default: false
+    -
+        name: disable-authentication
+        type: boolean
+        label: Disable LDAP (Active Directory) Authentication
+        description: If set to true, any LDAP (Active Directory) authentication attempt returns authentication success if the user is found
+        default: false
+    -
+        name: allow-following-referrals
+        label: Allow Follow Referrals
+        description: Allow following referrals in LDAP
+        type: boolean
+        default: false
+    -
+        name: attribute1-expression
+        type: string
+        label: Attribute 1 Expression
+        description: PI Expression used to extract Attribute 1 from an LDAP response
+    -
+        name: attribute2-expression
+        type: string
+        label: Attribute 2 Expression
+        description: PI Expression used to extract Attribute 2 from an LDAP response
+    -
+        name: attribute3-expression
+        type: string
+        label: Attribute 3 Expression
+        description: PI Expression used to extract Attribute 3 from an LDAP response

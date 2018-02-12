@@ -1,0 +1,58 @@
+--- 
+name: activedirectory-ldap-policy
+namespace: com.citrix.adc.stylebooks
+version: "1.0"
+description: This StyleBook configures a Microsoft ActiveDirectory Authentication policy
+schema-version: "1.0"
+private: true
+import-stylebooks: 
+    - 
+        namespace: com.citrix.adc.commontypes
+        version: "1.0"
+        prefix: cmtypes
+    - 
+        namespace: com.citrix.adc.stylebooks
+        version: "1.0"
+        prefix: stlb
+parameters:
+    -
+        name: appname
+        type: string
+        label: "Application Domain"
+        description: "The Application Name"
+        required: true
+    -
+        name: rule
+        type: string
+        label: "NetScaler PI Rule for when to apply the Active Directory LDAP Policy"
+        description: "The Application Rule"
+    -
+        name: ad-settings
+        type: object
+        label: "Active Directory Authentication for External Users"
+        description: "Parameters for configuring AD Auth"
+        required: true
+        parameters-default-sources:
+            - cmtypes::ldap-base-params
+components:
+    -
+        name: ad-authpolicy-comp
+        type: stlb::ldap-policy
+        properties:
+            appname: $parameters.appname
+            rule?: $parameters.rule
+            ldap-settings:
+                is-activedirectory: true
+                server-ip: $parameters.ad-settings.server-ip
+                auth-timeout: 30
+                ldap-base: $parameters.ad-settings.ldap-base
+                bind-dn: $parameters.ad-settings.bind-dn
+                bind-dn-password: $parameters.ad-settings.bind-dn-password
+                default-group?: $parameters.ad-settings.default-group
+                is-secure-connection?: $parameters.ad-settings.is-secure-connection
+                ssl-protocol?: $parameters.ad-settings.ssl-protocol
+outputs:
+    -
+        name: ad-auth-policy
+        value: $components.ad-authpolicy-comp.outputs.ldap-auth-policy
+        description: The Active Directory LDAP Policy Component.

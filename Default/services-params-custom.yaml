@@ -1,0 +1,174 @@
+--- 
+name: services-params
+namespace: com.citrix.adc.commontypes
+version: "0.1"
+description: "This stylebook defines the parameters for services."
+private: true
+schema-version: "1.0"
+parameters: 
+  - 
+    name: svc-service-type
+    label: "Application Server Protocol"
+    description: "Protocol of the application server."
+    type: string
+    default: HTTP    
+    allowed-values:
+      - HTTP
+      - TCP
+      - SSL
+      - UDP
+      - ANY
+    required: true
+  -
+    name: svc-server-ips
+    label: "Server IPs"
+    description: "List of server IPs"
+    type: ipaddress[]
+    required: true
+  - 
+    name: svc-server-port
+    label: "Server Port"
+    description: "Server Port"
+    type: tcp-port
+    required: true
+    gui:
+      updatable: false
+
+  - 
+    name: svcg-advanced
+    label: "Advanced Application Server Settings"
+    description: "Advanced Application Server Settings"
+    type: object
+    gui: 
+      collapse_pane: true
+    parameters: 
+      - 
+        name: svc-max-clients
+        label: "Service Group Maximum Clients"
+        description: "Maximum number of simultaneous open connections for the service group."
+        type: number
+      - 
+        name: svc-max-requests
+        label: "Service Group Maximum Requests"
+        description: "Maximum number of requests that can be sent on a persistent connection to the service group."
+        type: number
+      - 
+        name: svc-client-ip
+        label: "Service Group CIP"
+        description: "Insert the Client IP header in requests forwarded to the service."
+        type: string
+        default: DISABLED  
+        allowed-values: 
+          - DISABLED
+          - ENABLED  
+      - 
+        name: svc-client-ip-header
+        label: "Service Group CIP Header"
+        description: "Name of the HTTP header whose value must be set to the IP address of the client. Used with the Client IP parameter. "
+        type: string
+      - 
+        name: svc-use-source-ip
+        label: "Preserve Client Source IP (USIP)"
+        description: "Use client's IP address as the source IP address when initiating connection to the server."
+        type: string
+        default: "NO"  
+        allowed-values: 
+          - "NO"
+          - "YES"
+      - 
+        name: svc-use-proxy-port
+        label: "Service Group UseProxyPort"
+        description: "Use the proxy port as the source port when initiating connections with the server."
+        type: string
+        default: "NO"
+        allowed-values: 
+          - "NO"
+          - "YES"
+      - 
+        name: svc-sure-connect
+        label: "Service Group Sure Connect"
+        description: "State of the SureConnect feature for the service group."
+        type: string
+      - 
+        name: svc-surge-protection
+        label: "Service Group Surge Protection"
+        description: "Enable surge protection for the service group."
+        type: string
+        default: "OFF"
+        allowed-values: 
+          - "OFF"
+          - "ON"
+      - 
+        name: svc-client-timeout
+        label: "Service Group Client Timeout"
+        description: "Time, in seconds, after which to terminate an idle client connection."
+        type: number        
+      - 
+        name: svc-server-timeout
+        label: "Service Group Server Timeout"
+        description: "Time, in seconds, after which to terminate an idle server connection."
+        type: number
+      - 
+        name: svc-client-keepalive
+        label: "Service Group Client Keep-Alive"
+        description: "Enable client keep-alive for the service group."
+        type: string
+        default: "NO"  
+        allowed-values: 
+          - "NO"
+          - "YES"     
+      - 
+        name: svc-tcp-buffering
+        label: "Service Group TCP buffering"
+        description: "Enable TCP buffering for the service group."
+        type: string
+        default: "NO" 
+        allowed-values: 
+          - "NO"
+          - "YES"
+      - 
+        name: svc-compression
+        label: "Service Group Compression"
+        description: "Enable compression for the specified service."
+        type: string
+        default: "NO"  
+        allowed-values: 
+          - "NO"
+          - "YES"
+      - 
+        name: svc-state
+        label: "Service Group State"
+        description: "Initial state of the service group."
+        type: string
+        default: ENABLED
+        allowed-values: 
+          - DISABLED
+          - ENABLED
+      - 
+        name: svc-downstate-flush
+        label: "Service Group Down State Flush"
+        description: "Flush all active transactions associated with all the services in the service group whose state transitions from UP to DOWN."
+        type: string
+        default: DISABLED          
+        allowed-values: 
+          - DISABLED
+          - ENABLED
+      - 
+        name: svc-custom-server-id
+        label: "Service Group Customer Server ID"
+        description: "The identifier for this IP:Port pair. Used when the persistency type is set to Custom Server ID."
+        type: string
+      - 
+        name: svc-enable-health-monitor
+        label: "Enable Service Group Monitoring"
+        description: "Enabled Health Monitoring if true"
+        type: string
+        default: "NO"
+        allowed-values:
+          - "YES"
+          - "NO"
+      - 
+        name: svc-comment
+        label: "Service Group Comment"
+        description: "Any information about the service group."
+        type: string

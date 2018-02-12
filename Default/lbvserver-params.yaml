@@ -1,0 +1,92 @@
+--- 
+name: lbvserver-params
+namespace: com.citrix.adc.commontypes
+version: "1.0"
+description: "This stylebook defines the parameters for a load balancing virtual server."
+private: true
+schema-version: "1.0"
+import-stylebooks:
+  - 
+    namespace: com.citrix.adc.commontypes
+    prefix: cmtypes
+    version: "1.0"
+parameters: 
+  - 
+    name: lb-appname
+    label: "Load Balanced Application Name"
+    description: "Name of the Load Balanced application"
+    type: string
+    key: true
+    gui:
+      updatable: false
+    required: true
+  - 
+    name: lb-virtual-ip
+    label: "Load Balanced App Virtual IP address"
+    description: "Virtual IP address representing the Load Balanced application"
+    type: ipaddress
+    required: true
+  - 
+    name: lb-virtual-port
+    label: "Load Balanced App Virtual Port"
+    description: "TCP port representing the Load Balanced application"
+    type: tcp-port
+    gui:
+      updatable: false
+    default: 80
+  - 
+    name: lb-service-type
+    label: "Load Balanced App Protocol"
+    description: "Protocol used for the Load Balanced application."
+    type: string
+    default: HTTP    
+    required: true
+    gui:
+      updatable: false
+    allowed-values: 
+      - HTTP
+      - SSL
+      - TCP
+      - UDP
+      - ANY
+  - 
+    name: lb-advanced
+    label: "Advanced Load Balancer Settings"
+    description: "Advanced load balancer settings"
+    type: object
+    gui: 
+      collapse_pane: true    
+    parameters-default-sources:
+      - cmtypes::vserver-advanced-params
+    parameters:
+      - 
+        name: algorithm
+        label: "Load Balanced App Algorithm"
+        description: "Load Balancing algorithm for the application"
+        type: string
+        default: LEASTCONNECTION        
+        allowed-values: 
+          - LEASTCONNECTION
+          - ROUNDROBIN
+          - LEASTRESPONSETIME
+      - 
+        name: persistence
+        label: "Load Balanced App Persistence Type"
+        description: "Persistence type used for members of this pool"
+        type: string
+        allowed-values: 
+          - NONE
+          - SOURCEIP
+          - COOKIEINSERT
+          - SRCIPDESTIP
+          - DESTIP   
+      - 
+        name: persistence-backup
+        label: "Load Balanced App Backup Persistence"
+        description: "Backup persistence type for the virtual server."
+        type: string
+      - 
+        name: backup-persistence-timeout
+        label: "Load Balanced App Backup Persistence Timeout"
+        description: "Time period for which backup persistence is in effect."
+        type: number

@@ -1,0 +1,256 @@
+---
+name: microsoft-office365-sso
+namespace: com.citrix.adc.enterprise.stylebooks
+version: "1.0"
+display-name: SSO Office 365 StyleBook
+description: | 
+  This StyleBook configures NetScaler to play the role of a SAML IdP for Office 365, therefore 
+  providing Single SignOn (SSO) to users.
+schema-version: "1.0"
+import-stylebooks:
+  -
+    namespace: netscaler.nitro.config
+    prefix: ns
+    version: "11.0"
+  - 
+    namespace: com.citrix.adc.stylebooks
+    prefix: stlb
+    version: "1.1"
+  - 
+    namespace: com.citrix.adc.commontypes
+    prefix: cmtypes
+    version: "1.0"
+parameters:
+  -
+    name: appname
+    label: SSO Office 365 Application Name
+    description: Provide a name for this SSO Office 365 configuration
+    type: string
+    required: true
+    key: true
+  -
+    name: auth-vip
+    label: Authentication Virtual IP address
+    description: IP address of the authentication virtual server.
+    type: ipaddress
+    required: true
+  -
+    name: auth-cert
+    label: SSL Certificate for the Authentication Virtual IP
+    description: SSL Certification to be bound to authentication vserver on NetScaler (Not Office 365 Certificate)
+    type: cmtypes::certificate
+    required: true
+  -
+    name: auth-ca-cert
+    label: SSL CA Certificate for the Authentication Virtual IP
+    description: SSL CA Certification to be bound to authentication vserver on NetScaler (Not Office 365 Certificate)
+    type: cmtypes::certificate
+  -
+    name: ldap-settings
+    label: Active Directory (LDAP) Settings for SSO Office 365
+    description: LDAP Settings for SSO Office 365
+    type: object
+    required: true
+    parameters-default-sources:
+        - cmtypes::ldap-base-params
+  -
+    name: saml-settings
+    label: SAML Settings for SSO Office 365
+    description: SAML Settings for SSO Office 365
+    type: object
+    required: true
+    parameters:
+        -
+            name: saml-idp-cert
+            label: SAML IdP Certificate
+            description: SSL Certificate used by NetScaler to sign issued SAML assertions
+            type: cmtypes::certificate
+            required: true
+        -
+            name: saml-idp-ca-cert
+            label: SAML IdP CA Certificate
+            description: SSL CA Certificate for the SAML IdP Certificate
+            type: cmtypes::certificate
+        -
+            name: saml-sp-cert
+            label: SAML SP Certificate
+            description: Office365 SSL Public Certificate used by NetScaler to verify incoming SAML authentication requests
+            type: cmtypes::certificate
+            required: true
+        -
+            name: saml-sp-ca-cert
+            label: SAML SP CA Certificate
+            description: SSL CA Certificate for the SAML SP Certificate
+            type: cmtypes::certificate
+        -
+            name: saml-issuer-name
+            label: Saml issuer name
+            description: The name to be used in requests sent from NetScaler IdP to uniquely identify NetScaler.
+            type: string
+            default: "https://nssaml.citrix.com/saml/login"
+        -
+            name: name-id-expr
+            label: Name Identifier Expression
+            description: NetScaler Expression that will be evaluated to extract the SAML NameIdentifier to be sent in the SAML assertion.
+            type: string
+            default: "HTTP.REQ.USER.ATTRIBUTE(2).B64ENCODE"
+        -
+            name: signature-algorithm
+            label: Signature Algorithm
+            description: Algorithm to be used to sign/verify SAML transactions.
+            type: string
+            default: RSA-SHA256
+            allowed-values:
+              - RSA-SHA1 
+              - RSA-SHA256
+        -
+            name: digest-method
+            label: Digest Method
+            description: Algorithm to be used to compute/verify digest for SAML transactions.
+            type: string
+            default: SHA256
+            allowed-values:
+              - SHA1 
+              - SHA256
+        -
+            name: audience
+            label: Audience name or url
+            description: |
+              Audience for which assertion sent by NetScaler IdP is applicable. This is typically entity name or url that represents 
+              ServiceProvider (Microsoft Office365).
+            type: string
+            default: "urn:federation:MicrosoftOnline"
+        -
+            name: reject-unsigned-requests
+            label: Option to Reject unsigned SAML Requests
+            description: |
+              Option to Reject unsigned SAML Requests. When set to true, this option denies any authentication requests 
+              that are not signed.
+            type: boolean
+            default: false
+        -
+            name: saml-attribute-name
+            label: SAML Attribute Name
+            description: Name of user attribute that needs to be sent in SAML Assertion.
+            default: IDPEmail
+            type: string
+        -
+            name: saml-attribute-friendly-name
+            label: SAML Attribute Friendly Name
+            description: Friendly Name of the user attribute that needs to be sent in SAML Assertion.
+            default: UserID
+            type: string
+        -
+            name: saml-attribute-expr
+            label: PI Expression for SAML Attribute
+            description: Expression that will be evaluated to extract user attribute's value to be sent in the SAML assertion
+            type: string
+            default: "HTTP.REQ.USER.ATTRIBUTE(1)"
+        -
+            name: saml-attribute-format
+            label: SAML Attribute Format
+            description: Format of user attribute to be sent in Assertion.
+            type: string
+            default: URI
+        -
+            name: saml-rule-expr
+            label: PI Rule Expression 
+            description: |
+              NetScaler PI boolean expression that matches traffic to which these SAML settings are 
+              applied. The default expression is "HTTP.REQ.HEADER(\"Referer\").CONTAINS(\"microsoft\")"
+            type: string
+substitutions:
+  saml-rule(rule): if-then-else($rule, $rule, str("HTTP.REQ.HEADER(\"Referer\").CONTAINS(\"microsoft\")"))
+components:
+  -
+    name: auth-ldap-policy-comp
+    type: stlb::ldap-policy
+    description: This component creates the LDAP policy/action config entities
+    properties:
+      appname: $parameters.appname
+      ldap-settings:
+        is-activedirectory?: $parameters.ldap-settings.is-activedirectory
+        server-name?: $parameters.ldap-settings.server-name
+        server-ip?: $parameters.ldap-settings.server-ip
+        server-port?: $parameters.ldap-settings.server-port
+        ldap-base?: $parameters.ldap-settings.ldap-base
+        bind-dn?: $parameters.ldap-settings.bind-dn
+        bind-dn-password?: $parameters.ldap-settings.bind-dn-password
+        host-name?: $parameters.ldap-settings.host-name
+        validate-ldap-cert?: $parameters.ldap-settings.validate-ldap-cert
+        user-attribute-name?: $parameters.ldap-settings.user-attribute-name
+        group-attribute-name?: $parameters.ldap-settings.group-attribute-name
+        group-subattribute-name?: $parameters.ldap-settings.group-subattribute-name
+        default-group?: $parameters.ldap-settings.default-group
+        sso-attribute-name?: $parameters.ldap-settings.sso-attribute-name
+        is-secure-connection?: $parameters.ldap-settings.is-secure-connection
+        ssl-protocol?: $parameters.ldap-settings.ssl-protocol
+        auth-timeout?: $parameters.ldap-settings.auth-timeout
+        allow-password-change?: $parameters.ldap-settings.allow-password-change
+        disable-authentication?: $parameters.ldap-settings.disable-authentication
+        allow-following-referrals?: $parameters.ldap-settings.allow-following-referrals
+        attribute1-expression?: $parameters.ldap-settings.attribute1-expression
+        attribute2-expression?: $parameters.ldap-settings.attribute2-expression
+        attribute3-expression?: $parameters.ldap-settings.attribute3-expression
+    # properties-default-sources:
+    #     - $parameters
+  -
+    name: saml-idp-certkeys-comp
+    type: stlb::certkeys
+    description: Uploads the SAML IdP SSL Certificate and CA Certificate and creates the corresponding certkeys
+    properties:
+      certificates:
+          - $parameters.saml-settings.saml-idp-cert
+          - $parameters.saml-settings.saml-idp-ca-cert
+  -
+    name: saml-sp-certkeys-comp
+    type: stlb::certkeys
+    description: Uploads the SAML SP SSL Certificate and CA Certificate and creates the corresponding certkeys
+    properties:
+      certificates:
+          - $parameters.saml-settings.saml-sp-cert
+          - $parameters.saml-settings.saml-sp-ca-cert
+  -
+    name: auth-saml-idp-policy-comp
+    type: stlb::saml-idp-policy
+    description: This component creates the SAML IdP policy/profile config entities
+    properties:
+      appname: $parameters.appname
+      rule?: $substitutions.saml-rule($parameters.saml-settings.saml-rule-expr)
+      saml-idp-settings:
+        saml-idp-cert-name: $components.saml-idp-certkeys-comp.outputs.certkeys[0].properties.certkey
+        saml-sp-cert-name: $components.saml-sp-certkeys-comp.outputs.certkeys[0].properties.certkey
+        saml-idp-issuer-name: $parameters.saml-settings.saml-issuer-name
+        saml-assertion-consumerservice-url: "https://login.microsoftonline.com/login.srf"
+        name-id-expr: $parameters.saml-settings.name-id-expr
+        signature-algorithm?: $parameters.saml-settings.signature-algorithm
+        digest-method?: $parameters.saml-settings.digest-method
+        audience:  $parameters.saml-settings.audience
+        reject-unsigned-requests?: $parameters.saml-settings.reject-unsigned-requests
+        user-attrs:
+            attribute1-name?: $parameters.saml-settings.saml-attribute-name
+            attribute1-friendly-name?: $parameters.saml-settings.saml-attribute-friendly-name
+            attribute1-expr?: $parameters.saml-settings.saml-attribute-expr
+            attribute1-format?: $parameters.saml-settings.saml-attribute-format
+
+  -
+    name: auth-comp
+    type: stlb::auth
+    description: This component creates the LDAP Auth Vserver and binds the LDAP and SAML policies to it
+    properties:
+        name: $parameters.appname
+        vip: $parameters.auth-vip
+        protocol: SSL
+        port: 443
+        certificates: 
+          - $parameters.auth-cert
+          - $parameters.auth-ca-cert
+        auth-settings:
+          auth-domain?: $parameters.saml-settings.saml-issuer-name
+          max-login-attempts: 255
+          failed-login-timeout: 1
+        aaa-policies:
+          ldap-policies:
+            - $components.auth-ldap-policy-comp.outputs.ldap-auth-policy.properties.name
+          samlidp-policies:
+            - $components.auth-saml-idp-policy-comp.outputs.saml-idp-policy.properties.name

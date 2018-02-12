@@ -1,0 +1,80 @@
+--- 
+name: lb-mon
+namespace: com.citrix.adc.stylebooks
+version: "1.0"
+description: "This stylebook defines a typical Load Balanced Application configuration with monitors."
+display-name: "HTTP/SSL LoadBalancing (with Monitors) StyleBook"
+schema-version: "1.0"
+import-stylebooks: 
+  - 
+    namespace: netscaler.nitro.config
+    prefix: ns
+    version: "10.5"
+  - 
+    namespace: com.citrix.adc.stylebooks
+    prefix: stlb
+    version: "1.0"
+  - 
+    namespace: com.citrix.adc.commontypes
+    prefix: cmtypes
+    version: "1.0"
+parameters-default-sources:
+  - stlb::lb
+parameters:
+  -
+    name: monitors
+    label: "List of Monitors"
+    description: "List of Monitors to monitor Application Servers"
+    type: cmtypes::monitor[]
+substitutions:
+  mon-name(appname, monname): $appname + "-mon-" + $monname
+components: 
+  - 
+    name: lb-comp
+    type: stlb::lb 
+    properties-default-sources:
+      - $parameters
+  -
+    name: monitors-comp
+    type: cmtypes::monitor
+    condition: $parameters.monitors
+    repeat: $parameters.monitors
+    repeat-item: mon
+    repeat-index: ndx
+    description: "Builds a list of NetScaler monitor objects and binds them to the servicegroup of this LB config"
+    properties-default-sources:
+      - $mon
+    properties:
+        monitorname: $substitutions.mon-name($parameters.lb-appname, $mon.monitorname)
+    components:
+      -
+        name: monitor-svcg-binding-comp
+        condition:  $parameters.svc-servers
+        type: ns::servicegroup_lbmonitor_binding
+        properties:
+          servicegroupname: $components.lb-comp.outputs.servicegroup.properties.servicegroupname
+          monitor_name: $parent.properties.monitorname
+      -
+        name: monitor-service-binding-comps
+        condition: $parameters.svc-server-domains
+        type: ns::service_lbmonitor_binding
+        repeat: $components.lb-comp.outputs.service-members
+        repeat-item: service
+        properties:
+          name: $service.properties.name
+          monitor_name: $parent.properties.monitorname
+outputs: 
+  - 
+    name: lbvserver
+    value: $components.lb-comp.outputs.lbvserver
+  - 
+    name: servicegroup
+    condition:  $parameters.svc-servers
+    value: $components.lb-comp.outputs.servicegroup
+  - 
+    name: service-members
+    condition: $parameters.svc-server-domains
+    value: $components.lb-comp.outputs.service-members
+  - 
+    name: monitors
+    value: $components.monitors-comp

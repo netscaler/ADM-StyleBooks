@@ -1,0 +1,73 @@
+--- 
+name: activedirectory-negotiate-policy
+namespace: com.citrix.adc.stylebooks
+version: "1.0"
+description: This stylebook configures an Active Directory Authentication Neotiate Policy and its Action
+schema-version: "1.0"
+private: true
+import-stylebooks: 
+    - 
+        namespace: netscaler.nitro.config
+        version: "10.5"
+        prefix: ns
+
+parameters:
+    -
+        name: appname
+        type: string
+        label: "Application Domain"
+        description: "The Application Name"
+        required: true
+    -
+        name: rule
+        type: string
+        label: "NetScaler PI Rule for when to apply the Session Policy"
+        description: "The Application Rule"
+        default: "true"
+    -
+        name: service-account
+        type: object
+        label: "AD Service Account"
+        description: "Service Account to use for connecting to Active Directory"
+        required: true    
+        parameters:
+            -
+                name: auth-domain
+                type: string
+                label: "Authentication Domain"
+                description: "The DNS domain associated with the Auth"
+                required: true
+            -
+                name: username
+                type: string
+                label: "Service Account Username"
+                description: "Service Account username used by NetScaler to authenticate users to AD"
+                required: true
+            -
+                name: password
+                type: string
+                label: "Service Account Password"
+                description: "Service Account password used by NetScaler to authenticate users to AD"
+                required: true 
+components:
+    -
+        name: auth-negotiate-action-comp
+        type: ns::authenticationnegotiateaction
+        properties:
+            name: "%{$parameters.appname}%-negotiate-action"
+            domain: upper($parameters.service-account.auth-domain)
+            domainuser: $parameters.service-account.username
+            domainuserpasswd: $parameters.service-account.password
+        components:
+            -
+                name: auth-negotiate-policy-comp
+                type: ns::authenticationpolicy
+                properties:
+                    name: "%{$parameters.appname}%-negotiate-policy"
+                    rule: $parameters.rule
+                    action: $parent.properties.name
+outputs:
+    -
+        name: auth-negotiate-policy
+        value: $components.auth-negotiate-action-comp.components.auth-negotiate-policy-comp
+        description: The Component representing ActiveDirectory Authentication Negotiate Policy

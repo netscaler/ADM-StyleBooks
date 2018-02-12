@@ -1,0 +1,122 @@
+---
+name: microsoft-skype-for-business-director
+namespace: com.citrix.adc.enterprise.stylebooks
+version: "1.0"
+description: |
+            This StyleBook defines a NetScaler configuration for the Director Server of 
+            Microsoft Skype for Business 2015.
+display-name: Microsoft Skype for Business 2015 StyleBook (Director)
+schema-version: "1.0"
+private: true
+import-stylebooks:
+  -
+    namespace: netscaler.nitro.config
+    prefix: ns
+    version: "10.5"
+  -
+    namespace: com.citrix.adc.stylebooks
+    prefix: stlb-custom
+    version: "0.1"
+parameters:
+  -
+    name: dir-vip
+    label: Skype for Business Director Virtual IP
+    description: The Director Virtual IP address for Microsoft Skype for Business
+    type: ipaddress
+  -
+    name: dir-server-ips
+    label: Skype for Business Director Server IPs
+    description: List of Skype for Business Director Server IPs
+    type: ipaddress[]
+  -
+    name: dir-ports-list
+    label: List of Ports for Microsoft Skype for Business Director
+    description: List of ports
+    type: object
+    gui:
+      collapse_pane: true
+    parameters:
+       -
+          name: http
+          label: HTTP Port
+          description: Port used for communication from Director Servers to the web farm FQDNs (the URLs used by IIS web components) when HTTPS is not used.
+          type: tcp-port
+          gui:
+            updatable: false
+          default: 80
+       -
+          name: https
+          label: HTTPS Port
+          description: Port used for communication from Director Servers to the Web farm FQDNs (the URLs used by Web Components).
+          type: tcp-port
+          gui:
+            updatable: false
+          default: 443
+       -
+          name: autodiscover-interpool
+          label: AutoDiscover Internal Port
+          description: HTTPS (from Reverse Proxy) and HTTPS Director inter-pool communications for Autodiscover sign-in.
+          gui:
+            updatable: false
+          type: tcp-port
+          default: 4443
+       -
+          name: sip-mtls
+          label: SIP Internal Port
+          description: Port used for internal SIP communications between servers and between servers and Office Communicator.
+          type: tcp-port
+          gui:
+            updatable: false
+          default: 5061
+components:
+  -
+    name: http-lb-comp
+    type: stlb-custom::lb
+    properties:
+      lb-appname: sfb-dir-http
+      lb-service-type: TCP
+      lb-virtual-ip: $parameters.dir-vip
+      lb-virtual-port: $parameters.dir-ports-list.http
+      svc-server-ips: $parameters.dir-server-ips
+      svc-service-type: TCP
+      svc-server-port: 8080
+      lb-advanced:
+        persistence: SOURCEIP
+  -
+    name: https-lb-comp
+    type: stlb-custom::lb
+    properties:
+      lb-appname: sfb-dir-https
+      lb-service-type: TCP
+      lb-virtual-ip: $parameters.dir-vip
+      lb-virtual-port: $parameters.dir-ports-list.https
+      svc-server-ips: $parameters.dir-server-ips
+      svc-service-type: TCP
+      svc-server-port: $parameters.dir-ports-list.https
+      lb-advanced:
+        persistence: SOURCEIP
+
+  -
+    name: autodiscover-interpool-lb-comp
+    type: stlb-custom::lb
+    properties:
+      lb-appname: sfb-dir-autodiscover
+      lb-service-type: TCP
+      lb-virtual-ip: $parameters.dir-vip
+      lb-virtual-port: $parameters.dir-ports-list.autodiscover-interpool
+      svc-server-ips: $parameters.dir-server-ips
+      svc-service-type: TCP
+      svc-server-port: $parameters.dir-ports-list.autodiscover-interpool
+      lb-advanced:
+        persistence: SOURCEIP
+  -
+    name: sip-mtls-lb-comp
+    type: stlb-custom::lb
+    properties:
+      lb-appname: sfb-dir-sip-mtls
+      lb-service-type: TCP
+      lb-virtual-ip: $parameters.dir-vip
+      lb-virtual-port: $parameters.dir-ports-list.sip-mtls
+      svc-server-ips: $parameters.dir-server-ips
+      svc-service-type: TCP
+      svc-server-port: $parameters.dir-ports-list.sip-mtls

@@ -1,0 +1,99 @@
+--- 
+name: tmsession-policy
+namespace: com.citrix.adc.stylebooks
+version: "1.0"
+description: This stylebook configures a TM Session Policy and its Action
+schema-version: "1.0"
+private: true
+import-stylebooks: 
+    - 
+        namespace: netscaler.nitro.config
+        version: "10.5"
+        prefix: ns
+parameters:
+    -
+        name: appname
+        type: string
+        label: "Application Domain"
+        description: "The Application Name"
+        required: true
+    -
+        name: rule
+        type: string
+        label: "NetScaler PI Rule for when to apply the Session Policy"
+        description: "The Application Rule"
+        default: ns_true
+    -
+        name: session-info
+        type: object
+        label: "Authentication Session Settings"
+        description: "Parameters for configuring Authentication session settings (e.g. SSO)"
+        required: true    
+        parameters:
+            -
+                name: auth-domain
+                type: string
+                label: "Authentication Domain"
+                description: "The DNS domain associated with the Auth"
+                required: true
+            - 
+                name: enable-sso
+                type: boolean
+                label: "Enable SSO"
+                description: "Set this to true (or check the box) to enable SSO in this session"
+                default: false
+            - 
+                name: delegate-username
+                type: string
+                label: "Kerberos Delegate Username"
+                description: "The User Account Username used for Kerberos Constrained Delegation to impersonate users and enable SSO"
+            - 
+                name: delegate-password
+                type: string
+                label: "Kerberos Delegate Password"
+                description: "The User Account Password used for Kerberos Constrained Delegation to to impersonate users and enable SSO"
+            -
+                name: enable-persistent-cookie
+                type: boolean
+                label: "Enable Session Persistent Cookie"
+                description: Enable or disable persistent SSO cookies for the traffic
+                default: false
+            -
+                name: persistent-cookie-timeout
+                type: number
+                label: "Persistent Cookie Timeout (minutes)"
+                description: Specify the number of minutes for which the persistent cookie remains valid.
+substitutions:
+    bool-to-onoff: 
+        true: "ON"
+        false: "OFF"
+components:
+    -
+        name: kcd-account-comp
+        type: ns::aaakcdaccount
+        properties:
+            kcdaccount: truncate("%{$parameters.appname}%-kcd-account", 31)
+            realmstr: upper($parameters.session-info.auth-domain)
+            delegateduser?: $parameters.session-info.delegate-username
+            kcdpassword?: $parameters.session-info.delegate-password
+    -
+        name: tmsession-action-comp
+        type: ns::tmsessionaction
+        properties:
+            name: "%{$parameters.appname}%-tmsession-action"
+            sso: $substitutions.bool-to-onoff[$parameters.session-info.enable-sso]
+            kcdaccount: $components.kcd-account-comp.properties.kcdaccount
+            persistentcookie?: $substitutions.bool-to-onoff[$parameters.session-info.enable-persistent-cookie]
+            persistentcookievalidity?: $parameters.session-info.persistent-cookie-timeout
+    -
+        name: tmsession-policy-comp
+        type: ns::tmsessionpolicy
+        properties:
+            name: "%{$parameters.appname}%-tmsession-policy"
+            rule: $parameters.rule
+            action: $components.tmsession-action-comp.properties.name
+outputs:
+    -
+        name: tmsession-policy
+        value: $components.tmsession-policy-comp
+        description: The Component representing the TM Session Policy

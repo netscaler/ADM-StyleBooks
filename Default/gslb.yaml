@@ -1,0 +1,195 @@
+name: gslb
+namespace: com.citrix.adc.stylebooks
+version: "1.0"
+display-name: GSLB StyleBook
+description: |
+    This StyleBook is used to configure one or a number of NetScalers in different sites into a 
+    GSLB setup. It is assumed that the SNIP IP on each NetScaler to be used by this StyleBook 
+    as the Site IP is already configured on the appliance.
+schema-version: "1.0"
+import-stylebooks: 
+  - 
+    namespace: netscaler.nitro.config
+    version: "10.5"
+    prefix: ns
+  - 
+    namespace: com.citrix.adc.commontypes
+    version: "1.0"
+    prefix: cmtypes
+parameters:
+    -
+        name: name
+        label: Application Name
+        type: string
+        required: true
+        key: true
+    -
+        name: domain-name
+        label: DNS Domain Name
+        description: GSLB DNS Domain Name
+        type: string
+        required: true
+    -
+        name: ttl
+        label: TTL for the Domain
+        description: Time-To-Live value (number of seconds) for the Domain
+        type: number
+        default: 30
+    -
+        name: algorithm
+        label: LB Algorithm
+        description: Global Load Balancing Algorithm
+        type: string
+        default: ROUNDROBIN
+        allowed-values: 
+          - ROUNDROBIN
+          - STATICPROXIMITY
+          - SOURCEIPHASH 
+    -
+        name: protocol
+        label: Protocol
+        description: The protocol of the GSLB VIP 
+        type: string
+        default: HTTP
+        allowed-values:
+            - HTTP
+            - FTP
+            - TCP
+            - UDP
+            - SSL
+            - SSL_BRIDGE
+            - SSL_TCP
+            - NNTP
+            - ANY
+            - SIP_UDP
+            - SIP_TCP
+            - SIP_SSL
+            - RADIUS
+            - RDP
+            - RTSP
+            - MYSQL
+            - MSSQL
+            - ORACLE
+    - 
+        name: monitor
+        label: LB Monitor
+        description: Monitor to be bound to the GSLB service
+        type: cmtypes::monitor
+    -
+        name: sites
+        label: GSLB Sites
+        description: Provide information about the GSLB Sites 
+        type: object[]
+        required: true
+        parameters:
+            -
+                name: name
+                label: Site Name
+                type: string
+                required: true
+            -
+                name: ipaddress
+                label: Site IP Address
+                description: The IP Address of this Site. Use a SNIP IP address on the site's appliance.
+                type: ipaddress
+                required: true
+            -
+                name: public-ipaddress
+                label: Site Public IP Address
+                description: The Public IP Address of this Site. It NATs to the Site's IP address
+                type: ipaddress
+            -
+                name: virtual-ip
+                label: Site VIP IP
+                description: The IP Address for the GSLB Service on this site (The VIP on this Site)
+                type: ipaddress
+                required: true
+            -
+                name: virtual-port
+                label: Site VIP Port
+                description: The port number for the GSLB Service (VIP) on this site 
+                type: tcp-port
+                default: 80
+components:
+    -
+        name: enable-gslb-comp
+        type: ns::nsfeature
+        description: Enables the GSLB feature
+        meta-properties:
+            action: enable
+        properties:
+            feature: ["GSLB", "LB"]
+    -
+        name: gslb-monitor-comp
+        type: cmtypes::monitor
+        condition: $parameters.monitor
+        properties:
+            monitorname: $parameters.name + "-" + $parameters.monitor.monitorname + "-gslbmon"
+            type: $parameters.monitor.type
+            destip?: $parameters.monitor.destip
+            destport?: $parameters.monitor.destport
+            httprequest?: $parameters.monitor.httprequest
+            send?: $parameters.monitor.send
+            customheaders?: $parameters.monitor.customheaders
+            respcodes?: $parameters.monitor.respcodes
+            recv?: $parameters.monitor.recv
+            lrtm?: $parameters.monitor.lrtm
+            secure?: $parameters.monitor.secure
+            interval?: $parameters.monitor.interval
+            interval_units?: $parameters.monitor.interval_units
+            resptimeout?: $parameters.monitor.resptimeout
+            retries?: $parameters.monitor.retries
+            downtime?: $parameters.monitor.downtime
+    -
+        name: gslb-vserver-comp
+        type: ns::gslbvserver
+        description: Creates a GSLB VServer config object
+        properties:
+            name: $parameters.name + "-gslbvserver"
+            servicetype: $parameters.protocol
+            lbmethod: $parameters.algorithm
+        components:
+          -
+            name: gslb-domain-comp
+            type: ns::gslbvserver_domain_binding
+            properties:
+              name: $parent.properties.name
+              domainname: $parameters.domain-name
+              ttl: $parameters.ttl
+    -
+        name: gslb-site-comp
+        type: ns::gslbsite
+        description: Creates a GSLB Site config object
+        repeat: $parameters.sites
+        repeat-item: site
+        properties:
+            sitename: $parameters.name + "-" + $site.name + "-gslbsite"
+            siteipaddress: $site.ipaddress
+            publicip?: $site.public-ipaddress
+        components:
+            -
+                name: gslb-service-comp
+                type: ns::gslbservice
+                description: Creates a GSLB Service
+                properties:
+                    servicename: $parameters.name + "-" + $site.name + "-gslbservice"
+                    ip: $site.virtual-ip
+                    servicetype: $parameters.protocol
+                    port: $site.virtual-port
+                    sitename: $parent.properties.sitename
+                components:
+                    -
+                        name: gslb-vserver-service-binding-comp
+                        type: ns::gslbvserver_gslbservice_binding
+                        description: Creates a Binding between the GSLB vserver and the GSLB Service
+                        properties:
+                            name: $components.gslb-vserver-comp.properties.name
+                            servicename: $parent.properties.servicename
+                    - 
+                        name: gslb-service-monitor-binding-comp
+                        type: ns::gslbservice_lbmonitor_binding
+                        description: Creates a Binding between the GSLB service and the GSLB monitor
+                        condition: $parameters.monitor
+                        properties:
+                          servicename: $parent.properties.servicename
+                          monitor_name: $components.gslb-monitor-comp.properties.monitorname

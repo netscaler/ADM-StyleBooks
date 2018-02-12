@@ -1,0 +1,99 @@
+--- 
+name: sharepoint-feature-config-params
+namespace: com.citrix.adc.enterprise.stylebooks
+version: "1.1"
+display-name: Sharepoint Feature Configuration Parameters
+description: This stylebook creates Sharepoint Cache Config
+private: true
+schema-version: "1.0"
+parameters:
+  -
+    name: sharepoint-appname
+    type: string
+    label: Name of the Application
+    required: true
+  -
+    name: sharepoint-vip-protocol
+    label: Sharepoint frontend Protocol
+    description: Sharepoint frontend protocol (HTTP or SSL)
+    type: string
+    allowed-values:
+      - HTTP
+      - SSL
+    required: true
+  -
+    name: sharepoint-servers-ips
+    label: Sharepoint Server IPs
+    description: List of Microsoft SharePoint Server IPs
+    type: ipaddress[]
+    required: true
+  -
+    name: sharepoint-csvserver-name
+    type: string
+    description: The Name of the Sharepoint CS Vserver
+  -
+    name: sharepoint-lbvservers
+    type: object
+    label: Sharepoint lbvservers that have caching policies
+    required: true
+    parameters:
+      -
+        name: default-lbvserver-name
+        type: string
+        description: The default Sharepoint lbvserver name
+        required: true
+      -
+        name: frontpage-lbvserver-name
+        type: string
+        description: The Sharepoint frontpage lbvserver name
+        required: true
+      -
+        name: docs-lbvserver-name
+        type: string
+        description: The Sharepoint docs lbvserver name
+        required: true
+      -
+        name: editable-images-lbvserver-name
+        type: string
+        description: The Sharepoint editable images lbvserver name
+        required: true
+      -
+        name: readonly-images-lbvserver-name
+        type: string
+        description: The Sharepoint readonly images lbvserver name
+        required: true
+      -
+        name: videos-lbvserver-name
+        type: string
+        description: The Sharepoint videos lbvserver name
+        required: true
+      -
+        name: audio-lbvserver-name
+        type: string
+        description: The Sharepoint audio lbvserver name
+        required: true
+      -
+        name: styles-scripts-lbvserver-name
+        type: string
+        description: The Sharepoint Styles & Scripts lbvserver name
+        required: true
+      -
+        name: soap-services-lbvserver-name
+        type: string
+        description: Sharepoint SOAP Services lbvserver name
+        required: true
+      -
+        name: portal-management-lbvserver-name
+        type: string
+        description: Sharepoint Portal Management lbvserver name
+        required: true
+      -
+        name: webservices-definitions-lbvserver-name
+        type: string
+        description: Sharepoint WebServices Definitions lbvserver name
+        required: true
+      -
+        name: webservices-schemas-lbvserver-name
+        type: string
+        description: Sharepoint WebServices Schemas lbvserver name
+        required: true

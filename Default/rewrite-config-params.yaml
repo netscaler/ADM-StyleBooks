@@ -1,0 +1,60 @@
+name: rewrite-config-params
+namespace: com.citrix.adc.commontypes
+version: "1.0"
+display-name: Rewrite Configuration
+private: true
+schema-version: "1.0"
+import-stylebooks: 
+  - 
+    namespace: com.citrix.adc.commontypes
+    version: "1.0"
+    prefix: cmtypes
+parameters:
+    -
+        name: rewrite-config
+        label: Rewrite Configs Section
+        type: object
+        gui: 
+            collapse_pane: true  
+        parameters:
+            -
+                name: replace-path
+                type: cmtypes::replace-path-params
+                label: URL Path to replace
+                description: Use this to replace the URL Path component in an HTTP request
+                gui: 
+                    collapse_pane: true  
+            -
+                name: new-headers
+                type: cmtypes::insert-header-params[]
+                label: Headers to Insert
+                description: The list of headers to insert in requests to response
+                default: []
+                gui: 
+                    collapse_pane: true  
+            -
+                name: remove-headers
+                type: cmtypes::remove-header-params[]
+                label: Headers to remove
+                description: The list of headers to insert in requests to response
+                default: []
+                gui: 
+                    collapse_pane: true  
+            -
+                name: replace-headers
+                type: cmtypes::replace-header-params[]
+                label: Headers to replace
+                description: The list of headers to replace in requests to response
+                default: []
+                gui: 
+                    collapse_pane: true  
+            -
+                name: replace-content
+                type: cmtypes::replace-content-params[]
+                label: Text strings to replace in Response
+                description: This section allows you to replace a text string in the response with another string
+                default: []
+                gui: 
+                    collapse_pane: true  
+
+

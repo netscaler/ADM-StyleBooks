@@ -1,0 +1,86 @@
+name: responder-config
+namespace: com.citrix.adc.stylebooks
+version: "1.0"
+display-name: Responder Config StyleBook
+private: true
+description: This StyleBook contains the different responder configuration that can be applied to traffic by NetScaler
+schema-version: "1.0"
+import-stylebooks: 
+  - 
+    namespace: netscaler.nitro.config
+    version: "10.5"
+    prefix: ns
+  - 
+    namespace: com.citrix.adc.stylebooks
+    version: "1.0"
+    prefix: stlb
+  - 
+    namespace: com.citrix.adc.commontypes
+    version: "1.0"
+    prefix: cmtypes
+parameters:
+  -
+    name: appname
+    label: SharePoint Application Name
+    description: The Name of this Sharepoint Application
+    type: string
+    required: true
+    key: true
+parameters-default-sources:
+    - cmtypes::responder-config-params
+components:
+    # -
+    #   name: responder-enable-feature-comp
+    #   type: ns::nsfeature
+    #   description: Enables the RESPONDER feature on NetScaler
+    #   meta-properties:
+    #       action: enable
+    #   properties:
+    #       feature: ["responder"]
+    - 
+      name: responder-policy-label-comp
+      type: ns::responderpolicylabel
+      description: The responder policy label to which all responder policies are bound
+      properties: 
+        labelname: $parameters.appname + "-responderpolicylabel"
+    -
+        name: redirect-comp
+        type: stlb::redirect-url
+        condition: $parameters.responder-config.redirect-url
+        properties:
+            appname: $parameters.appname
+            redirect-url: $parameters.responder-config.redirect-url
+        components:
+          -
+            name: responderpolicy-responderpolicylabel-binding-comp
+            type: ns::responderpolicylabel_responderpolicy_binding
+            description: Binds the responder policy  to the responder policy label
+            properties:
+              labelname: $components.responder-policy-label-comp.properties.labelname
+              policyname: $parent.outputs.redirect-url-policy.properties.name
+              gotopriorityexpression: END
+              priority: 10
+    -
+        name: redirect-to-https-comp
+        type: stlb::redirect-to-https
+        condition: $parameters.responder-config.redirect-to-https
+        properties:
+            appname: $parameters.appname
+            redirect-to-https: $parameters.responder-config.redirect-to-https
+        components:
+          -
+            name: responderpolicy-responderpolicylabel-binding-comp
+            type: ns::responderpolicylabel_responderpolicy_binding
+            description: Binds the responder policy  to the responder policy label
+            properties:
+              labelname: $components.responder-policy-label-comp.properties.labelname
+              policyname: $parent.outputs.redirect-to-https-policy.properties.name
+              gotopriorityexpression: END
+              priority: 20
+outputs:
+  -
+    name: responder-policy-label
+    value: $components.responder-policy-label-comp.properties.labelname
+
+
+

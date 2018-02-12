@@ -1,0 +1,257 @@
+--- 
+name: microsoft-adfsproxy
+namespace: com.citrix.adc.enterprise.stylebooks
+version: "1.0"
+description: |
+    This stylebook configures NetScaler to act as an ADFS Proxy. For details on the NetScaler configuration created
+    by this StyleBook, please refer to the Citrix Deployment Guide titled
+    "Guide to Deploying NetScaler as an Active Directory Federation Services Proxy" available at 
+    https://www.citrix.com/content/dam/citrix/en_us/documents/products-solutions/guide-to-deploying-netscaler-as-an-active-directory-federation-services-proxy.pdf
+schema-version: "1.0"
+private: true
+import-stylebooks: 
+    - 
+        namespace: netscaler.nitro.config
+        version: "10.5"
+        prefix: ns
+    - 
+        namespace: com.citrix.adc.stylebooks
+        version: "1.0"
+        prefix: stlb
+    - 
+        namespace: com.citrix.adc.commontypes
+        version: "1.0"
+        prefix: cmtypes
+parameters:
+    -
+        name: adfs-appname
+        label: ADFSProxy Deployment Name
+        description: The name to be given to this deployment of ADFSProxy config
+        type: string
+        required: true
+    -
+        name: adfs-server-names
+        type: string[]
+        label: "ADFS Servers"
+        description: "The list of FQDNs (domain names) of ADFS Servers"
+        required: true 
+    -
+        name: adfs-vip
+        type: ipaddress
+        label: "ADFSProxy Public VIP IP"
+        description: "The Public VIP IP address on NetScaler that ADFSProxy users connect to"
+        required: true 
+    -
+        name: auth-domain
+        type: string
+        label: "ADFSProxy Authentication Domain"
+        description: "The DNS Domain Name in Active Directory for User Authentication"
+        required: true
+    -
+        name: auth-internal
+        type: object
+        label: "ADFSProxy Internal Users Authentication"
+        description: "Parameters for configuring Internal Users Authentication to ADFS (AD Negotiate + SSO to ADFS)"
+        required: true    
+        parameters:
+            -
+                name: auth-vip
+                type: ipaddress
+                label: "ADFSProxy Internal Authentication VIP"
+                description: "The VIP IP address on NetScaler for the Authentication VServer to which Internal Users are redirected"
+                required: true
+            -
+                name: service-account-username
+                type: string
+                label: "Service Account Username"
+                description: "Service Account username used by NetScaler to authenticate users to AD"
+                required: true
+            -
+                name: service-account-password
+                type: string
+                label: "Service Account Password"
+                description: "Service Account password used by NetScaler to authenticate users to AD"
+                required: true 
+            - 
+                name: delegate-username
+                type: string
+                label: "Kerberos Delegate Username"
+                description: "The User Account Username used for Kerberos Constrained Delegation to impersonate users and enable SSO"
+                required: true
+            - 
+                name: delegate-password
+                type: string
+                label: "Kerberos Delegate Password"
+                description: "The User Account Password used for Kerberos Constrained Delegation to to impersonate users and enable SSO"
+                required: true
+    -
+        name: auth-external
+        type: object
+        label: "ADFSProxy Active Directory Authentication for External Users"
+        description: "Parameters for configuring AD Auth for ADFSProxy"
+        required: true
+        parameters:
+            -
+                name: auth-vip
+                type: ipaddress
+                label: "ADFSProxy External Authentication VIP"
+                description: "The VIP IP address on NetScaler for authenticating external users to Active Directory"
+                required: true
+        parameters-default-sources:
+            - cmtypes::ldap-base-params
+    -
+        name: cert
+        type: cmtypes::certificate
+        label: "Certificate File path"
+        required: true
+    -
+        name: ca-cert
+        type: cmtypes::certificate
+        label: "CA Certificate File path"
+        description: "CA Certificate file"
+    -
+        name: dns-vip
+        type: ipaddress
+        label: "DNS VIP IP address"
+        description: "VIP IP address on NetScaler for frontending the DNS Servers"
+        required: true
+    -
+        name: dns-servers
+        type: ipaddress[]
+        label: "IP addresses of DNS Servers"
+        description: "The list of DNS Servers IP addresses"
+        required: true
+substitutions:
+  add-port(server-name): 
+    domain : $server-name
+    port: 443
+  request-url-expression: HTTP.REQ.URL
+  trust-path: /adfs/services/trust
+  metadata-path: /trust/proxymex
+  auth-integrated-path: /adfs/ls/auth/integrated
+  wia-path: /adfs/ls/wia
+  full-metadata-path: /adfs/services/trust/proxymex
+  metadata-xml-path: /federationmetadata/2007-06/federationmetadata.xml
+  url-contains(path): str("HTTP.REQ.URL.CONTAINS(%{quotewrap($path)}%)")
+  trust-url-rule: str("%{$substitutions.url-contains($substitutions.trust-path)}% && (!%{$substitutions.url-contains($substitutions.metadata-path)}%)")
+  federationproxy-rule: str("HTTP.REQ.URL.CONTAINS(%{quotewrap($substitutions.trust-path)}%) || HTTP.REQ.URL.CONTAINS(%{quotewrap($substitutions.metadata-xml-path)}%)")
+  windows-integrated-auth-rule: str("HTTP.REQ.URL.CONTAINS(%{quotewrap($substitutions.auth-integrated-path)}%) || HTTP.REQ.URL.CONTAINS(%{quotewrap($substitutions.wia-path)}%)")
+components:
+    -
+        name: enable-features-comp
+        type: ns::nsfeature
+        description: Enables the NetScaler features needed for ADFSProxy configuration
+        meta-properties:
+            action: enable
+        properties:
+            feature: ["cs", "lb", "ssl", "rewrite", "aaa"]
+    -
+        name: adfs-cs-comp
+        type: stlb::cs-lb-mon
+        properties:
+            appname: $parameters.adfs-appname
+            cs-virtual-ip: $parameters.adfs-vip
+            cs-virtual-port: 443
+            cs-service-type: SSL
+            certificates: [$parameters.cert, $parameters.ca-cert]
+            default-lb-pool:
+                lb-appname: $parameters.adfs-appname + "-adfs-internal"
+                lb-virtual-ip: $parameters.adfs-vip
+                lb-virtual-port: 444
+                lb-service-type: SSL
+                certificates: [$parameters.cert, $parameters.ca-cert]
+                lb-advanced:
+                    auth-params:
+                        authentication: "OFF"
+                        authentication-http-401: "ON"
+                        authentication-vserver-name: $components.adfs-auth-401-comp.outputs.auth-vserver.properties.name
+                svc-server-domains: map($substitutions.add-port, $parameters.adfs-server-names)
+                svc-service-type: SSL
+            pools: 
+                -
+                    rule: $substitutions.federationproxy-rule
+                    lb-pool:
+                        lb-appname: $parameters.adfs-appname + "-adfs-federationproxy"
+                        lb-virtual-ip: $parameters.adfs-vip
+                        lb-virtual-port: 445
+                        lb-service-type: SSL
+                        certificates: [$parameters.cert, $parameters.ca-cert]
+                        svc-server-domains: map($substitutions.add-port, $parameters.adfs-server-names)
+                        svc-service-type: SSL
+                    priority: 1
+                -
+                    rule: $substitutions.windows-integrated-auth-rule
+                    lb-pool:
+                        lb-appname: $parameters.adfs-appname + "-adfs-external"
+                        lb-virtual-ip: $parameters.adfs-vip
+                        lb-virtual-port: 446
+                        lb-service-type: SSL
+                        certificates: [$parameters.cert, $parameters.ca-cert]
+                        lb-advanced:
+                            auth-params:
+                                authentication: "ON"
+                                authentication-http-401: "OFF"
+                                authentication-host: $parameters.auth-domain
+                                authentication-vserver-name: $components.adfs-auth-ldap-comp.outputs.auth-vserver.properties.name
+                        svc-server-domains: map($substitutions.add-port, $parameters.adfs-server-names)
+                        svc-service-type: SSL
+                    priority: 2
+    -
+        name: adfs-dns-comp
+        type: stlb::adfs-dns
+        description: This component configures DNS VIP and Servers for ADFS
+        properties:
+            dns-name: $parameters.adfs-appname
+            dns-vip: $parameters.dns-vip
+            dns-servers: $parameters.dns-servers
+    -
+        name: adfs-auth-401-comp
+        type: stlb::adfs-auth-401
+        description: This component creates an Auth 401 VServer and binds certs, ADFS negotiate and session policies to it
+        properties:
+            adfs-appname: $parameters.adfs-appname
+            auth-domain: $parameters.auth-domain
+            auth-info: $parameters.auth-internal
+            cert: $parameters.cert
+            ca-cert: $parameters.ca-cert
+    -
+        name: adfs-auth-ldap-comp
+        type: stlb::adfs-auth-ldap
+        description: This component creates an Auth LDAP VServer and binds certs, ADFS ldap and session policies to it
+        properties:
+            adfs-appname: $parameters.adfs-appname
+            auth-domain: $parameters.auth-domain
+            auth-info: 
+                auth-vip: $parameters.auth-external.auth-vip
+                server-ip: $parameters.auth-external.server-ip
+                ldap-base: $parameters.auth-external.ldap-base
+                bind-dn: $parameters.auth-external.bind-dn
+                bind-dn-password: $parameters.auth-external.bind-dn-password
+                default-group?: $parameters.auth-external.default-group
+            cert: $parameters.cert
+            ca-cert: $parameters.ca-cert
+    -
+        name: adfs-federationproxy-rewrite-config-comp
+        type: stlb::rewrite-config
+        description: This component creates the rewrite policies required for the ADFS federation proxy
+        properties:
+            appname: $parameters.adfs-appname
+            rewrite-config:
+                replace-headers:
+                    -
+                        name: $substitutions.request-url-expression
+                        pattern: $substitutions.trust-url-rule
+                        value: $substitutions.full-metadata-path
+        components:
+            -
+                name: adfs-federationproxy-lbvserver-rewrite-bindings-comp
+                type: stlb::vserver-rewritepolicies-bindings
+                description: This component binds the lbvserver to the rewrite policy label created by the parent component.
+                properties:
+                  vserver-name: $components.adfs-cs-comp.outputs.non-default-lbvservers[0].properties.name
+                  vserver-type: LBVSERVER
+                  policies:
+                    -
+                      name: $parent.outputs.rewrite-request-policy-label
+                      type: POLICYLABEL
+                      bind-point: REQUEST

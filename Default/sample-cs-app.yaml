@@ -1,0 +1,167 @@
+name: sample-cs-app
+namespace: com.acme-corp.stylebooks
+version: "1.0"
+display-name: "Sample Application StyleBook using CS, LB and SSL features"
+description: |
+  This StyleBook is an example that shows using the base cs-lb-mon StyleBook to create
+  a content-switching app with SSL Offload and a monitor suited to this app. 
+  This StyleBook also assumes that the app listens on port 443 for SSL or 
+  port 80 for HTTP. App servers listen on port 80.
+schema-version: "1.0"
+import-stylebooks: 
+  - 
+    namespace: netscaler.nitro.config
+    version: "10.5"
+    prefix: ns
+  - 
+    namespace: com.citrix.adc.stylebooks
+    version: "1.0"
+    prefix: stlb
+  -
+    namespace: com.citrix.adc.commontypes
+    version: "1.0"
+    prefix: cmtypes
+parameters:
+  - 
+    name: appname
+    label: "Application Name"
+    description: "The name of the application"
+    type: string
+    required: true
+    key: true
+  - 
+    name: vip
+    label: "Application Virtual IP address"
+    description: "The VIP IP that front-ends this app"
+    type: ipaddress
+    required: true
+    key: true
+  -
+    name: protocol
+    label: "Application Protocol"
+    description: "Application Protocol used by Clients to connect to the VIP"
+    type: string
+    allowed-values:
+      - HTTP
+      - SSL
+    default: HTTP
+    key: true
+  -
+    name: certificate
+    label: "VIP Certificate File"
+    description: "The file path of the server certificate used on this VIP"
+    type: certfile
+  -
+    name: key
+    label: "VIP Certificate Key File"
+    description: "The file path of the server certificate's private key used on this VIP"
+    type: keyfile
+  -
+    name: ca-certificate
+    label: "VIP CA Certificate File"
+    description: "The file path of the CA certificate used to sign the server certificate"
+    type: certfile
+  - 
+    name: server-pools
+    label: "Server Pools"
+    description: |
+        Server Pools with rules that direct client requests to the right pool of servers.
+    type: object[]
+    parameters:
+      -
+        name: pool-name
+        label: "Pool name"
+        description: "Name of the pool of servers"
+        type: string
+        required: true
+      -
+        name: rule
+        label: "Rule Expression"
+        description: "NetScaler PI rule expression. Client requests that match this expression are served by this pool"
+        type: string
+        required: true
+      -
+        name: servers
+        label: "Server IPs and Ports"
+        description: "IP addresses of servers that are part of this pool"
+        type: cmtypes::server-ip-port-params[]
+        required: true
+  -
+    name: monitor-interval
+    label: "Monitor Interval"
+    description: "The interval (in seconds) between successive probes to monitor the health of app servers"
+    type: number
+    default: 20
+substitutions:
+  cs-port[]:
+    true: int("80")
+    false: int("443")
+components:
+  -
+    name: cs-pools
+    type: stlb::cs-lb-mon
+    description: |
+      Updates the cs-lb-mon configuration with the different pools provided.
+      Each pool with rule result in a dummy LB vserver, cs action, cs policy, 
+      and csvserver_cspolicy_binding configuration. 
+    condition: $parameters.server-pools
+    repeat: $parameters.server-pools
+    repeat-item: pool
+    repeat-condition: $pool.rule
+    repeat-index: ndx
+    properties:
+      appname: $parameters.appname + "-cs"
+      cs-virtual-ip: $parameters.vip
+      cs-virtual-port: $substitutions.cs-port($parameters.protocol == "HTTP")
+      cs-service-type: $parameters.protocol
+      pools:
+        -
+          lb-pool:
+            lb-appname: $pool.pool-name
+            lb-service-type: HTTP
+            lb-virtual-ip: 0.0.0.0
+            lb-virtual-port: 0
+            svc-service-type: HTTP
+            svc-servers: $pool.servers
+            monitors:
+              -
+                monitorname: $pool.pool-name
+                type: PING
+                interval: $parameters.monitor-interval
+                interval_units: SEC
+                retries: 3
+          rule: $pool.rule
+          priority: $ndx + 1
+  -
+    name: cs-server-certificate
+    type: stlb::vserver-certs-binds
+    description: |
+      Binds csvserver with server certificate
+    condition: ($parameters.protocol == "SSL") and $parameters.server-pools and $parameters.certificate and $parameters.key
+    properties:
+      vserver-name: $components.cs-pools.outputs.csvserver.properties.name
+      certificates:
+        -
+          cert-name: $parameters.appname + "-cs-cert"
+          cert-file: $parameters.certificate
+          ssl-inform: PEM
+          key-name: cs-key
+          key-file: $parameters.key
+  -
+    name: cs-ca-certificate
+    type: stlb::vserver-certs-binds
+    description: |
+      Binds csvserver with CA certificate
+    condition: ($parameters.protocol == "SSL") and $parameters.server-pools and $parameters.ca-certificate
+    properties:
+      vserver-name: $components.cs-pools.outputs.csvserver.properties.name
+      certificates:
+        -
+          cert-name: $parameters.appname + "-cs-ca-cert"
+          cert-file: $parameters.ca-certificate
+          ssl-inform: PEM
+          cert-advanced:
+            is-ca-cert: true
+            skip-ca-name: false
+            expiry-monitor: ENABLED
+            notification-period: 20

@@ -1,0 +1,316 @@
+name: compression-config
+namespace: com.citrix.adc.stylebooks
+version: "1.0"
+display-name: Compression Config StyleBook
+description: |    
+    This StyleBook contains the different Compression configuration that can be applied to traffic by NetScaler
+private: true
+schema-version: "1.0"
+import-stylebooks: 
+  - 
+    namespace: netscaler.nitro.config
+    version: "10.5"
+    prefix: ns
+  - 
+    namespace: com.citrix.adc.stylebooks
+    version: "1.0"
+    prefix: stlb
+  - 
+    namespace: com.citrix.adc.commontypes
+    version: "1.0"
+    prefix: cmtypes
+parameters:
+    -
+        name: appname
+        type: string
+        required: true
+parameters-default-sources:
+    - cmtypes::compression-config-params
+components:
+  # -
+  #   name: cmp-enable-feature-comp
+  #   type: ns::nsfeature
+  #   description: Enables the CMP feature (Compression) on NetScaler
+  #   meta-properties:
+  #       action: enable
+  #   properties:
+  #       feature: ["cmp"]
+  -
+    name: cmp-policies-comp
+    type: stlb::cmp-policies-config
+    description: This component creates all the compression policies that are needed
+    properties:
+        name: $parameters.appname
+        compression-config: $parameters.compression-config
+  - 
+    name: cmp-request-policy-label-comp
+    type: ns::cmppolicylabel
+    description: The cmp request policy label to which all cmp policies (for requests) are bound
+    properties: 
+      labelname: $parameters.appname + "-request-cmppolicylabel"
+      type: REQ
+    components:
+      -
+        name: file-suffixes-cmppolicy-request-cmppolicylabel-binding-comp
+        type: ns::cmppolicylabel_cmppolicy_binding
+        condition: $components.cmp-policies-comp.outputs.file-suffixes-cmp-policyname
+        description: Binds the request policy created in the parent component to the cmp request policy label
+        properties:
+            labelname: $parent.properties.labelname
+            policyname: $components.cmp-policies-comp.outputs.file-suffixes-cmp-policyname
+            gotopriorityexpression: END
+            priority: 10
+      -
+        name: resource-names-cmppolicy-request-cmppolicylabel-binding-comp
+        type: ns::cmppolicylabel_cmppolicy_binding
+        condition: $components.cmp-policies-comp.outputs.resource-names-cmp-policyname
+        description: Binds the request policy created in the parent component to the cmp request policy label
+        properties:
+            labelname: $parent.properties.labelname
+            policyname: $components.cmp-policies-comp.outputs.resource-names-cmp-policyname
+            gotopriorityexpression: END
+            priority: 20
+      -
+        name: all-but-file-suffixes-cmppolicy-request-cmppolicylabel-binding-comp
+        type: ns::cmppolicylabel_cmppolicy_binding
+        condition: $components.cmp-policies-comp.outputs.all-but-file-suffixes-cmp-policyname
+        description: Binds the request policy created in the parent component to the cmp request policy label
+        properties:
+            labelname: $parent.properties.labelname
+            policyname: $components.cmp-policies-comp.outputs.all-but-file-suffixes-cmp-policyname
+            gotopriorityexpression: END
+            priority: 30
+      -
+        name: all-but-resource-names-cmppolicy-request-cmppolicylabel-binding-comp
+        type: ns::cmppolicylabel_cmppolicy_binding
+        condition: $components.cmp-policies-comp.outputs.all-but-resource-names-cmp-policyname
+        description: Binds the request policy created in the parent component to the cmp request policy label
+        properties:
+            labelname: $parent.properties.labelname
+            policyname: $components.cmp-policies-comp.outputs.all-but-resource-names-cmp-policyname
+            gotopriorityexpression: END
+            priority: 40
+      -
+        name: file-suffixes-nocmppolicy-request-cmppolicylabel-binding-comp
+        type: ns::cmppolicylabel_cmppolicy_binding
+        condition: $components.cmp-policies-comp.outputs.file-suffixes-nocmp-policyname
+        description: Binds the request policy created in the parent component to the cmp request policy label
+        properties:
+            labelname: $parent.properties.labelname
+            policyname: $components.cmp-policies-comp.outputs.file-suffixes-nocmp-policyname
+            gotopriorityexpression: END
+            priority: 50
+      -
+        name: resource-names-nocmppolicy-request-cmppolicylabel-binding-comp
+        type: ns::cmppolicylabel_cmppolicy_binding
+        condition: $components.cmp-policies-comp.outputs.resource-names-nocmp-policyname
+        description: Binds the request policy created in the parent component to the cmp request policy label
+        properties:
+            labelname: $parent.properties.labelname
+            policyname: $components.cmp-policies-comp.outputs.resource-names-nocmp-policyname
+            gotopriorityexpression: END
+            priority: 60
+      -
+        name: all-but-file-suffixes-nocmppolicy-request-cmppolicylabel-binding-comp
+        type: ns::cmppolicylabel_cmppolicy_binding
+        condition: $components.cmp-policies-comp.outputs.all-but-file-suffixes-nocmp-policyname
+        description: Binds the request policy created in the parent component to the cmp request policy label
+        properties:
+            labelname: $parent.properties.labelname
+            policyname: $components.cmp-policies-comp.outputs.all-but-file-suffixes-nocmp-policyname
+            gotopriorityexpression: END
+            priority: 70
+      -
+        name: all-but-resource-names-nocmppolicy-request-cmppolicylabel-binding-comp
+        type: ns::cmppolicylabel_cmppolicy_binding
+        condition: $components.cmp-policies-comp.outputs.all-but-resource-names-nocmp-policyname
+        description: Binds the request policy created in the parent component to the cmp request policy label
+        properties:
+            labelname: $parent.properties.labelname
+            policyname: $components.cmp-policies-comp.outputs.all-but-resource-names-nocmp-policyname
+            gotopriorityexpression: END
+            priority: 80
+  - 
+    name: cmp-response-policy-label-comp
+    type: ns::cmppolicylabel
+    description: The cmp response policy label to which all cmp policies (for responses) are bound
+    properties: 
+      labelname: $parameters.appname + "-response-cmppolicylabel"
+      type: RES
+    components:
+      -
+        name: file-suffixes-cmppolicy-response-cmppolicylabel-binding-comp
+        type: ns::cmppolicylabel_cmppolicy_binding
+        condition: $components.cmp-policies-comp.outputs.file-suffixes-cmp-policyname
+        description: Binds the same policy created in the parent component to the cmp response policy label
+        properties:
+            labelname: $parent.properties.labelname
+            policyname: $components.cmp-policies-comp.outputs.file-suffixes-cmp-policyname
+            gotopriorityexpression: END
+            priority: 10
+      -
+        name: mime-types-cmppolicy-response-cmppolicylabel-binding-comp
+        type: ns::cmppolicylabel_cmppolicy_binding
+        condition: $components.cmp-policies-comp.outputs.mime-types-cmp-policyname
+        description: Binds the policy created in the parent component to the cmp response policy label
+        properties:
+            labelname: $parent.properties.labelname
+            policyname: $components.cmp-policies-comp.outputs.mime-types-cmp-policyname
+            gotopriorityexpression: END
+            priority: 20
+      -
+        name: resource-names-cmppolicy-response-cmppolicylabel-binding-comp
+        type: ns::cmppolicylabel_cmppolicy_binding
+        condition: $components.cmp-policies-comp.outputs.resource-names-cmp-policyname
+        description: Binds the policy created in the parent component to the cmp response policy label
+        properties:
+            labelname: $parent.properties.labelname
+            policyname: $components.cmp-policies-comp.outputs.resource-names-cmp-policyname
+            gotopriorityexpression: END
+            priority: 30
+      -
+        name: all-but-file-suffixes-cmppolicy-response-cmppolicylabel-binding-comp
+        type: ns::cmppolicylabel_cmppolicy_binding
+        condition: $components.cmp-policies-comp.outputs.all-but-file-suffixes-cmp-policyname
+        description: Binds the same policy created in the parent component to the cmp response policy label
+        properties:
+            labelname: $parent.properties.labelname
+            policyname: $components.cmp-policies-comp.outputs.all-but-file-suffixes-cmp-policyname
+            gotopriorityexpression: END
+            priority: 40
+      -
+        name: all-but-mime-types-cmppolicy-response-cmppolicylabel-binding-comp
+        type: ns::cmppolicylabel_cmppolicy_binding
+        condition: $components.cmp-policies-comp.outputs.all-but-mime-types-cmp-policyname
+        description: Binds the same policy created in the parent component to the cmp response policy label
+        properties:
+            labelname: $parent.properties.labelname
+            policyname: $components.cmp-policies-comp.outputs.all-but-mime-types-cmp-policyname
+            gotopriorityexpression: END
+            priority: 50
+      -
+        name: all-but-resource-names-cmppolicy-response-cmppolicylabel-binding-comp
+        type: ns::cmppolicylabel_cmppolicy_binding
+        condition: $components.cmp-policies-comp.outputs.all-but-resource-names-cmp-policyname
+        description: Binds the same policy created in the parent component to the cmp response policy label
+        properties:
+            labelname: $parent.properties.labelname
+            policyname: $components.cmp-policies-comp.outputs.all-but-resource-names-cmp-policyname
+            gotopriorityexpression: END
+            priority: 60
+      -
+        name: file-suffixes-nocmppolicy-response-cmppolicylabel-binding-comp
+        type: ns::cmppolicylabel_cmppolicy_binding
+        condition: $components.cmp-policies-comp.outputs.file-suffixes-nocmp-policyname
+        description: Binds the same policy created in the parent component to the cmp response policy label
+        properties:
+            labelname: $parent.properties.labelname
+            policyname: $components.cmp-policies-comp.outputs.file-suffixes-nocmp-policyname
+            gotopriorityexpression: END
+            priority: 70
+      -
+        name: mime-types-nocmppolicy-response-cmppolicylabel-binding-comp
+        type: ns::cmppolicylabel_cmppolicy_binding
+        condition: $components.cmp-policies-comp.outputs.mime-types-nocmp-policyname
+        description: Binds the same policy created in the parent component to the cmp response policy label
+        properties:
+            labelname: $parent.properties.labelname
+            policyname: $components.cmp-policies-comp.outputs.mime-types-nocmp-policyname
+            gotopriorityexpression: END
+            priority: 80
+      -
+        name: resource-names-nocmppolicy-response-cmppolicylabel-binding-comp
+        type: ns::cmppolicylabel_cmppolicy_binding
+        condition: $components.cmp-policies-comp.outputs.resource-names-nocmp-policyname
+        description: Binds the same policy created in the parent component to the cmp response policy label
+        properties:
+            labelname: $parent.properties.labelname
+            policyname: $components.cmp-policies-comp.outputs.resource-names-nocmp-policyname
+            gotopriorityexpression: END
+            priority: 90
+      -
+        name: all-but-file-suffixes-nocmppolicy-response-cmppolicylabel-binding-comp
+        type: ns::cmppolicylabel_cmppolicy_binding
+        condition: $components.cmp-policies-comp.outputs.all-but-file-suffixes-nocmp-policyname
+        description: Binds the same policy created in the parent component to the cmp response policy label
+        properties:
+            labelname: $parent.properties.labelname
+            policyname: $components.cmp-policies-comp.outputs.all-but-file-suffixes-nocmp-policyname
+            gotopriorityexpression: END
+            priority: 100
+      -
+        name: all-but-mime-types-nocmppolicy-response-cmppolicylabel-binding-comp
+        type: ns::cmppolicylabel_cmppolicy_binding
+        condition: $components.cmp-policies-comp.outputs.all-but-mime-types-nocmp-policyname
+        description: Binds the same policy created in the parent component to the cmp response policy label
+        properties:
+            labelname: $parent.properties.labelname
+            policyname: $components.cmp-policies-comp.outputs.all-but-mime-types-nocmp-policyname
+            gotopriorityexpression: END
+            priority: 110
+      -
+        name: all-but-resource-names-nocmppolicy-response-cmppolicylabel-binding-comp
+        type: ns::cmppolicylabel_cmppolicy_binding
+        condition: $components.cmp-policies-comp.outputs.all-but-resource-names-nocmp-policyname
+        description: Binds the same policy created in the parent component to the cmp response policy label
+        properties:
+            labelname: $parent.properties.labelname
+            policyname: $components.cmp-policies-comp.outputs.all-but-resource-names-nocmp-policyname
+            gotopriorityexpression: END
+            priority: 120
+
+outputs:
+    -
+        name: cmp-request-policy-label
+        value: $components.cmp-request-policy-label-comp.properties.labelname
+    -
+        name: cmp-response-policy-label
+        value: $components.cmp-response-policy-label-comp.properties.labelname
+    - 
+        name: file-suffixes-cmp-policyname
+        condition: $parameters.compression-config.cmp-file-suffixes
+        value: $components.cmp-policies-comp.outputs.file-suffixes-cmp-policyname
+    - 
+        name: all-but-file-suffixes-cmp-policyname
+        condition: $parameters.compression-config.cmp-all-but-file-suffixes
+        value: $components.cmp-policies-comp.outputs.all-but-file-suffixes-cmp-policyname
+    - 
+        name: file-suffixes-nocmp-policyname
+        condition: $parameters.compression-config.nocmp-file-suffixes
+        value: $components.cmp-policies-comp.outputs.file-suffixes-nocmp-policyname
+    - 
+        name: all-but-file-suffixes-nocmp-policyname
+        condition: $parameters.compression-config.nocmp-all-but-file-suffixes
+        value: $components.cmp-policies-comp.outputs.all-but-file-suffixes-nocmp-policyname
+    - 
+        name: mime-types-cmp-policyname
+        condition: $parameters.compression-config.cmp-mime-types
+        value: $components.cmp-policies-comp.outputs.mime-types-cmp-policyname
+    - 
+        name: all-but-mime-types-cmp-policyname
+        condition: $parameters.compression-config.cmp-all-but-mime-types
+        value: $components.cmp-policies-comp.outputs.all-but-mime-types-cmp-policyname
+    - 
+        name: mime-types-nocmp-policyname
+        condition: $parameters.compression-config.nocmp-mime-types
+        value: $components.cmp-policies-comp.outputs.mime-types-nocmp-policyname
+    - 
+        name: all-but-mime-types-nocmp-policyname
+        condition: $parameters.compression-config.nocmp-all-but-mime-types
+        value: $components.cmp-policies-comp.outputs.all-but-mime-types-nocmp-policyname
+    - 
+        name: resource-names-cmp-policyname
+        condition: $parameters.compression-config.cmp-resource-names
+        value: $components.cmp-policies-comp.outputs.resource-names-cmp-policyname
+    - 
+        name: all-but-resource-names-cmp-policyname
+        condition: $parameters.compression-config.cmp-all-but-resource-names
+        value: $components.cmp-policies-comp.outputs.all-but-resource-names-cmp-policyname
+    - 
+        name: resource-names-nocmp-policyname
+        condition: $parameters.compression-config.nocmp-resource-names
+        value: $components.cmp-policies-comp.outputs.resource-names-nocmp-policyname
+    - 
+        name: all-but-resource-names-nocmp-policyname
+        condition: $parameters.compression-config.nocmp-all-but-resource-names
+        value: $components.cmp-policies-comp.outputs.all-but-resource-names-nocmp-policyname

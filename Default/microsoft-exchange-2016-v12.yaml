@@ -1,0 +1,229 @@
+---
+name: microsoft-exchange-2016
+description: This StyleBook defines NetScaler configuration for Microsoft Exchange 2016
+display-name: Microsoft Exchange 2016
+namespace: com.citrix.adc.enterprise.stylebooks
+version: "1.2"
+schema-version: "1.0"
+import-stylebooks:
+  -
+    namespace: netscaler.nitro.config
+    version: "10.5"
+    prefix: ns
+  - 
+    namespace: com.citrix.adc.stylebooks
+    version: "1.0"
+    prefix: stlb
+  - 
+    namespace: com.citrix.adc.enterprise.stylebooks
+    version: "1.2"
+    prefix: ent
+  - 
+    namespace: com.citrix.adc.commontypes
+    version: "1.0"
+    prefix: cmtypes
+parameters:
+  -
+    name: exch-appname
+    label: Exchange Application Name
+    description: The Name of the Microsoft Exchange application
+    type: string
+    required: true
+    key: true
+  -
+    name: exch-vip
+    label: Exchange VIP
+    description: The Virtual IP for the Microsoft Exchange application
+    type: ipaddress
+    required: true
+  -
+    name: server-ips
+    label: Exchange Server IPs
+    description: List of Microsoft Exchange Server IPs
+    type: ipaddress[]
+    required: true
+  -
+    name: exch-certs
+    label: Exchange Certificates 
+    description: Microsoft Exchange SSL certificates
+    type: cmtypes::certificate[]
+    required: true
+  -
+    name: exch-auth
+    label: Exchange Active Directory Authentication config
+    description: Settings for Active Directory Authentication configuration for Exchange
+    type: object
+    required: true
+    parameters:
+      -
+        name: vip
+        label: Active Directory Authentication VIP
+        description: The VIP IP address used for Active Directory vserver
+        type: ipaddress
+        required: true
+      -
+        name: server-ip
+        type: ipaddress
+        label: Active Directory Server IP
+        description: The Active Directory Server IP Address
+        required: true
+      -
+        name: base
+        label: Active Directory Base String
+        description: The Active Directory LDAP Base string for authentication. Example "cn=Users,dc=acme,dc=com"
+        type: string
+        required: true
+      -
+        name: bind-dn
+        type: string
+        label: Active Directory LDAP Bind Distinguished Name (DN)
+        description: LDAP Bind Distinguished Name (DN) used to bind to the LDAP server (Active Directory server). For example "cn=Administrator,cn=Users,dc=acme,dc=com"
+        required: true
+      -
+        name: bind-dn-password
+        type: password
+        label: Active Directory LDAP Bind Distinguished Name (DN) Password
+        description: LDAP Bind Distinguished Name (DN) password for Active Directory Authentication
+        min-length: 1
+        required: true
+      -
+        name: login-name
+        label: Active Directory user name Attribute
+        description: Active Directory attribute for user name. The NetScaler uses the LDAP attribute to query external Active Directory Servers. For example "samAccountName"
+        type: string
+        required: true
+      -
+        name: group-attribute-name
+        label: Active Directory group Attribute Name
+        description: Active Directory group Attribute Name. The NetScaler uses this attribute to extract the user's groups. For example "memberOf"
+        type: string
+        required: true
+      -
+        name: group-subattribute-name
+        label: Active Directory Group Sub-Attribute name
+        description: Active Directory Group sub-attribute name. The NetScaler uses this subattribute to extract the user's groups. For example "cn"
+        type: string
+        required: true
+      -
+        name: auth-domain
+        label: Active Directory Authentication Domain
+        description: Active Directory Authentication DNS Domain name
+        type: string
+substitutions:
+  exch-logon-matching-rule: str("HTTP.REQ.URL.CONTAINS(\"owa/auth/logon.asp\")")
+  exch-logout-matching-rule: str("HTTP.REQ.URL.CONTAINS(\"logoff.owa\")")
+  exch-logon-success-rule: str("HTTP.RES.SET_COOKIE.COOKIE(\"cadata\").VALUE(\"cadata\").LENGTH.GT(70)")
+components:
+  -
+      name: enable-features-comp
+      type: ns::nsfeature
+      description: Enables the NetScaler features needed for Microsoft Exchange application
+      meta-properties:
+          action: enable
+      properties:
+          feature: ["cs", "lb", "ssl", "rewrite", "aaa"]
+  -
+    name: auth-dnsrecord-comp
+    type: ns::dnsaddrec
+    condition: $parameters.exch-auth.auth-domain
+    description: Adds a DNS record for the auth domain that resolves to the auth VIP IP.
+    properties:
+      hostname: $parameters.exch-auth.auth-domain
+      ipaddress: $parameters.exch-auth.vip
+  -
+    name: auth-ldap-policy-comp
+    type: stlb::ldap-policy
+    description: This component creates a NetScaler LDAP policy/action config entities for Active Directory
+    properties:
+      appname: $parameters.exch-appname
+      ldap-settings:
+        is-activedirectory: true
+        server-ip: $parameters.exch-auth.server-ip
+        ldap-base: $parameters.exch-auth.base
+        bind-dn: $parameters.exch-auth.bind-dn
+        bind-dn-password: $parameters.exch-auth.bind-dn-password
+        user-attribute-name: $parameters.exch-auth.login-name
+        group-attribute-name: $parameters.exch-auth.group-attribute-name
+        group-subattribute-name: $parameters.exch-auth.group-subattribute-name
+        sso-attribute-name: str("")
+        allow-password-change: true
+        allow-following-referrals: true
+  -
+    name: auth-comp
+    type: stlb::auth
+    description: This component creates a NetScaler LDAP Auth Vserver for Active Directory and binds all policies to it
+    properties:
+        name: $parameters.exch-appname
+        vip: $parameters.exch-auth.vip
+        protocol: SSL
+        port: 443
+        certificates: $parameters.exch-certs
+        auth-settings:
+          auth-domain?: $parameters.exch-auth.auth-domain
+          max-login-attempts?: 255
+          failed-login-timeout?: 1
+        aaa-policies:
+          ldap-policies:
+            - $components.auth-ldap-policy-comp.outputs.ldap-auth-policy.properties.name
+  -
+    name: exch-cs-comp
+    description: This component creates the CS and all the LB VServers needed for Exchange
+    type: ent::microsoft-exchange-cs
+    properties:
+      exch-appname: $parameters.exch-appname
+      exch-vip: $parameters.exch-vip
+      exch-certs: $parameters.exch-certs
+      server-ips: $parameters.server-ips
+      auth-vserver: $components.auth-comp.outputs.auth-vserver.properties.name
+  -
+    name: exch-cookie-update-comp
+    description: This component configures NetScaler to change the cookie value in some Exchange requests
+    type: stlb::cookie-postfix
+    properties:
+      appname: $parameters.exch-appname
+      vserver-name: $components.exch-cs-comp.outputs.default-lbvserver.properties.name
+      url-string: logon.asp
+      cookie-name: OutlookSession
+      cookie-postfix: "\";PBack=0\""
+  -
+    name: owa-logon-traffic-pol-comp
+    description: This component creates a TM Traffic Policy for Logon to Microsoft Exchange OWA
+    type: stlb::tmtraffic-policy
+    properties:
+      name: $parameters.exch-appname + "-logon"
+      rule: $substitutions.exch-logon-matching-rule
+      traffic-settings:
+        app-timeout: 1
+        sso-settings:
+          sso-form-settings: 
+            username-field: username
+            password-field: password
+            action-url: "/owa/auth.owa"
+            submit-method: POST
+            success-expr: $substitutions.exch-logon-success-rule
+            max-response-size: 60000
+  -
+    name: owa-logout-traffic-pol-comp
+    description: This component creates a TM Traffic Policy for Logout from Microsoft Exchange OWA
+    type: stlb::tmtraffic-policy
+    properties:
+      name: $parameters.exch-appname + "-logout"
+      rule: $substitutions.exch-logout-matching-rule
+      traffic-settings:
+        initiate-logout: true
+  -
+    name: owa-traffic-policies-bindings-comp
+    description: This component creates the bindings of the logon/logout traffic policies to the OWA LB vserver.
+    type: stlb::vserver-tmtrafficpolicies-bindings
+    properties:
+      vserver-name: $components.exch-cs-comp.outputs.owa-lbvserver.properties.name
+      vserver-type: LBVSERVER
+      policies:
+        -
+          name: $components.owa-logon-traffic-pol-comp.outputs.traffic-policy.properties.name
+          type: POLICY
+          bind-point: REQUEST
+        -
+          name: $components.owa-logout-traffic-pol-comp.outputs.traffic-policy.properties.name
+          type: POLICY
+          bind-point: REQUEST

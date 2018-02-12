@@ -1,0 +1,52 @@
+name: replace-header
+namespace: com.citrix.adc.stylebooks
+version: "1.0"
+display-name: Request Header Replacement StyleBook
+private: true
+schema-version: "1.0"
+description: |    
+    This StyleBook replaces an HTTP header in the request or response stream. For each header, the user 
+    specifies the header name and the new header value, and optionally a NetScaler Policy expression for selecting a subset of the requests    
+    for which the header is replaced (defaults to "true" which means the header is replaced in all requests or responses).
+import-stylebooks: 
+  - 
+    namespace: netscaler.nitro.config
+    version: "10.5"
+    prefix: ns
+  - 
+    namespace: com.citrix.adc.commontypes
+    version: "1.0"
+    prefix: cmtypes
+parameters:
+    -
+        name: appname
+        type: string
+        label: Application Name
+        description: The Name of the Application
+    -
+        name: header
+        type: object
+        description: The header to insert
+        parameters-default-sources:
+            - cmtypes::replace-header-params
+components:
+  -
+    name: replace-header-action-comp
+    type: ns::rewriteaction
+    properties:
+        name: $parameters.appname + "-" + $parameters.header.name + "-rewrite-action"
+        type: REPLACE
+        target: $parameters.header.name
+        stringbuilderexpr: str("\"") + $parameters.header.value + str("\"")
+    components:
+      -
+        name: replace-header-policy-comp
+        type: ns::rewritepolicy
+        properties:
+            name: $parameters.appname + "-" + $parameters.header.name + "-rewrite-policy"
+            rule: $parameters.header.pattern
+            action: $parent.properties.name
+outputs:
+    -
+        name: replace-header-policy
+        value: $components.replace-header-action-comp.components.replace-header-policy-comp

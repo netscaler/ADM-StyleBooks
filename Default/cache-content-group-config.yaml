@@ -1,0 +1,86 @@
+name: cache-content-group-config
+namespace: com.citrix.adc.stylebooks
+version: "1.0"
+display-name: Cache Content Group Configuration
+schema-version: "1.0"
+private: true
+import-stylebooks: 
+  - 
+    namespace: netscaler.nitro.config
+    prefix: ns
+    version: "10.5"
+parameters:
+  -
+    name: name
+    type: string
+    label: Cache Content Group Name
+    description: The name for the content group
+    required: true
+  -
+    name: relative-expiry-time
+    type: number
+    label: Cache Object Expiry Time
+    description: Relative expiry time, in seconds, after which to expire an object cached in this content group
+  -
+    name: min-response-size
+    type: number
+    label: Minimum Size of a Response
+    description: Minimum size of a response that can be cached in this content group
+    min-value: 0
+    max-value: 2097151
+    default: 0
+  -
+    name: max-response-size
+    type: number
+    label: Maximum size of a response
+    description: Maximum size of a response that can be cached in this content group
+    min-value: 0
+    max-value: 2097151
+    default: 80
+  -
+    name: max-mem-limit
+    type: number
+    label: Maximum Memory Limit
+    default: 65536
+    description: Maximum amount of memory that the cache can use
+  -
+    name: poll-every-time
+    type: string
+    label: Poll Content Group
+    description: Always poll for the objects in this content group
+    default: "NO"
+    allowed-values:
+        - "YES"
+        - "NO"
+  -
+    name: hit-selector
+    type: string
+    label: Cache Hit Selector Name
+    description: Selector for evaluating whether an object is served from the cache (default is exact match)
+  -
+    name: invalidation-selector
+    type: string
+    label: Cache Invalidation Selector Name
+    description: Selector for invalidating objects in the content group
+
+
+components:
+  - 
+    name: cache-content-group-comp
+    type: ns::cachecontentgroup
+    description: Component for creation of content group
+    properties: 
+      name: truncate("%{$parameters.name}%-cntgrp", 31)
+      relexpiry?: $parameters.relative-expiry-time
+      minressize?: $parameters.min-response-size
+      maxressize?: $parameters.max-response-size
+      memlimit?: $parameters.max-mem-limit
+      invalselector?: $parameters.invalidation-selector
+      hitselector?: $parameters.hit-selector
+      polleverytime?: $parameters.poll-every-time
+
+outputs:
+  -
+    name: contentgroup-name
+    value: $components.cache-content-group-comp.properties.name
+

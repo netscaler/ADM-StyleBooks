@@ -1,0 +1,20 @@
+name: insert-header-params
+namespace: com.citrix.adc.commontypes
+version: "1.0"
+display-name: Insert Header Parameters
+private: true
+schema-version: "1.0"
+import-stylebooks: 
+  - 
+    namespace: com.citrix.adc.commontypes
+    version: "1.0"
+    prefix: cmtypes
+parameters-default-sources:
+  - cmtypes::base-header-params
+parameters:
+  -
+    name: value
+    type: string
+    label: Header Value
+    description: The value of the header to insert
+    required: true

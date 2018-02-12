@@ -1,0 +1,25 @@
+name: base-header-params
+namespace: com.citrix.adc.commontypes
+version: "1.0"
+display-name: Base Header Parameters
+private: true
+schema-version: "1.0"
+parameters:
+  -
+    name: name
+    type: string
+    label: Header Name
+    description: The name of the header
+    required: true
+  -
+    name: pattern
+    type: string
+    label: Request Filter (Policy Expression)
+    description: The NetScaler Policy Expression used to select requests for which to perform action on the header. If the value is "true" (default), then the action is applied to all requests.
+    default: "true"
+  -
+    name: on-response
+    label:  On Response 
+    description: If true, the header is inserted in the response, otherwise it is inserted in the request.
+    type: boolean
+    default: false

@@ -1,0 +1,149 @@
+---
+name: sso-google-apps
+namespace: com.citrix.adc.enterprise.stylebooks
+version: "1.0"
+display-name: SSO Google Apps StyleBook
+description: | 
+  This StyleBook configures NetScaler to play the role of a SAML IdP for Google Apps, therefore 
+  providing Single SignOn (SSO) to Google Apps users. This StyleBook can be used on NetScalers 11.0 and above.
+schema-version: "1.0"
+import-stylebooks:
+  - 
+    namespace: com.citrix.adc.stylebooks
+    prefix: stlb
+    version: "1.1"
+  - 
+    namespace: com.citrix.adc.commontypes
+    prefix: cmtypes
+    version: "1.0"
+parameters:
+  -
+    name: appname
+    label: Application Name
+    description: Application Name for this SSO Google Apps Deployment
+    type: string
+    required: true
+    key: true
+  -
+    name: auth-vip
+    label: Authentication Virtual IP address
+    description: IP address of the authentication virtual server.
+    type: ipaddress
+    required: true
+  -
+    name: saml-rule-expr
+    label: SAML Rule Expression
+    description: |
+      NetScaler PI boolean expression that matches traffic to which these SAML settings are 
+      applied. The default PI rule is: HTTP.REQ.HEADER("Referer").CONTAINS("google")
+    type: string
+  -
+    name: saml-idp-settings
+    label: SAML IdP Settings
+    description: SAML Settings on NetScaler for Google Apps SSO
+    type: object
+    required: true
+    parameters-default-sources:
+        - cmtypes::saml-idp-base-params
+  -
+    name: ldap-settings
+    label: LDAP (Active Directory) Settings to authenticate Google Apps Users
+    description: LDAP Settings for SSO Google Apps
+    type: object
+    required: true
+    parameters-default-sources:
+        - cmtypes::ldap-base-params
+  -
+    name: idp-cert
+    label: SAML IdP SSL Certificate for the Authentication Virtual IP
+    description: SSL Certification to be bound to authentication vserver on NetScaler
+    required: true
+    type: cmtypes::certificate
+  -
+    name: idp-ca-cert
+    label: IdP SSL CA Certificate of the SAML Service Provider
+    description: |
+       Google SSL CA Certificate (public key) used to validate Authentication Requests from Google Apps
+    type: cmtypes::certificate
+  -
+    name: sp-cert
+    label: SAML SP SSL Certificate
+    description: |
+        Google SSL Certificate (public key) used to validate Authentication Requests from Google Apps
+    type: cmtypes::certificate
+
+substitutions:
+  google-referer-rule: str("HTTP.REQ.HEADER(\"Referer\").CONTAINS(\"google\")")
+  saml-rule(rule): if-then-else($rule, $rule, $substitutions.google-referer-rule)
+components:
+  -
+    name: idp-certkeys-comp
+    type: stlb::certkeys
+    description: Uploads the IdP (NetScaler) SSL Certificate and CA Certificate and creates the corresponding certkeys
+    properties:
+      certificates:
+          - $parameters.idp-cert
+          - $parameters.idp-ca-cert
+  -
+    name: sp-certkeys-comp
+    type: stlb::certkeys
+    condition: $parameters.sp-cert
+    description: Uploads the SP's (Relying Party) SSL Certificate and creates the corresponding certkey
+    properties:
+      certificates:
+          - $parameters.sp-cert          
+  -
+    name: saml-idp-settings-comp
+    description: This component builds the saml-idp-settings object property used in the saml-idp-policy component below.
+    type: object
+    properties-default-sources:
+        - $parameters.saml-idp-settings
+    properties:
+        saml-idp-cert-name: $components.idp-certkeys-comp.outputs.certkeys[0].properties.certkey
+        saml-sp-cert-name?: $components.sp-certkeys-comp.outputs.certkeys[0].properties.certkey
+
+  -
+    name: ldap-settings-comp
+    description: This component builds the ldap-settings object property used in the ldap-policy component below.
+    type: object
+    properties-default-sources:
+        - $parameters.ldap-settings
+    properties:
+        is-activedirectory: true
+  -
+    name: auth-ldap-policy-comp
+    type: stlb::ldap-policy
+    description: This component creates the LDAP policy/action config entities
+    properties-default-sources:
+        - $parameters
+    properties:
+      ldap-settings: $components.ldap-settings-comp.properties
+  -
+    name: auth-saml-idp-policy-comp
+    type: stlb::saml-idp-policy
+    description: This component creates the SAML IdP policy/profile config entities
+    properties:
+      appname: $parameters.appname
+      rule?: $substitutions.saml-rule($parameters.saml-rule-expr)
+      saml-idp-settings: $components.saml-idp-settings-comp.properties
+  -
+    name: auth-comp
+    type: stlb::auth
+    description: This component creates the LDAP Auth Vserver and binds the LDAP and SAML policies to it
+    properties:
+        name: $parameters.appname
+        vip: $parameters.auth-vip
+        protocol: SSL
+        port: 443
+        certificates: 
+          - $parameters.idp-cert
+          - $parameters.idp-ca-cert
+        auth-settings:
+          auth-domain?: $parameters.saml-idp-settings.saml-idp-issuer-name
+          max-login-attempts: 255
+          failed-login-timeout: 1
+        aaa-policies:
+          ldap-policies:
+            - $components.auth-ldap-policy-comp.outputs.ldap-auth-policy.properties.name
+          samlidp-policies:
+            - $components.auth-saml-idp-policy-comp.outputs.saml-idp-policy.properties.name

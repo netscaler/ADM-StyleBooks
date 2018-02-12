@@ -1,0 +1,51 @@
+name: remove-header
+namespace: com.citrix.adc.stylebooks
+version: "1.0"
+display-name: Request Header Removal StyleBook
+private: true
+schema-version: "1.0"
+description: |    
+    This StyleBook removes an HTTP header in the request or response stream. 
+import-stylebooks: 
+  - 
+    namespace: netscaler.nitro.config
+    version: "10.5"
+    prefix: ns
+  - 
+    namespace: com.citrix.adc.commontypes
+    version: "1.0"
+    prefix: cmtypes
+parameters:
+    -
+        name: appname
+        type: string
+        label: Application Name
+        description: The Name of the Application
+    -
+        name: header
+        type: object
+        description: The header to remove
+        parameters-default-sources:
+            - cmtypes::remove-header-params
+substitutions:
+    check-header-exist-rule(header-name): str("HTTP.REQ.HEADER(%{quotewrap($header-name)}%).EXISTS")
+components:
+  -
+    name: remove-header-action-comp
+    type: ns::rewriteaction
+    properties:
+        name: $parameters.appname + "-" + $parameters.header.name + "-rewrite-action"
+        type: DELETE_HTTP_HEADER
+        target: $parameters.header.name
+    components:
+      -
+        name: remove-header-policy-comp
+        type: ns::rewritepolicy
+        properties:
+            name: $parameters.appname + "-" + $parameters.header.name + "-rewrite-policy"
+            rule: $substitutions.check-header-exist-rule($parameters.header.name)
+            action: $parent.properties.name
+outputs:
+    -
+        name: remove-header-policy
+        value: $components.remove-header-action-comp.components.remove-header-policy-comp

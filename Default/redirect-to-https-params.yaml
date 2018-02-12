@@ -1,0 +1,13 @@
+name: redirect-to-https-params
+namespace: com.citrix.adc.commontypes
+version: "1.0"
+display-name: Redirect to HTTPS Parameters
+private: true
+schema-version: "1.0"
+parameters:
+  -
+    name: pattern
+    type: string
+    label: Request Filter (Policy Expression)
+    description: The NetScaler Policy Expression used to select requests for which to perform action on the header
+    default: "true"

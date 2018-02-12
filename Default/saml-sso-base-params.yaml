@@ -1,0 +1,246 @@
+--- 
+name: saml-sso-base-params
+namespace: com.citrix.adc.commontypes
+version: "1.0"
+description: This StyleBook define the base parameters for SAML IdP configurations in NetScaler.
+schema-version: "1.0"
+private: true
+import-stylebooks:
+    -
+        namespace: com.citrix.adc.commontypes
+        version: "1.0"
+        prefix: cmtypes
+parameters:
+    -
+        name: saml-assertion-consumerservice-url
+        label: Assertion Consumer Service URL
+        description: Service Provider's URL where NetScaler IdP needs to send the SAML assertions.
+        type: string
+        required: true
+    -
+        name: saml-relaystate-expr
+        label: RelayState Expression
+        description: |
+          The NetScaler Policy (PI) expression used to extract the value for the
+          RelayState attribute that accompanies the issued SAML assertion sent to the Service Provider.
+        type: string
+        required: true
+    -
+        name: saml-sso-signing-certificate
+        label: IdP Signing Certificate 
+        description: The NetScaler IdP Certificate used to sign the issued SAML Assertions
+        type: cmtypes::certificate
+        required: true
+    -
+        name: saml-sso-issuer-name
+        label: SAML Issuer Name
+        description: |
+            The NetScaler Issuer name (URL) used by NetScaler IdP in issued SAML Assertions.
+            This name identifies the NetScaler IdP to Service Providers (Relying Parties).
+            For example: "https://<NetScaler Auth VIP>/saml/login"
+        type: string
+    -
+        name: name-id-expr
+        label: NameIdentifier Expression
+        description: |
+            NetScaler PI Expression that will be used to fill the value for the SAML NameID of the SAML assertion.
+            This value is typically extracted from user attributes (e.g. username or email value).
+            Example: HTTP.REQ.USER.ATTRIBUTE(1)
+        type: string
+    -
+        name: name-id-format
+        label: NameIdentifier Format
+        description: Format of the NameIdentifier field sent in the SAML Assertion
+        type: string
+        allowed-values:
+            - Unspecified
+            - emailAddress
+            - X509SubjectName
+            - WindowsDomainQualifiedName
+            - kerberos
+            - entity
+            - persistent
+            - transient
+    -
+        name: send-password
+        label: Include User Password in SAML Assertion
+        description: If true, the password is sent in the SAML Assertion
+        type: boolean
+        default: false
+    -
+        name: audience
+        label: Audience name or url
+        description: Audience for which assertion sent by NetScaler IdP is applicable. This is typically entity name, ID or URL that represents the Service Provider.
+        type: string
+    -
+        name: valid-period
+        label: Assertion Valid Period (minutes)
+        description: |
+            The number of minutes for which the assertion is considered valid. The assertion is valid in the interval
+            [current-time - valid-period, current-time + valid-period]. So if valid-period is 5 minutes, the assertion is valid in 
+            a window of 10 minutes.
+        type: number
+        default: 5
+    -
+        name: signature-algorithm
+        label: Signature Algorithm
+        description: Algorithm to be used to verify/sign SAML requests/responses.
+        type: string
+        allowed-values:
+          - RSA-SHA1 
+          - RSA-SHA256
+        default: RSA-SHA1
+    -
+        name: digest-method
+        label: Digest Method
+        description: Algorithm to be used to verify/compute digest hash for SAML requests/responses.
+        type: string
+        allowed-values:
+          - SHA1 
+          - SHA256
+        default: SHA1
+    -
+        name: encrypt-assertion
+        label: Encrypt SAML Assertions
+        description: Option to encrypt SAML Assertions issued by NetScaler IdP.
+        type: object
+        parameters:
+          -
+              name: encryption-algorithm
+              label: Encryption Algorithm  
+              description: Encryption Algorithm used to encrypt SAML Assertions if encryption is enabled.
+              type: string
+              allowed-values:
+                  - DES3
+                  - AES128
+                  - AES192
+                  - AES256
+              default: AES256
+          -
+            name: saml-sp-certificate
+            label: Service Provider Certificate
+            description: |
+              The NetScaler Certificate (public certificate) of the Service Provider used by NetScaler IdP
+              to encrypt SAML Assertions sent to the Service Provider.
+            type: cmtypes::certificate
+    -
+        name: user-attrs
+        label: User Attributes
+        type: object
+        description: Extra User Attributes that need to be included in the issued SAML assertion by the NetScaler IdP
+        parameters:
+          -
+              name: attribute1-name
+              label: User Attribute 1 Name
+              description: Name of a user attribute that needs to be included in the issued SAML Assertion.
+              type: string
+          -
+              name: attribute1-expr
+              label: User Attribute 1 Expression
+              description: Expression that will be evaluated to extract the attribute's value to be included in the issued SAML Assertion
+              type: string
+          -
+              name: attribute1-friendly-name
+              label: User Attribute 1 Friendly Name
+              description: User-Friendly Name of the attribute included in the issued SAML Assertion
+              type: string
+          -
+              name: attribute1-format
+              label: User Attribute 1 Format
+              description: Format of the Attribute in the issued Assertion.
+              type: string
+              allowed-values:
+                - URI
+                - BASIC
+          -
+              name: attribute2-name
+              label: User Attribute 2 Name
+              description: Name of a user attribute that needs to be included in the issued SAML Assertion
+              type: string
+          -
+              name: attribute2-expr
+              label: User Attribute 2 Expression
+              description: Expression that will be evaluated to extract attribute2's value to be included in the issued SAML Assertion
+              type: string
+          -
+              name: attribute2-friendly-name
+              label: User Attribute 2 Friendly Name
+              description: User-Friendly Name of the attribute included in the issued SAML Assertion.
+              type: string
+          -
+              name: attribute2-format
+              label: User Attribute 2 Format
+              description: Format of the Attribute in the issued Assertion.
+              type: string
+              allowed-values:
+                - URI
+                - BASIC
+          -
+              name: attribute3-name
+              label: User Attribute 3 Name
+              description: Name of a user attribute that needs to be included in the issued SAML Assertion.
+              type: string
+          -
+              name: attribute3-expr
+              label: User Attribute 3 Expression
+              description: Expression that will be evaluated to extract attribute3's value to be included in the issued SAML Assertion
+              type: string
+          -
+              name: attribute3-friendly-name
+              label: User Attribute 3 Friendly Name
+              description: User-Friendly Name of the attribute included in the issued SAML Assertion.
+              type: string
+          -
+              name: attribute3-format
+              label: User Attribute 3 Format
+              description: Format of the Attribute in the issued Assertion.
+              type: string
+              allowed-values:
+                - URI
+                - BASIC
+          -
+              name: attribute4-name
+              label: User Attribute 4 Name
+              description: Name of a user attribute that needs to be included in the issued SAML Assertion
+              type: string
+          -
+              name: attribute4-expr
+              label: User Attribute 4 Expression
+              description: Expression that will be evaluated to extract attribute4's value to be included in the issued SAML Assertion
+              type: string
+          -
+              name: attribute4-friendly-name
+              label: User Attribute 4 Friendly Name
+              description: User-Friendly Name of the attribute included in the issued SAML Assertion.
+              type: string
+          -
+              name: attribute4-format
+              label: User Attribute 4 Format
+              description: Format of the Attribute in the issued Assertion.
+              type: string
+              allowed-values:
+                - URI
+                - BASIC
+          -
+              name: attribute5-name
+              label: User Attribute 5 Name
+              description: Name of a user attribute that needs to be included in the issued SAML Assertion.
+              type: string
+          -
+              name: attribute5-expr
+              label: User Attribute 5 Expression
+              description: Expression that will be evaluated to extract attribute's value to be included in the issued SAML Assertion
+              type: string
+          -
+              name: attribute5-friendly-name
+              label: User Attribute 5 Friendly Name
+              description: User-Friendly Name of the attribute included in the issued SAML Assertion.
+              type: string
+          -
+              name: attribute5-format
+              label: User Attribute 5 Format
+              description: Format of the Attribute in the issued Assertion.
+              type: string
+              allowed-values:
+                - URI
+                - BASIC

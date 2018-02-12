@@ -1,0 +1,67 @@
+name: compression-config-params
+namespace: com.citrix.adc.commontypes
+version: "1.0"
+display-name: Compression Params
+private: true
+schema-version: "1.0"
+import-stylebooks: 
+  - 
+    namespace: com.citrix.adc.commontypes
+    version: "1.0"
+    prefix: cmtypes
+parameters:
+    -
+        name: compression-config
+        label: Compression Configs Section
+        type: object
+        gui: 
+            collapse_pane: true 
+        parameters:
+            - 
+                name: cmp-file-suffixes
+                type: cmtypes::file-suffix-param[]
+                label:  Compression - File Suffixes to Include
+            - 
+                name: cmp-all-but-file-suffixes
+                type: cmtypes::file-suffix-param[]
+                label:  Compression - File Suffixes to Exclude
+            - 
+                name: nocmp-file-suffixes
+                type: cmtypes::file-suffix-param[]
+                label:  Non-Compression - File Suffixes to Include
+            - 
+                name: nocmp-all-but-file-suffixes
+                type: cmtypes::file-suffix-param[]
+                label:  Non-Compression - File Suffixes to Exclude
+            - 
+                name: cmp-mime-types
+                type: cmtypes::mime-type-param[]
+                label:  Compression -  MIME Types to Include
+            - 
+                name: cmp-all-but-mime-types
+                type: cmtypes::mime-type-param[]
+                label:  Compression - MIME Types to Exclude
+            - 
+                name: nocmp-mime-types
+                type: cmtypes::mime-type-param[]
+                label:  Non-Compression - MIME Types to Include
+            - 
+                name: nocmp-all-but-mime-types
+                type: cmtypes::mime-type-param[]
+                label:  Non-Compression - MIME Types to Exclude
+            - 
+                name: cmp-resource-names
+                type: string[]
+                label: Compression - Resource Names to Include
+            - 
+                name: cmp-all-but-resource-names
+                type: string[]
+                label: Compression - Resource Names to Exclude
+            - 
+                name: nocmp-resource-names
+                type: string[]
+                label: Non-Compression - Resource Names to Include
+            - 
+                name: nocmp-all-but-resource-names
+                type: string[]
+                label: Non-Compression - Resource Names to Exclude

@@ -1,0 +1,453 @@
+name: cmp-policies-config
+namespace: com.citrix.adc.stylebooks
+version: "1.0"
+display-name: File Suffix compression
+private: true
+schema-version: "1.0"
+import-stylebooks: 
+  - 
+    namespace: netscaler.nitro.config
+    version: "10.5"
+    prefix: ns
+  - 
+    namespace: com.citrix.adc.commontypes
+    version: "1.0"
+    prefix: cmtypes  
+parameters:
+    -
+        name: name
+        label: Prefix String
+        type: string
+        description: Use this prefix string for all entities created by this StyleBook 
+        required: true
+parameters-default-sources:
+    - cmtypes::compression-config-params
+substitutions:
+    file-suffixes-rule(suffix-patset-name): str("HTTP.REQ.URL.SUFFIX.SET_TEXT_MODE(IGNORECASE).EQUALS_ANY(%{quotewrap($suffix-patset-name)}%)")
+    all-but-file-suffixes-rule(suffix-patset-name): str("!") + $substitutions.file-suffixes-rule($suffix-patset-name)
+    mime-types-rule(suffix-patset-name): str("HTTP.RES.HEADER(%{quotewrap(Content-Type)}%).EQUALS_ANY(%{quotewrap($suffix-patset-name)}%)")
+    all-but-mime-types-rule(suffix-patset-name): str("!") + $substitutions.mime-types-rule($suffix-patset-name)
+    resource-names-rule(suffix-patset-name): str("HTTP.REQ.URL.PATH.GET_REVERSE(0).SET_TEXT_MODE(Ignorecase).EQUALS_ANY(%{quotewrap($suffix-patset-name)}%)")
+    all-but-resource-names-rule(suffix-patset-name): str("!") + $substitutions.resource-names-rule($suffix-patset-name)
+components:
+    -
+        name: cmp-file-suffixes-patset-comp
+        type: ns::policypatset
+        condition: $parameters.compression-config.cmp-file-suffixes
+        properties:
+          # It is necessary to use replace as NetScaler policypatset names cannot contain "-"
+          name: replace($parameters.name + "-cmp-file-suffixes-patset", "-", "_")
+        components:
+          -
+            name: cmp-file-suffixes-patset-bindings-comp
+            type: ns::policypatset_pattern_binding
+            repeat: $parameters.compression-config.cmp-file-suffixes
+            repeat-item: item
+            properties:
+              name: $parent.properties.name
+              String: $item.file-suffix
+    -
+        name: cmp-all-but-file-suffixes-patset-comp
+        type: ns::policypatset
+        condition: $parameters.compression-config.cmp-all-but-file-suffixes
+        properties:
+          # It is necessary to use replace as NetScaler policypatset names cannot contain "-"
+          name: replace($parameters.name + "-cmp-all-but-file-suffixes-patset", "-", "_")
+        components:
+          -
+            name: cmp-all-but-file-suffixes-patset-bindings-comp
+            type: ns::policypatset_pattern_binding
+            repeat: $parameters.compression-config.cmp-all-but-file-suffixes
+            repeat-item: item
+            properties:
+              name: $parent.properties.name
+              String: $item.file-suffix
+    -
+        name: nocmp-file-suffixes-patset-comp
+        type: ns::policypatset
+        condition: $parameters.compression-config.nocmp-file-suffixes
+        properties:
+          # It is necessary to use replace as NetScaler policypatset names cannot contain "-"
+          name: replace($parameters.name + "-nocmp-file-suffixes-patset", "-", "_")
+        components:
+          -
+            name: nocmp-file-suffixes-patset-bindings-comp
+            type: ns::policypatset_pattern_binding
+            repeat: $parameters.compression-config.nocmp-file-suffixes
+            repeat-item: item
+            properties:
+              name: $parent.properties.name
+              String: $item.file-suffix
+    -
+        name: nocmp-all-but-file-suffixes-patset-comp
+        type: ns::policypatset
+        condition: $parameters.compression-config.nocmp-all-but-file-suffixes
+        properties:
+          # It is necessary to use replace as NetScaler policypatset names cannot contain "-"
+          name: replace($parameters.name + "-nocmp-all-but-file-suffixes-patset", "-", "_")
+        components:
+          -
+            name: nocmp-all-but-file-suffixes-patset-bindings-comp
+            type: ns::policypatset_pattern_binding
+            repeat: $parameters.compression-config.nocmp-all-but-file-suffixes
+            repeat-item: item
+            properties:
+              name: $parent.properties.name
+              String: $item.file-suffix
+    -
+        name: cmp-file-suffixes-action-cmp
+        type: ns::cmpaction
+        condition: $parameters.compression-config.cmp-file-suffixes
+        properties:
+            name: $parameters.name + "-cmp-file-suffixes-cmpaction"
+            cmptype: COMPRESS
+        components:
+            -
+                name: cmp-file-suffixes-policy-cmp
+                type: ns::cmppolicy
+                properties:
+                    name: $parameters.name + "-cmp-file-suffixes-cmppolicy"
+                    rule: $substitutions.file-suffixes-rule($components.cmp-file-suffixes-patset-comp.properties.name)
+                    resaction: $parent.properties.name
+    -
+        name: cmp-all-but-file-suffixes-action-cmp
+        type: ns::cmpaction
+        condition: $parameters.compression-config.cmp-all-but-file-suffixes
+        properties:
+            name: $parameters.name + "-cmp-all-but-file-suffixes-cmpaction"
+            cmptype: COMPRESS
+        components:
+            -
+                name: cmp-all-but-file-suffixes-policy-cmp
+                type: ns::cmppolicy
+                properties:
+                    name: $parameters.name + "-cmp-all-but-file-suffixes-cmppolicy"
+                    rule: $substitutions.all-but-file-suffixes-rule($components.cmp-all-but-file-suffixes-patset-comp.properties.name)
+                    resaction: $parent.properties.name
+    -
+        name: nocmp-file-suffixes-action-cmp
+        type: ns::cmpaction
+        condition: $parameters.compression-config.nocmp-file-suffixes
+        properties:
+            name: $parameters.name + "-nocmp-file-suffixes-cmpaction"
+            cmptype: NOCOMPRESS
+        components:
+            -
+                name: nocmp-file-suffixes-policy-cmp
+                type: ns::cmppolicy
+                properties:
+                    name: $parameters.name + "-nocmp-file-suffixes-cmppolicy"
+                    rule: $substitutions.file-suffixes-rule($components.nocmp-file-suffixes-patset-comp.properties.name)
+                    resaction: $parent.properties.name
+    -
+        name: nocmp-all-but-file-suffixes-action-cmp
+        type: ns::cmpaction
+        condition: $parameters.compression-config.nocmp-all-but-file-suffixes
+        properties:
+            name: $parameters.name + "-nocmp-all-but-file-suffixes-cmpaction"
+            cmptype: NOCOMPRESS
+        components:
+            -
+                name: nocmp-all-but-file-suffixes-policy-cmp
+                type: ns::cmppolicy
+                properties:
+                    name: $parameters.name + "-nocmp-all-but-file-suffixes-cmppolicy"
+                    rule: $substitutions.all-but-file-suffixes-rule($components.nocmp-all-but-file-suffixes-patset-comp.properties.name)
+                    resaction: $parent.properties.name
+    -
+        name: cmp-mime-types-patset-comp
+        type: ns::policypatset
+        condition: $parameters.compression-config.cmp-mime-types
+        properties:
+          # It is necessary to use replace as NetScaler policypatset names cannot contain "-"
+          name: replace($parameters.name + "-cmp-mime-types-patset", "-", "_")
+        components:
+          -
+            name: cmp-mime-types-patset-bindings-comp
+            type: ns::policypatset_pattern_binding
+            repeat: $parameters.compression-config.cmp-mime-types
+            repeat-item: item
+            properties:
+              name: $parent.properties.name
+              String: $item.mime-type
+    -
+        name: cmp-all-but-mime-types-patset-comp
+        type: ns::policypatset
+        condition: $parameters.compression-config.cmp-all-but-mime-types
+        properties:
+          # It is necessary to use replace as NetScaler policypatset names cannot contain "-"
+          name: replace($parameters.name + "-cmp-all-but-mime-types-patset", "-", "_")
+        components:
+          -
+            name: cmp-all-but-mime-types-patset-bindings-comp
+            type: ns::policypatset_pattern_binding
+            repeat: $parameters.compression-config.cmp-all-but-mime-types
+            repeat-item: item
+            properties:
+              name: $parent.properties.name
+              String: $item.mime-type
+    -
+        name: nocmp-mime-types-patset-comp
+        type: ns::policypatset
+        condition: $parameters.compression-config.nocmp-mime-types
+        properties:
+          # It is necessary to use replace as NetScaler policypatset names cannot contain "-"
+          name: replace($parameters.name + "-nocmp-mime-types-patset", "-", "_")
+        components:
+          -
+            name: nocmp-mime-types-patset-bindings-comp
+            type: ns::policypatset_pattern_binding
+            repeat: $parameters.compression-config.nocmp-mime-types
+            repeat-item: item
+            properties:
+              name: $parent.properties.name
+              String: $item.mime-type
+    -
+        name: nocmp-all-but-mime-types-patset-comp
+        type: ns::policypatset
+        condition: $parameters.compression-config.nocmp-all-but-mime-types
+        properties:
+          # It is necessary to use replace as NetScaler policypatset names cannot contain "-"
+          name: replace($parameters.name + "-nocmp-all-but-mime-types-patset", "-", "_")
+        components:
+          -
+            name: nocmp-all-but-mime-types-patset-bindings-comp
+            type: ns::policypatset_pattern_binding
+            repeat: $parameters.compression-config.nocmp-all-but-mime-types
+            repeat-item: item
+            properties:
+              name: $parent.properties.name
+              String: $item.mime-type
+    -
+        name: cmp-mime-types-action-cmp
+        type: ns::cmpaction
+        condition: $parameters.compression-config.cmp-mime-types
+        properties:
+            name: $parameters.name + "-cmp-mime-types-cmpaction"
+            cmptype: COMPRESS
+        components:
+            -
+                name: cmp-mime-types-policy-cmp
+                type: ns::cmppolicy
+                properties:
+                    name: $parameters.name + "-cmp-mime-types-cmppolicy"
+                    rule: $substitutions.mime-types-rule($components.cmp-mime-types-patset-comp.properties.name)
+                    resaction: $parent.properties.name
+    -
+        name: cmp-all-but-mime-types-action-cmp
+        type: ns::cmpaction
+        condition: $parameters.compression-config.cmp-all-but-mime-types
+        properties:
+            name: $parameters.name + "-cmp-all-but-mime-types-cmpaction"
+            cmptype: COMPRESS
+        components:
+            -
+                name: cmp-all-but-mime-types-policy-cmp
+                type: ns::cmppolicy
+                properties:
+                    name: $parameters.name + "-cmp-all-but-mime-types-cmppolicy"
+                    rule: $substitutions.all-but-mime-types-rule($components.cmp-all-but-mime-types-patset-comp.properties.name)
+                    resaction: $parent.properties.name
+    -
+        name: nocmp-mime-types-action-cmp
+        type: ns::cmpaction
+        condition: $parameters.compression-config.nocmp-mime-types
+        properties:
+            name: $parameters.name + "-nocmp-mime-types-cmpaction"
+            cmptype: NOCOMPRESS
+        components:
+            -
+                name: nocmp-mime-types-policy-cmp
+                type: ns::cmppolicy
+                properties:
+                    name: $parameters.name + "-nocmp-mime-types-cmppolicy"
+                    rule: $substitutions.mime-types-rule($components.nocmp-mime-types-patset-comp.properties.name)
+                    resaction: $parent.properties.name
+    -
+        name: nocmp-all-but-mime-types-action-cmp
+        type: ns::cmpaction
+        condition: $parameters.compression-config.nocmp-all-but-mime-types
+        properties:
+            name: $parameters.name + "-nocmp-all-but-mime-types-cmpaction"
+            cmptype: NOCOMPRESS
+        components:
+            -
+                name: nocmp-all-but-mime-types-policy-cmp
+                type: ns::cmppolicy
+                properties:
+                    name: $parameters.name + "-nocmp-all-but-mime-types-cmppolicy"
+                    rule: $substitutions.all-but-mime-types-rule($components.nocmp-all-but-mime-types-patset-comp.properties.name)
+                    resaction: $parent.properties.name
+    -
+        name: cmp-resource-names-patset-comp
+        type: ns::policypatset
+        condition: $parameters.compression-config.cmp-resource-names
+        properties:
+          # It is necessary to use replace as NetScaler policypatset names cannot contain "-"
+          name: replace($parameters.name + "-cmp-resource-names-patset", "-", "_")
+        components:
+          -
+            name: cmp-resource-names-patset-bindings-comp
+            type: ns::policypatset_pattern_binding
+            repeat: $parameters.compression-config.cmp-resource-names
+            repeat-item: resource-name
+            properties:
+              name: $parent.properties.name
+              String: $resource-name
+    -
+        name: cmp-all-but-resource-names-patset-comp
+        type: ns::policypatset
+        condition: $parameters.compression-config.cmp-all-but-resource-names
+        properties:
+          # It is necessary to use replace as NetScaler policypatset names cannot contain "-"
+          name: replace($parameters.name + "-cmp-all-but-resource-names-patset", "-", "_")
+        components:
+          -
+            name: cmp-all-but-resource-names-patset-bindings-comp
+            type: ns::policypatset_pattern_binding
+            repeat: $parameters.compression-config.cmp-all-but-resource-names
+            repeat-item: resource-name
+            properties:
+              name: $parent.properties.name
+              String: $resource-name
+    -
+        name: nocmp-resource-names-patset-comp
+        type: ns::policypatset
+        condition: $parameters.compression-config.nocmp-resource-names
+        properties:
+          # It is necessary to use replace as NetScaler policypatset names cannot contain "-"
+          name: replace($parameters.name + "-nocmp-resource-names-patset", "-", "_")
+        components:
+          -
+            name: nocmp-resource-names-patset-bindings-comp
+            type: ns::policypatset_pattern_binding
+            repeat: $parameters.compression-config.nocmp-resource-names
+            repeat-item: resource-name
+            properties:
+              name: $parent.properties.name
+              String: $resource-name
+    -
+        name: nocmp-all-but-resource-names-patset-comp
+        type: ns::policypatset
+        condition: $parameters.compression-config.nocmp-all-but-resource-names
+        properties:
+          # It is necessary to use replace as NetScaler policypatset names cannot contain "-"
+          name: replace($parameters.name + "-nocmp-all-but-resource-names-patset", "-", "_")
+        components:
+          -
+            name: nocmp-all-but-resource-names-patset-bindings-comp
+            type: ns::policypatset_pattern_binding
+            repeat: $parameters.compression-config.nocmp-all-but-resource-names
+            repeat-item: resource-name
+            properties:
+              name: $parent.properties.name
+              String: $resource-name
+    -
+        name: cmp-resource-names-action-cmp
+        type: ns::cmpaction
+        condition: $parameters.compression-config.cmp-resource-names
+        properties:
+            name: $parameters.name + "-cmp-resource-names-cmpaction"
+            cmptype: COMPRESS
+        components:
+            -
+                name: cmp-resource-names-policy-cmp
+                type: ns::cmppolicy
+                properties:
+                    name: $parameters.name + "-cmp-resource-names-cmppolicy"
+                    rule: $substitutions.resource-names-rule($components.cmp-resource-names-patset-comp.properties.name)
+                    resaction: $parent.properties.name
+    -
+        name: cmp-all-but-resource-names-action-cmp
+        type: ns::cmpaction
+        condition: $parameters.compression-config.cmp-all-but-resource-names
+        properties:
+            name: $parameters.name + "-cmp-all-but-resource-names-cmpaction"
+            cmptype: COMPRESS
+        components:
+            -
+                name: cmp-all-but-resource-names-policy-cmp
+                type: ns::cmppolicy
+                properties:
+                    name: $parameters.name + "-cmp-all-but-resource-names-cmppolicy"
+                    rule: $substitutions.all-but-resource-names-rule($components.cmp-all-but-resource-names-patset-comp.properties.name)
+                    resaction: $parent.properties.name
+    -
+        name: nocmp-resource-names-action-cmp
+        type: ns::cmpaction
+        condition: $parameters.compression-config.nocmp-resource-names
+        properties:
+            name: $parameters.name + "-nocmp-resource-names-cmpaction"
+            cmptype: NOCOMPRESS
+        components:
+            -
+                name: nocmp-resource-names-policy-cmp
+                type: ns::cmppolicy
+                properties:
+                    name: $parameters.name + "-nocmp-resource-names-cmppolicy"
+                    rule: $substitutions.resource-names-rule($components.nocmp-resource-names-patset-comp.properties.name)
+                    resaction: $parent.properties.name
+    -
+        name: nocmp-all-but-resource-names-action-cmp
+        type: ns::cmpaction
+        condition: $parameters.compression-config.nocmp-all-but-resource-names
+        properties:
+            name: $parameters.name + "-nocmp-all-but-resource-names-cmpaction"
+            cmptype: NOCOMPRESS
+        components:
+            -
+                name: nocmp-all-but-resource-names-policy-cmp
+                type: ns::cmppolicy
+                properties:
+                    name: $parameters.name + "-nocmp-all-but-resource-names-cmppolicy"
+                    rule: $substitutions.all-but-resource-names-rule($components.nocmp-all-but-resource-names-patset-comp.properties.name)
+                    resaction: $parent.properties.name
+outputs:
+    - 
+        name: file-suffixes-cmp-policyname
+        condition: $parameters.compression-config.cmp-file-suffixes
+        value: $components.cmp-file-suffixes-action-cmp.components.cmp-file-suffixes-policy-cmp.properties.name
+    - 
+        name: all-but-file-suffixes-cmp-policyname
+        condition: $parameters.compression-config.cmp-all-but-file-suffixes
+        value: $components.cmp-all-but-file-suffixes-action-cmp.components.cmp-all-but-file-suffixes-policy-cmp.properties.name
+    - 
+        name: file-suffixes-nocmp-policyname
+        condition: $parameters.compression-config.nocmp-file-suffixes
+        value: $components.nocmp-file-suffixes-action-cmp.components.nocmp-file-suffixes-policy-cmp.properties.name
+    - 
+        name: all-but-file-suffixes-nocmp-policyname
+        condition: $parameters.compression-config.nocmp-all-but-file-suffixes
+        value: $components.nocmp-all-but-file-suffixes-action-cmp.components.nocmp-all-but-file-suffixes-policy-cmp.properties.name
+    - 
+        name: mime-types-cmp-policyname
+        condition: $parameters.compression-config.cmp-mime-types
+        value: $components.cmp-mime-types-action-cmp.components.cmp-mime-types-policy-cmp.properties.name
+    - 
+        name: all-but-mime-types-cmp-policyname
+        condition: $parameters.compression-config.cmp-all-but-mime-types
+        value: $components.cmp-all-but-mime-types-action-cmp.components.cmp-all-but-mime-types-policy-cmp.properties.name
+    - 
+        name: mime-types-nocmp-policyname
+        condition: $parameters.compression-config.nocmp-mime-types
+        value: $components.nocmp-mime-types-action-cmp.components.nocmp-mime-types-policy-cmp.properties.name
+    - 
+        name: all-but-mime-types-nocmp-policyname
+        condition: $parameters.compression-config.nocmp-all-but-mime-types
+        value: $components.nocmp-all-but-mime-types-action-cmp.components.nocmp-all-but-mime-types-policy-cmp.properties.name
+    - 
+        name: resource-names-cmp-policyname
+        condition: $parameters.compression-config.cmp-resource-names
+        value: $components.cmp-resource-names-action-cmp.components.cmp-resource-names-policy-cmp.properties.name
+    - 
+        name: all-but-resource-names-cmp-policyname
+        condition: $parameters.compression-config.cmp-all-but-resource-names
+        value: $components.cmp-all-but-resource-names-action-cmp.components.cmp-all-but-resource-names-policy-cmp.properties.name
+    - 
+        name: resource-names-nocmp-policyname
+        condition: $parameters.compression-config.nocmp-resource-names
+        value: $components.nocmp-resource-names-action-cmp.components.nocmp-resource-names-policy-cmp.properties.name
+    - 
+        name: all-but-resource-names-nocmp-policyname
+        condition: $parameters.compression-config.nocmp-all-but-resource-names
+        value: $components.nocmp-all-but-resource-names-action-cmp.components.nocmp-all-but-resource-names-policy-cmp.properties.name

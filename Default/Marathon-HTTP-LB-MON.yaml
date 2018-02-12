@@ -1,0 +1,65 @@
+
+--- 
+name: Marathon-HTTP-LB-MON
+namespace: com.citrix.adc.stylebooks
+version: "1.1"
+display-name: "Marathon Load Balanced Application with Monitor"
+description: "This stylebook Load Balanced Application configuration for Marathon"
+schema-version: "1.0"
+private: true
+import-stylebooks: 
+  - 
+    namespace: com.citrix.adc.stylebooks
+    prefix: stlb
+    version: "1.1"
+parameters-default-sources:
+  - stlb::Marathon-ROOT
+substitutions:
+  mon-name(givenname, index): $givenname + "-" + $parameters.appname + "-" + str($index) + "-mon"
+components: 
+  - 
+    name: http-lb
+    type: stlb::Marathon-HTTP-LB
+    repeat: $parameters.app-services
+    repeat-item: app
+    properties: 
+      appname: $parameters.appname
+      app-services: [ $app ]
+    components:
+      -
+        name: monitors
+        type: stlb::NS-LBMonitor
+        condition: $app.monitors
+        repeat: $app.monitors
+        repeat-item: mon
+        repeat-index: mon-index
+        properties:
+            monitorname: $substitutions.mon-name($mon.monitorname, $mon-index)
+            type: $mon.type
+            destip?: $mon.destip
+            destport?: $mon.destport
+            httprequest?: $mon.httprequest
+            send?: $mon.send
+            customheaders?: $mon.customheaders
+            respcode?: $mon.respcode
+            recv?: $mon.recv
+            lrtm?: $mon.lrtm
+            secure?: $mon.secure
+            interval?: $mon.interval
+            interval_units?: $mon.interval_units
+            resptimeout?: $mon.resptimeout
+            retries?: $mon.retries
+            downtime?: $mon.downtime
+        components:
+          -
+            name: mon-binding
+            type: stlb::NS-SGMonitorBinding
+            repeat: $parent.parent.outputs.servicegroups
+            repeat-item: sg
+            properties:
+              servicegroupname: $sg.properties.servicegroupname
+              monitorname: $parent.properties.monitorname
+outputs: 
+  - 
+    name: http-lbs
+    value: $components.http-lb

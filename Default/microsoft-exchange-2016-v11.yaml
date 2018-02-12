@@ -1,0 +1,239 @@
+---
+name: microsoft-exchange-2016
+description: This StyleBook defines NetScaler configuration for Microsoft Exchange 2016
+display-name: Microsoft Exchange 2016
+namespace: com.citrix.adc.enterprise.stylebooks
+schema-version: "1.0"
+version: "1.1"
+private: true
+import-stylebooks:
+  -
+    namespace: netscaler.nitro.config
+    prefix: ns
+    version: "10.5"
+  - 
+    namespace: com.citrix.adc.stylebooks
+    prefix: stlb
+    version: "1.0"
+  - 
+    namespace: com.citrix.adc.commontypes
+    prefix: cmtypes
+    version: "1.0"
+parameters:
+  -
+    name: exch-appname
+    label: Exchange Application Name
+    description: The Name of the Microsoft Exchange application
+    type: string
+    required: true
+    key: true
+  -
+    name: exch-vip
+    label: Exchange VIP
+    description: The Virtual IP for the Microsoft Exchange application
+    type: ipaddress
+    required: true
+  -
+    name: server-ips
+    label: Exchange Server IPs
+    description: List of Microsoft Exchange Server IPs
+    type: ipaddress[]
+    required: true
+  -
+    name: exch-certs
+    label: Exchange Certificates 
+    description: Microsoft Exchange SSL certificates
+    type: cmtypes::certificate[]
+    required: true
+  -
+    name: exch-auth
+    label: Exchange Active Directory Authentication config
+    description: Settings for Active Directory Authentication configuration for Exchange
+    type: object
+    required: true
+    parameters:
+      -
+        name: vip
+        label: Active Directory Authentication VIP
+        description: The VIP IP address used for Active Directory vserver
+        type: ipaddress
+        required: true
+      -
+        name: server-ip
+        type: ipaddress
+        label: Active Directory Server IP
+        description: The Active Directory Server IP Address
+        required: true
+      -
+        name: base
+        label: Active Directory Base String
+        description: The Active Directory LDAP Base string for authentication. Example "cn=Users,dc=acme,dc=com"
+        type: string
+        required: true
+      -
+        name: bind-dn
+        type: string
+        label: Active Directory LDAP Bind Distinguished Name (DN)
+        description: LDAP Bind Distinguished Name (DN) used to bind to the LDAP server (Active Directory server). For example "cn=Administrator,cn=Users,dc=acme,dc=com"
+        required: true
+      -
+        name: bind-dn-password
+        type: password
+        label: Active Directory LDAP Bind Distinguished Name (DN) Password
+        description: LDAP Bind Distinguished Name (DN) password for Active Directory Authentication
+        min-length: 1
+        required: true
+      -
+        name: login-name
+        label: Active Directory user name Attribute
+        description: Active Directory attribute for user name. The NetScaler uses the LDAP attribute to query external Active Directory Servers. For example "samAccountName"
+        type: string
+        required: true
+      -
+        name: group-attribute-name
+        label: Active Directory group Attribute Name
+        description: Active Directory group Attribute Name. The NetScaler uses this attribute to extract the user's groups. For example "memberOf"
+        type: string
+        required: true
+      -
+        name: group-subattribute-name
+        label: Active Directory Group Sub-Attribute name
+        description: Active Directory Group sub-attribute name. The NetScaler uses this subattribute to extract the user's groups. For example "cn"
+        type: string
+        required: true
+      -
+        name: auth-domain
+        label: Active Directory Authentication Domain
+        description: Active Directory Authentication DNS Domain name
+        type: string
+substitutions:
+  add-port(server-ip):
+    ip: $server-ip
+    port: 443
+components:
+  -
+      name: enable-features-comp
+      type: ns::nsfeature
+      description: Enables the NetScaler features needed for Microsoft Exchange application
+      meta-properties:
+          action: enable
+      properties:
+          feature: ["cs", "lb", "ssl", "rewrite", "aaa"]
+  -
+    name: auth-dnsrecord-comp
+    type: ns::dnsaddrec
+    condition: $parameters.exch-auth.auth-domain
+    description: Adds a DNS record for the auth domain that resolves to the auth VIP IP.
+    properties:
+      hostname: $parameters.exch-auth.auth-domain
+      ipaddress: $parameters.exch-auth.vip
+  -
+    name: auth-ldap-policy-comp
+    type: stlb::ldap-policy
+    description: This component creates a NetScaler LDAP policy/action config entities for Active Directory
+    properties:
+      appname: $parameters.exch-appname
+      ldap-settings:
+        is-activedirectory: true
+        server-ip: $parameters.exch-auth.server-ip
+        ldap-base: $parameters.exch-auth.base
+        bind-dn: $parameters.exch-auth.bind-dn
+        bind-dn-password: $parameters.exch-auth.bind-dn-password
+        user-attribute-name: $parameters.exch-auth.login-name
+        group-attribute-name: $parameters.exch-auth.group-attribute-name
+        group-subattribute-name: $parameters.exch-auth.group-subattribute-name
+  -
+    name: auth-comp
+    type: stlb::auth
+    description: This component creates a NetScaler LDAP Auth Vserver for Active Directory and binds all policies to it
+    properties:
+        name: $parameters.exch-appname
+        vip: $parameters.exch-auth.vip
+        protocol: SSL
+        port: 443
+        certificates: $parameters.exch-certs
+        auth-settings:
+          auth-domain?: $parameters.exch-auth.auth-domain
+          max-login-attempts?: 255
+          failed-login-timeout?: 1
+        aaa-policies:
+          ldap-policies:
+            - $components.auth-ldap-policy-comp.outputs.ldap-auth-policy.properties.name
+  -
+    name: ms-exch-comp
+    description: This component builds the CS and LB vservers and services needed for Exchange configuration
+    type: stlb::cs-lb-mon
+    properties:
+      appname: $parameters.exch-appname
+      cs-virtual-ip: $parameters.exch-vip
+      cs-virtual-port: 443
+      cs-service-type: SSL
+      certificates: $parameters.exch-certs
+      cs-advanced: 
+        client-timeout: 180
+        auth-params:
+          authentication-vserver-name: $components.auth-comp.outputs.auth-vserver.properties.name
+          authentication-http-401: "ON"
+      default-lb-pool:
+        lb-appname: owa
+        lb-service-type: SSL
+        lb-virtual-ip: 0.0.0.0
+        lb-virtual-port: 0
+        svc-service-type: SSL
+        svc-servers: map($substitutions.add-port, $parameters.server-ips)
+        certificates: $parameters.exch-certs
+      pools:
+        -
+            rule: str("HTTP.REQ.URL.CONTAINS(\"Microsoft\")")
+            lb-pool: 
+              lb-appname: activesync
+              lb-service-type: SSL
+              lb-virtual-ip: 0.0.0.0
+              lb-virtual-port: 0
+              svc-service-type: SSL
+              svc-servers:  map($substitutions.add-port, $parameters.server-ips)
+              certificates: $parameters.exch-certs
+            priority: 50
+        -
+            rule: str("HTTP.REQ.URL.CONTAINS(\"rpc\")")
+            lb-pool: 
+              lb-appname: rpc
+              lb-service-type: SSL
+              lb-virtual-ip: 0.0.0.0
+              lb-virtual-port: 0
+              svc-service-type: SSL
+              svc-servers:  map($substitutions.add-port, $parameters.server-ips)
+              certificates: $parameters.exch-certs
+            priority: 51
+        -
+            rule: str("HTTP.REQ.URL.CONTAINS(\"ews\")")
+            lb-pool: 
+              lb-appname: ews
+              lb-service-type: SSL
+              lb-virtual-ip: 0.0.0.0
+              lb-virtual-port: 0
+              svc-service-type: SSL
+              svc-servers:  map($substitutions.add-port, $parameters.server-ips)
+              certificates: $parameters.exch-certs
+            priority: 52
+        -
+            rule: str("HTTP.REQ.URL.CONTAINS(\"autodiscover\")")
+            lb-pool: 
+              lb-appname: autodiscover
+              lb-service-type: SSL
+              lb-virtual-ip: 0.0.0.0
+              lb-virtual-port: 0
+              svc-service-type: SSL
+              svc-servers:  map($substitutions.add-port, $parameters.server-ips)
+              certificates: $parameters.exch-certs
+            priority: 53
+  -
+    name: exch-cookie-update-comp
+    description: This component configures NetScaler to change the cookie value in some Exchange requests
+    type: stlb::cookie-postfix
+    properties:
+      appname: $parameters.exch-appname
+      vserver-name: $components.ms-exch-comp.outputs.default-lbvserver.properties.name
+      url-string: logon.asp
+      cookie-name: OutlookSession
+      cookie-postfix: "\";PBack=0\""

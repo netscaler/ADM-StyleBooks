@@ -1,0 +1,101 @@
+--- 
+name: adfs-auth-ldap
+namespace: com.citrix.adc.stylebooks
+version: "1.0"
+description: This stylebook configures an Authentication VServer
+schema-version: "1.0"
+private: true
+import-stylebooks: 
+    - 
+        namespace: netscaler.nitro.config
+        version: "10.5"
+        prefix: ns
+    - 
+        namespace: com.citrix.adc.commontypes
+        version: "1.0"
+        prefix: cmtypes
+    - 
+        namespace: com.citrix.adc.stylebooks
+        version: "1.0"
+        prefix: stlb
+parameters:
+    -
+        name: adfs-appname
+        type: string
+        label: "Application Domain"
+        description: "The Application Name"
+        required: true
+    -
+        name: auth-domain
+        type: string
+        label: "Authentication Domain"
+        description: "The DNS domain associated with the Auth VIP"
+        required: true
+    -
+        name: auth-info
+        type: object
+        label: "ADFSProxy Active Directory Authentication for External Users"
+        description: "Parameters for configuring AD Auth for ADFSProxy"
+        required: true
+        parameters:
+            -
+                name: auth-vip
+                type: ipaddress
+                label: "ADFSProxy External Authentication VIP"
+                description: "The VIP IP address on NetScaler for authenticating external users to Active Directory"
+                required: true
+        parameters-default-sources:
+            - cmtypes::ldap-base-params
+    -
+        name: cert
+        type: cmtypes::certificate
+        label: "Certificate File path"
+        required: true
+    -
+        name: ca-cert
+        type: cmtypes::certificate
+        label: "CA Certificate File path"
+        description: "CA Certificate file"
+components:
+    -
+        name: adfs-ldap-comp
+        type: stlb::activedirectory-ldap-policy
+        description: "This Component configures the NetScaler LDAP Policy and Action for Active Directory"
+        properties:
+            appname: $parameters.adfs-appname
+            ad-settings:
+                server-ip: $parameters.auth-info.server-ip
+                ldap-base: $parameters.auth-info.ldap-base
+                bind-dn: $parameters.auth-info.bind-dn
+                bind-dn-password: $parameters.auth-info.bind-dn-password
+                default-group?: $parameters.auth-info.default-group
+    -
+        name: adfs-tmsession-comp
+        type: stlb::tmsession-policy
+        properties:
+            appname: $parameters.adfs-appname + "-adfs-ldap"
+            session-info:
+                auth-domain: $parameters.auth-domain
+                enable-sso: true
+    -
+        name: adfs-auth-comp
+        type: stlb::auth
+        description: This component creates the Authentication VServer and binds it to the policies provided.
+        properties:
+            name: $parameters.adfs-appname + '-adfs-ldap'
+            vip: $parameters.auth-info.auth-vip
+            certificates: 
+                - $parameters.cert
+                - $parameters.ca-cert
+            auth-settings:
+                auth-domain: $parameters.auth-domain
+            aaa-policies:
+                ldap-policies:
+                    - $components.adfs-ldap-comp.outputs.ad-auth-policy.properties.name
+                session-policies:
+                    - $components.adfs-tmsession-comp.outputs.tmsession-policy.properties.name
+outputs:
+    -
+        name: auth-vserver
+        value: $components.adfs-auth-comp.outputs.auth-vserver
+        description: "The Authentication vserver Component"

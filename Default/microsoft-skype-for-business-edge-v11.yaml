@@ -1,0 +1,216 @@
+---
+name: microsoft-skype-for-business-edge
+namespace: com.citrix.adc.enterprise.stylebooks
+version: "1.1"
+description: |
+            This StyleBook defines the NetScaler configuration for the Edge server of 
+            Microsoft Skype for Business 2015.
+display-name: Microsoft Skype for Business 2015 StyleBook (Edge Server)
+schema-version: "1.0"
+private: true
+import-stylebooks:
+  -
+    namespace: netscaler.nitro.config
+    prefix: ns
+    version: "10.5"
+  -
+    namespace: com.citrix.adc.stylebooks
+    prefix: stlb
+    version: "1.0"
+
+parameters:
+  -
+    name: edge-appname
+    label: Application Name of Edge VIPs for Microsoft Skype 
+    description: Application Name of Edge VIPs for Microsoft Skype 
+    type: string
+    key: true
+    required: true
+  -
+    name: edge-external-vip
+    label: External VIP for Edge 
+    description: The external Virtual IP address of Edge server for Microsoft Skype for Business
+    type: ipaddress
+  -
+    name: edge-external-server-ips
+    label: External Edge Server IPs
+    description: List of the external Server IPs of the Edge Servers
+    type: ipaddress[]
+  -
+    name: edge-internal-vip
+    label: Internal VIP for Edge
+    description: The internal Virtual IP address of Edge server for Microsoft Skype for Business
+    type: ipaddress
+  -
+    name: edge-internal-server-ips
+    label: Internal Edge Server IPs
+    description: List of the internal Server IPs of the Edge Servers
+    type: ipaddress[]
+  -
+    name: edge-ports-list
+    label: List of Ports 
+    description: List of Ports used for Edge Servers
+    type: object
+    gui:
+      collapse_pane: true
+    parameters:
+       -
+          name: https-ext
+          label: HTTPS External Port
+          description: |
+                Used for external SIP/TLS communication for remote user access, 
+                accessing internal Web conferences, and STUN/TCP inbound and outbound 
+                media communications for accessing internal media and A/V sessions
+          type: tcp-port
+          gui:
+            updatable: false
+          default: 443
+       -
+          name: https-int
+          label: HTTPS Internal Port
+          description: |
+                  Used for internal SIP/TLS communication, for remote user access, 
+                  accessing internal Web conferences, and STUN/TCP inbound and outbound 
+                  media communications for accessing internal media and A/V sessions
+          type: tcp-port
+          gui:
+            updatable: false
+          default: 443
+       -
+          name: sip-external-remoteaccess
+          label: SIP External Remote Access Port
+          description: |
+                Used for external ports for SIP/MTLS communication for remote user access 
+                or federation
+          type: tcp-port
+          gui:
+            updatable: false
+          default: 5061
+       -
+          name: sip-internal-remoteaccess
+          label: SIP Internal Remote Access Port
+          description: |
+                Used for internal SIP/MTLS communication for remote user access 
+                or federation
+          type: tcp-port
+          gui:
+            updatable: false
+          default: 5061
+       -
+          name: sip-external-STUN-UDP
+          label: SIP External STUN UDP port
+          description: |
+                Used for external ports for STUN/ UDP inbound and outbound media 
+                communications
+          type: tcp-port
+          gui:
+            updatable: false 
+          default: 3478
+       -
+          name: sip-internal-STUN-UDP
+          label: SIP Internal STUN UDP port
+          description: Used for STUN/UDP inbound and outbound media communications
+          type: tcp-port
+          gui:
+            updatable: false
+          default: 3478    
+       -
+          name: sip-internal-IM
+          label: SIP Internal IM Port
+          description: |
+                  Used for internal SIP/MTLS authentication of IM communications flowing 
+                  outbound through the internal firewall. (MRAS authentication)
+          type: tcp-port
+          gui:
+            updatable: false
+          default: 5062
+substitutions:
+  add-port(server-ip, port):
+    ip: $server-ip
+    port: $port
+  add-https-ext-port(server-ip): $substitutions.add-port($server-ip, $parameters.edge-ports-list.https-ext)
+  add-https-int-port(server-ip): $substitutions.add-port($server-ip, $parameters.edge-ports-list.https-int)
+  add-sip-external-remoteaccess-port(server-ip): $substitutions.add-port($server-ip, $parameters.edge-ports-list.sip-external-remoteaccess)
+  add-sip-internal-remoteaccess-port(server-ip): $substitutions.add-port($server-ip, $parameters.edge-ports-list.sip-internal-remoteaccess)
+  add-sip-external-STUN-UDP-port(server-ip): $substitutions.add-port($server-ip, $parameters.edge-ports-list.sip-external-STUN-UDP)
+  add-sip-internal-STUN-UDP-port(server-ip): $substitutions.add-port($server-ip, $parameters.edge-ports-list.sip-internal-STUN-UDP)
+  add-sip-internal-IM-port(server-ip): $substitutions.add-port($server-ip, $parameters.edge-ports-list.sip-internal-IM)
+components:
+  -
+    name: edge-external-lb-comp
+    type: stlb::lb
+    properties:
+      lb-appname: $parameters.edge-appname + '-sfb-edge-externalsip'
+      lb-service-type: TCP
+      lb-virtual-ip: $parameters.edge-external-vip
+      lb-virtual-port: $parameters.edge-ports-list.https-ext
+      svc-servers: map($substitutions.add-https-ext-port, $parameters.edge-external-server-ips)
+      svc-service-type: TCP
+  -
+    name: edge-internal-lb-comp
+    type: stlb::lb
+    properties:
+      lb-appname: $parameters.edge-appname + '-sfb-edge-internalsip'
+      lb-service-type: TCP
+      lb-virtual-ip: $parameters.edge-internal-vip
+      lb-virtual-port: $parameters.edge-ports-list.https-int
+      svc-servers: map($substitutions.add-https-int-port, $parameters.edge-internal-server-ips)
+      svc-service-type: TCP
+      lb-advanced:
+        persistence: SOURCEIP
+  -
+    name: edge-externalaccess-lb-comp
+    type: stlb::lb
+    properties:
+      lb-appname: $parameters.edge-appname + '-sfb-edge-externalaccess'
+      lb-service-type: TCP
+      lb-virtual-ip: $parameters.edge-external-vip
+      lb-virtual-port: $parameters.edge-ports-list.sip-external-remoteaccess
+      svc-servers: map($substitutions.add-sip-external-remoteaccess-port, $parameters.edge-external-server-ips)
+      svc-service-type: TCP
+  -
+    name: edge-internalaccess-lb-comp
+    type: stlb::lb
+    properties:
+      lb-appname: $parameters.edge-appname + '-sfb-edge-internalaccess'
+      lb-service-type: TCP
+      lb-virtual-ip: $parameters.edge-internal-vip
+      lb-virtual-port: $parameters.edge-ports-list.sip-internal-remoteaccess
+      svc-servers: map($substitutions.add-sip-internal-remoteaccess-port, $parameters.edge-internal-server-ips)
+      svc-service-type: TCP
+      lb-advanced:
+        persistence: SOURCEIP
+  -
+    name: edge-external-stun-lb-comp
+    type: stlb::lb
+    properties:
+      lb-appname: $parameters.edge-appname + '-sfb-edge-externalstun'
+      lb-service-type: UDP
+      lb-virtual-ip: $parameters.edge-external-vip
+      lb-virtual-port: $parameters.edge-ports-list.sip-external-STUN-UDP
+      svc-servers: map($substitutions.add-sip-external-STUN-UDP-port, $parameters.edge-external-server-ips)
+      svc-service-type: UDP
+  -
+    name: edge-internal-stun-lb-comp
+    type: stlb::lb
+    properties:
+      lb-appname: $parameters.edge-appname + '-sfb-edge-internalstun'
+      lb-service-type: UDP
+      lb-virtual-ip: $parameters.edge-internal-vip
+      lb-virtual-port: $parameters.edge-ports-list.sip-internal-STUN-UDP
+      svc-servers: map($substitutions.add-sip-internal-STUN-UDP-port, $parameters.edge-internal-server-ips)
+      svc-service-type: UDP
+      lb-advanced:
+        persistence: SOURCEIP
+  -
+    name: edge-im-lb-comp
+    type: stlb::lb
+    properties:
+      lb-appname: $parameters.edge-appname + '-sfb-edge-internalim'
+      lb-service-type: TCP
+      lb-virtual-ip: $parameters.edge-internal-vip
+      lb-virtual-port: $parameters.edge-ports-list.sip-internal-IM
+      svc-servers: map($substitutions.add-sip-internal-IM-port, $parameters.edge-internal-server-ips)
+      svc-service-type: TCP
+      lb-advanced:
+        persistence: SOURCEIP

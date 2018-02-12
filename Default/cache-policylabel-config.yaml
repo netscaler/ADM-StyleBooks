@@ -1,0 +1,63 @@
+--- 
+name: cache-policylabel-config
+description: "This stylebook creates a cache policy label and binds cache policies to it"
+display-name: "Compression Policy Stylebook"
+namespace: com.citrix.adc.stylebooks
+schema-version: "1.0"
+version: "1.0"
+private: true
+import-stylebooks: 
+  - 
+    namespace: netscaler.nitro.config
+    prefix: ns
+    version: "10.5"
+parameters:
+    -
+      name: name
+      type: string
+      label: Policy Label Name
+      description: The prefix name of the policy label
+      required: true
+    -
+      name: response-label
+      type: boolean
+      label: Whether this label is for responses
+      description: If true, the label is evaluated during response flow, otherwise it is evaluated during request flow
+      default: false
+    -
+      name: policynames
+      type: string[]
+      label: List of Policies
+      description: The list of Policies to be bound to the policy label
+substitutions:
+  label-direction:
+    false: REQ
+    true: RES
+  direction-str:
+    false: request
+    true: response
+components:
+  - 
+    name: cache-policylabel-comp
+    type: ns::cachepolicylabel
+    description: Component for creation of cache policylabel
+    properties: 
+      labelname: $parameters.name + "-" + $substitutions.direction-str[$parameters.response-label] + "-cachepolicylabel"
+      evaluates: $substitutions.label-direction[$parameters.response-label]
+  - 
+    name: cache-policylabel-policy-binding-comp
+    type: ns::cachepolicylabel_cachepolicy_binding
+    condition: $parameters.policynames
+    repeat: $parameters.policynames
+    repeat-item: policy-name
+    repeat-index: polndx
+    description: Component for binding cache policy and policylabel
+    properties: 
+      labelname: $components.cache-policylabel-comp.properties.labelname
+      policyname: $policy-name
+      priority: 10 + ($polndx * 10) 
+      gotopriorityexpression: END
+outputs:
+  -
+    name: labelname
+    value: $components.cache-policylabel-comp.properties.labelname

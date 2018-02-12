@@ -1,0 +1,334 @@
+---
+name: microsoft-skype-for-business-front-end
+namespace: com.citrix.adc.enterprise.stylebooks
+version: "1.0"
+description: |
+            This StyleBook defines the NetScaler configuration for the Front End server of 
+            Microsoft Skype for Business 2015.
+display-name: Microsoft Skype for Business 2015 StyleBook (Front-End Server)
+schema-version: "1.0"
+private: true
+import-stylebooks:
+  -
+    namespace: netscaler.nitro.config
+    prefix: ns
+    version: "10.5"
+  -
+    namespace: com.citrix.adc.stylebooks
+    prefix: stlb-custom
+    version: "0.1"
+
+parameters:
+  -
+    name: fe-vip
+    label: Skype for Business FrontEnd Virtual IP
+    description: The FrontEnd Virtual IP address for Microsoft Skype for Business
+    type: ipaddress
+  -
+    name: fe-server-ips
+    label: Skype for Business FrontEnd Server IPs
+    description: List of Skype for Business FrontEnd Server IPs
+    type: ipaddress[]
+  -
+    name: fe-ports-list
+    label: List of Ports for Microsoft Skype for Business Front-End
+    description: List of ports
+    type: object
+    gui:
+      collapse_pane: true
+    parameters:
+       -
+          name: http
+          label: HTTP Port
+          description: Port used for communication from Front End Servers to the web farm FQDNs (the URLs used by IIS web components) when https is not used.
+          type: tcp-port
+          gui:
+            updatable: false          
+          default: 80
+       -
+          name: https
+          label: HTTPS Port
+          description: Port used for communication from Front End Servers to the Web farm FQDNs (the URLs used by Web Components).
+          type: tcp-port
+          gui:
+            updatable: false
+          default: 443
+       -
+          name: autodiscover-interpool
+          label: AutoDiscover Internal Port
+          description: HTTPS (from Reverse Proxy) and HTTPS Front End inter-pool communications for Autodiscover sign-in.
+          type: tcp-port
+          gui:
+            updatable: false
+          default: 4443
+       -
+          name: rpc
+          label: RPC Port
+          description: Port used by the Front End Servers for Windows Management Instrumentation (WMI) operations and for moving users (a remote DCOM-based database operation).
+          type: tcp-port
+          gui:
+            updatable: false
+          default: 135
+       -
+          name: sip-mtls
+          label: SIP Port
+          description: Port used for internal SIP communications between servers and between servers and Office Communicator.
+          type: tcp-port
+          gui:
+            updatable: false
+          default: 5061
+       -
+          name: sip-conf-focus
+          label: SIP Focus Port
+          description: Port used for communication between the Focus (the Office Communications Server component that manages conference state) and the conferencing servers.
+          type: tcp-port
+          gui:
+            updatable: false
+          default: 444
+       -
+          name: sip-groupapp
+          label: SIP Group Port
+          description: Port used for incoming SIP requests for the Response Group application.
+          type: tcp-port
+          gui:
+            updatable: false
+          default: 5071
+       -
+          name: sip-appsharing
+          label: SIP AppSharing Port
+          description: Port used for listening to incoming SIP requests for application sharing.
+          type: tcp-port
+          gui:
+            updatable: false
+          default: 5065
+       -
+          name: sip-attendant
+          label: SIP Attendant Port
+          description: Port used for incoming SIP requests for Attendant (dial in conferencing).
+          type: tcp-port
+          gui:
+            updatable: false
+          default: 5072
+       -
+          name: sip-conf-announce
+          label: SIP Conf Announcement Port
+          description: Port used for incoming SIP requests for the Skype for Business Server Conferencing Announcement service (that is, for dial-in conferencing).
+          type: tcp-port
+          gui:
+            updatable: false
+          default: 5073
+       -
+          name: sip-callpark
+          label: SIP CallPark Port
+          description: Port used for incoming SIP requests for the Call Park application.
+          type: tcp-port
+          gui:
+            updatable: false
+          default: 5075
+       -
+          name: call-admission-control
+          label: SIP Call Admission Port
+          description: Port used for call admission control by the Bandwidth Policy Service.
+          type: tcp-port
+          gui:
+            updatable: false
+          default: 448
+       -
+          name: call-admission-control-TURN
+          label: SIP Call Admission TURN Port
+          description: Port used for call admission control by the Bandwidth Policy service for A/V Edge TURN traffic.
+          type: tcp-port
+          gui:
+            updatable: false          
+          default: 5080
+       -
+          name: sip-audiotest
+          label: SIP Audio Test Port
+          description: Port used for incoming SIP requests for the Audio Test service.
+          type: tcp-port
+          gui:
+            updatable: false
+          default: 5076
+components:
+  -
+    name: http-lb-comp
+    type: stlb-custom::lb
+    properties:
+      lb-appname: sfb-fe-http
+      lb-service-type: TCP
+      lb-virtual-ip: $parameters.fe-vip
+      lb-virtual-port: $parameters.fe-ports-list.http
+      svc-server-ips: $parameters.fe-server-ips
+      svc-service-type: TCP
+      svc-server-port: 8080
+      lb-advanced:
+        persistence: SOURCEIP
+  -
+    name: https-lb-comp
+    type: stlb-custom::lb
+    properties:
+      lb-appname: sfb-fe-https
+      lb-service-type: TCP
+      lb-virtual-ip: $parameters.fe-vip
+      lb-virtual-port: $parameters.fe-ports-list.https
+      svc-server-ips: $parameters.fe-server-ips
+      svc-service-type: TCP
+      svc-server-port: $parameters.fe-ports-list.https
+      lb-advanced:
+        persistence: SOURCEIP
+  -
+    name: autodiscover-interpool-lb-comp
+    type: stlb-custom::lb
+    properties:
+      lb-appname: sfb-fe-autodiscover
+      lb-service-type: TCP
+      lb-virtual-ip: $parameters.fe-vip
+      lb-virtual-port: $parameters.fe-ports-list.autodiscover-interpool
+      svc-server-ips: $parameters.fe-server-ips
+      svc-service-type: TCP
+      svc-server-port: $parameters.fe-ports-list.autodiscover-interpool
+      lb-advanced:
+        persistence: SOURCEIP
+  -
+    name: rpc-lb-comp
+    type: stlb-custom::lb
+    properties:
+      lb-appname: sfb-fe-rpc
+      lb-service-type: TCP
+      lb-virtual-ip: $parameters.fe-vip
+      lb-virtual-port: $parameters.fe-ports-list.rpc
+      svc-server-ips: $parameters.fe-server-ips
+      svc-service-type: TCP
+      svc-server-port: $parameters.fe-ports-list.rpc
+      lb-advanced:
+        persistence: SOURCEIP
+  -
+    name: sip-mtls-lb-comp
+    type: stlb-custom::lb
+    properties:
+      lb-appname: sfb-fe-sip-mtls
+      lb-service-type: TCP
+      lb-virtual-ip: $parameters.fe-vip
+      lb-virtual-port: $parameters.fe-ports-list.sip-mtls
+      svc-server-ips: $parameters.fe-server-ips
+      svc-service-type: TCP
+      svc-server-port: $parameters.fe-ports-list.sip-mtls
+      lb-advanced:
+        persistence: SOURCEIP
+  -
+    name: sip-conf-focus-lb-comp
+    type: stlb-custom::lb
+    properties:
+      lb-appname: sfb-fe-sip-conffocus
+      lb-service-type: TCP
+      lb-virtual-ip: $parameters.fe-vip
+      lb-virtual-port: $parameters.fe-ports-list.sip-conf-focus
+      svc-server-ips: $parameters.fe-server-ips
+      svc-service-type: TCP
+      svc-server-port: $parameters.fe-ports-list.sip-conf-focus
+      lb-advanced:
+        persistence: SOURCEIP
+  -
+    name: sip-groupapp-lb-comp
+    type: stlb-custom::lb
+    properties:
+      lb-appname: sfb-fe-sip-groupapp
+      lb-service-type: TCP
+      lb-virtual-ip: $parameters.fe-vip
+      lb-virtual-port: $parameters.fe-ports-list.sip-groupapp
+      svc-server-ips: $parameters.fe-server-ips
+      svc-service-type: TCP
+      svc-server-port: $parameters.fe-ports-list.sip-groupapp
+      lb-advanced:
+        persistence: SOURCEIP
+  -
+    name: sip-appsharing-lb-comp
+    type: stlb-custom::lb
+    properties:
+      lb-appname: sfb-fe-sip-appsharing
+      lb-service-type: TCP
+      lb-virtual-ip: $parameters.fe-vip
+      lb-virtual-port: $parameters.fe-ports-list.sip-appsharing
+      svc-server-ips: $parameters.fe-server-ips
+      svc-service-type: TCP
+      svc-server-port: $parameters.fe-ports-list.sip-appsharing
+      lb-advanced:
+        persistence: SOURCEIP
+  -
+    name: sip-attendant-lb-comp
+    type: stlb-custom::lb
+    properties:
+      lb-appname: sfb-fe-sip-attendant
+      lb-service-type: TCP
+      lb-virtual-ip: $parameters.fe-vip
+      lb-virtual-port: $parameters.fe-ports-list.sip-attendant
+      svc-server-ips: $parameters.fe-server-ips
+      svc-service-type: TCP
+      svc-server-port: $parameters.fe-ports-list.sip-attendant
+      lb-advanced:
+        persistence: SOURCEIP
+  -
+    name: sip-conf-announce-lb-comp
+    type: stlb-custom::lb
+    properties:
+      lb-appname: sfb-fe-sip-confannounce
+      lb-service-type: TCP
+      lb-virtual-ip: $parameters.fe-vip
+      lb-virtual-port: $parameters.fe-ports-list.sip-conf-announce
+      svc-server-ips: $parameters.fe-server-ips
+      svc-service-type: TCP
+      svc-server-port: $parameters.fe-ports-list.sip-conf-announce
+      lb-advanced:
+        persistence: SOURCEIP
+  -
+    name: sip-callpark-lb-comp
+    type: stlb-custom::lb
+    properties:
+      lb-appname: sfb-fe-sip-callpark
+      lb-service-type: TCP
+      lb-virtual-ip: $parameters.fe-vip
+      lb-virtual-port: $parameters.fe-ports-list.sip-callpark
+      svc-server-ips: $parameters.fe-server-ips
+      svc-service-type: TCP
+      svc-server-port: $parameters.fe-ports-list.sip-callpark
+      lb-advanced:
+        persistence: SOURCEIP
+  -
+    name: call-admissioncontrol-lb-comp
+    type: stlb-custom::lb
+    properties:
+      lb-appname: sfb-fe-calladmissioncontrol
+      lb-service-type: TCP
+      lb-virtual-ip: $parameters.fe-vip
+      lb-virtual-port: $parameters.fe-ports-list.call-admission-control
+      svc-server-ips: $parameters.fe-server-ips
+      svc-service-type: TCP
+      svc-server-port: $parameters.fe-ports-list.call-admission-control
+      lb-advanced:
+        persistence: SOURCEIP
+  -
+    name: call-admissioncontrol-TURN-lb-comp
+    type: stlb-custom::lb
+    properties:
+      lb-appname: sfb-fe-calladmissioncontrol-TURN
+      lb-service-type: TCP
+      lb-virtual-ip: $parameters.fe-vip
+      lb-virtual-port: $parameters.fe-ports-list.call-admission-control-TURN
+      svc-server-ips: $parameters.fe-server-ips
+      svc-service-type: TCP
+      svc-server-port: $parameters.fe-ports-list.call-admission-control-TURN
+      lb-advanced:
+        persistence: SOURCEIP
+  -
+    name: sip-audiotest-lb-comp
+    type: stlb-custom::lb
+    properties:
+      lb-appname: sfb-fe-sip-audiotest
+      lb-service-type: TCP
+      lb-virtual-ip: $parameters.fe-vip
+      lb-virtual-port: $parameters.fe-ports-list.sip-audiotest
+      svc-server-ips: $parameters.fe-server-ips
+      svc-service-type: TCP
+      svc-server-port: $parameters.fe-ports-list.sip-audiotest
+      lb-advanced:
+        persistence: SOURCEIP
