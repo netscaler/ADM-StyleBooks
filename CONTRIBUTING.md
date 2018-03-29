@@ -17,9 +17,9 @@ Please note we have a code of conduct, please follow it in all your interactions
               saml-policy-bindings.yaml
               README.md
     ```
-2. Update the README.md with the purpose of this StyleBoo, and details of what configuration objects each StyleBook file creates.
+2. Update the README.md with the purpose of this StyleBook, and details of what configuration objects each StyleBook file creates.
 3. Specify the MAS version and the NetScaler version that this StyleBook has been tested on.
-4. If this is based on an existing StyleBook, specify the original StyleBook.
+4. If this is based on an existing StyleBook, specify the original StyleBook and what changes you made to it.
 
 ## Code of Conduct
 
