@@ -22,6 +22,9 @@ Please note we have a code of conduct, please follow it in all your interactions
 4. If this is based on an existing StyleBook, specify the original StyleBook and what changes you made to it.
 5. Include a display-name and description attributes in your StyleBook.
 6. Ensure that your StyleBook follows the same style, naming conventions and formatting as Citrix Default StyleBooks.
+
+Please note that any contributions you make to this repository are governed by the MIT License.
+
 ## Code of Conduct
 
 ### Our Pledge
