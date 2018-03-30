@@ -1,5 +1,5 @@
 # Contributing
-If you want to contribute any StyleBooks you developed back to this repository, please follow the Github Pull Request model described here: https://help.github.com/articles/about-pull-requests/
+If you want to contribute any StyleBooks you developed back to this repository, please follow the Github Pull Request model described here: https://gist.github.com/Chaser324/ce0505fbed06b947d962
 
 Please first discuss the change you wish to make via issue,
 email, or any other method with the owners of this repository before making a change. 
