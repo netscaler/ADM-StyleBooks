@@ -44,7 +44,7 @@ Here are a few guidelines to follow when writing your own StyleBooks:
  
 7. Use lowercase for StyleBook names, parameters, components and properties.
 
-8. Do not use quotes or double quotes to wrap strings, as they are often required in YAML.
+8. Do not use quotes or double quotes to wrap strings, as they are often not required in YAML.
 
 9. Suffix the name of components with "-comp". For example a component that builds an lbvserver is named "lbvserver-comp".
 
