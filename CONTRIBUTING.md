@@ -40,18 +40,19 @@ Here are a few guidelines to follow when writing your own StyleBooks:
 
 5. If you have names made of multiple words, separate words with "-". For example, "vip-name".
 
-6. Use lowercase for StyleBook names, parameters, components and properties.
+6. For the main StyleBook, you can designate one of the parameters of your StyleBook (typically the "name" parameter or similar) as a key parameter by setting the "key" attribute to true. The value of this parameter will show up as the name of the ConfigPack in the MAS GUI.
+ 
+7. Use lowercase for StyleBook names, parameters, components and properties.
 
-7. Do not use quotes or double quotes to wrap strings, as they are often required in YAML.
+8. Do not use quotes or double quotes to wrap strings, as they are often required in YAML.
 
-8. Suffix the name of components with "-comp". For example a component that builds an lbvserver is named "lbvserver-comp".
+9. Suffix the name of components with "-comp". For example a component that builds an lbvserver is named "lbvserver-comp".
 
-9. Use StyleBook references whenever possible to reference a name of another component. For example, if your StyleBook builds an lbvserver, a servicegroup, then a binding between lbvserver and servicegroup, then in the binding, do not reconstruct the names again but use references to refer to the name of the lbvserver and servicegroup of the components where they were built.
+10. Use StyleBook references whenever possible to reference a name of another component. For example, if your StyleBook builds an lbvserver, a servicegroup, then a binding between lbvserver and servicegroup, then in the binding, do not reconstruct the names again but use references to refer to the name of the lbvserver and servicegroup of the components where they were built.
 
+11. If the same expression or constant is used in multiple places, or for readability you want to give an long complex expression a name, use StyleBook substitutions. 
 
-10. If the same expression or constant is used in multiple places, or for readability you want to give an long complex expression a name, use StyleBook substitutions. 
-
-11. If you use Outputs from a StyleBook, it is good practice to pass the whole component as the output not just the property needed.
+12. If you use Outputs from a StyleBook, it is good practice to pass the whole component as the output not just the property needed.
 
 ## Code of Conduct
 
