@@ -30,29 +30,33 @@ Please note that any contributions you make to this repository are governed by t
 
 Here are a few guidelines to follow when writing your own StyleBooks:
 
-1. It is a good practice to create at least 2 configpacks using the same StyleBook on the same NetScaler device to ensure that entities created by 2 configpacks are independent and do not conflict with each other.
+1. Provide your StyleBook with a meaningful name, display-name and description. The last two are used to display your StyleBook in MAS GUI.
 
-2. Whenever possible, build on top of the existing StyleBooks in MAS to simplify your own StyleBook and benefit from configurations that have already been reviewed and tested.
+2. Choose a namespace for your StyleBook that is unlikely to clash with others. For example, you can use the following format "com.<your-company-name>.adc.stylebooks.<department>". Note that the namespaces "com.citrix.adc.stylebooks" and "com.citrix.adc.enterprise.stylebooks" are reserved for Citrix Default StyleBooks in MAS.
+
+3. It is a good practice to always create at least 2 configpacks using the same StyleBook on the same NetScaler device to ensure that entities created by 2 configpacks are independent and do not conflict with each other (i.e. you are not using hardcoded names for entities in your StyleBook).
+
+4. Whenever possible, build on top of the existing StyleBooks in MAS to simplify your own StyleBook and benefit from configurations that have already been reviewed and tested.
   
-3. If several of your StyleBooks share a common set of parameters, then you can create a separate private StyleBook that contains these parameters, and then import this StyleBook wherever you need to use these parameters (see the parameters-default-sources construct in StyleBooks).
+5. If several of your StyleBooks share a common set of parameters, then you can create a separate private StyleBook that contains these parameters, and then import this StyleBook wherever you need to use these parameters (see the parameters-default-sources construct in StyleBooks).
 
-4. Always provide a label and description for your parameters, so they display correctly in MAS GUI.
+6. Always provide a label and description for your parameters, so they display correctly in MAS GUI.
 
-5. If you have names made of multiple words, separate words with "-". For example, "vip-name".
+7. If you have names made of multiple words, separate words with "-". For example, "vip-name".
 
-6. For the main StyleBook, you can designate one of the parameters of your StyleBook (typically the "name" parameter or similar) as a key parameter by setting the "key" attribute to true. The value of this parameter will show up as the name of the ConfigPack in the MAS GUI.
+8. For the main StyleBook, you can designate one of the parameters of your StyleBook (typically the "name" parameter or similar) as a key parameter by setting the "key" attribute to true. The value of this parameter will show up as the name of the ConfigPack in the MAS GUI.
  
-7. Use lowercase for StyleBook names, parameters, components, substitutions, outputs and properties.
+9. Use lowercase for StyleBook names, parameters, components, substitutions, outputs and properties.
 
-8. Avoid using quotes or double quotes to wrap strings, as they are often not required in YAML.
+10. Avoid where possible using quotes or double quotes to wrap strings, as they are often not required in YAML.
 
-9. It is a good practice to suffix the name of components with "-comp". For example a component that builds an lbvserver would be for example named "lbvserver-comp".
+11. It is a good practice to suffix the name of components with "-comp". For example a component that builds an lbvserver would be for example named "lbvserver-comp".
 
-10. Use StyleBook references whenever possible to reference a name of another component. For example, if your StyleBook builds an lbvserver, a servicegroup, then a binding between lbvserver and servicegroup, then in the binding, do not reconstruct the names again but use references to refer to the name of the lbvserver and servicegroup of the components where they were built.
+12. Use StyleBook references whenever possible to reference a name of another component. For example, if your StyleBook builds an lbvserver, a servicegroup, then a binding between lbvserver and servicegroup, then in the binding, do not reconstruct the names again but use references to refer to the name of the lbvserver and servicegroup of the components where they were built.
 
-11. If the same expression or constant is used in multiple places, or for readability you want to give a mnemonic name to a long complex expression a name, use StyleBook substitutions. 
+13. If the same expression or constant is used in multiple places, or for readability you want to give a mnemonic name to a long complex expression a name, use StyleBook substitutions. 
 
-12. If your StyleBook has an Outputs section, it is good practice to pass the whole component as the output not just the property needed.
+14. If your StyleBook has an Outputs section, it is good practice to pass the whole component as the output not just the property needed.
 
 ## Code of Conduct
 
