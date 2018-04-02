@@ -23,5 +23,6 @@ StyleBooks fit in well with the principles of Infrastructure-as-code that is pra
 
 For a reference on the syntax of StyleBooks and how to write and test new ones, please refer to the Citrix online documentation at: https://docs.citrix.com/en-us/netscaler-mas/12/stylebooks.html
 
+
 You can also login to MAS, browse the StyleBooks catalog, and see how the different StyleBooks relate to (and depend on) each other, by using the Dependencies Viewer. 
 
