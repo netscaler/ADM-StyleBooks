@@ -1,0 +1,41 @@
+---
+name: appfw-policy-params
+namespace: com.citrix.adc.commontypes 
+version: "1.0"
+display-name: "StyleBook contains the parameters of an AppFw policy"
+description: "StyleBook contains the parameters of an AppFw policy"
+schema-version: "1.0"
+private: true
+import-stylebooks:
+  - 
+    namespace: com.citrix.adc.commontypes
+    prefix: cmtypes
+    version: "1.0"
+parameters:
+  -
+    name: rule
+    label: AppFw Policy Rule
+    description: |
+        The AppFw Policy rule (PI expression) to select traffic for which the AppFw profile settings are applied.
+        The default is to apply the appfw settings to all traffic on the VIP.
+    type: string 
+    required: true
+    default: "true"
+  - 
+    name: type
+    description: |
+     Application firewall profile type, which controls which security checks and settings are applied to content that is filtered with the profile.
+    label: Type of profile
+    type: string[]
+    allowed-values: 
+      - HTML
+      - XML
+    default:
+      - HTML
+    max-items: 2
+  -
+    name: profile-settings
+    label: AppFw Profile Settings
+    type: object
+    parameters-default-sources:
+      - cmtypes::appfw-profile-params

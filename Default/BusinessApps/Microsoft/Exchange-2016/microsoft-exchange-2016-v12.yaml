@@ -1,6 +1,6 @@
 ---
 name: microsoft-exchange-2016
-description: This StyleBook defines NetScaler configuration for Microsoft Exchange 2016
+description: This StyleBook defines Citrix ADC configuration for Microsoft Exchange 2016
 display-name: Microsoft Exchange 2016
 namespace: com.citrix.adc.enterprise.stylebooks
 version: "1.2"
@@ -89,19 +89,19 @@ parameters:
       -
         name: login-name
         label: Active Directory user name Attribute
-        description: Active Directory attribute for user name. The NetScaler uses the LDAP attribute to query external Active Directory Servers. For example "samAccountName"
+        description: Active Directory attribute for user name. The Citrix ADC uses the LDAP attribute to query external Active Directory Servers. For example "samAccountName"
         type: string
         required: true
       -
         name: group-attribute-name
         label: Active Directory group Attribute Name
-        description: Active Directory group Attribute Name. The NetScaler uses this attribute to extract the user's groups. For example "memberOf"
+        description: Active Directory group Attribute Name. The Citrix ADC uses this attribute to extract the user's groups. For example "memberOf"
         type: string
         required: true
       -
         name: group-subattribute-name
         label: Active Directory Group Sub-Attribute name
-        description: Active Directory Group sub-attribute name. The NetScaler uses this subattribute to extract the user's groups. For example "cn"
+        description: Active Directory Group sub-attribute name. The Citrix ADC uses this subattribute to extract the user's groups. For example "cn"
         type: string
         required: true
       -
@@ -117,7 +117,7 @@ components:
   -
       name: enable-features-comp
       type: ns::nsfeature
-      description: Enables the NetScaler features needed for Microsoft Exchange application
+      description: Enables the Citrix ADC features needed for Microsoft Exchange application
       meta-properties:
           action: enable
       properties:
@@ -133,7 +133,7 @@ components:
   -
     name: auth-ldap-policy-comp
     type: stlb::ldap-policy
-    description: This component creates a NetScaler LDAP policy/action config entities for Active Directory
+    description: This component creates a Citrix ADC LDAP policy/action config entities for Active Directory
     properties:
       appname: $parameters.exch-appname
       ldap-settings:
@@ -151,7 +151,7 @@ components:
   -
     name: auth-comp
     type: stlb::auth
-    description: This component creates a NetScaler LDAP Auth Vserver for Active Directory and binds all policies to it
+    description: This component creates a Citrix ADC LDAP Auth Vserver for Active Directory and binds all policies to it
     properties:
         name: $parameters.exch-appname
         vip: $parameters.exch-auth.vip
@@ -177,7 +177,7 @@ components:
       auth-vserver: $components.auth-comp.outputs.auth-vserver.properties.name
   -
     name: exch-cookie-update-comp
-    description: This component configures NetScaler to change the cookie value in some Exchange requests
+    description: This component configures Citrix ADC to change the cookie value in some Exchange requests
     type: stlb::cookie-postfix
     properties:
       appname: $parameters.exch-appname

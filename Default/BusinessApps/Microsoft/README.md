@@ -5,3 +5,4 @@ This folder contains StyleBooks for the following Microsoft Applications:
   * Microsoft Exchange 2016
   * Microsoft Skype for Business
   * Microsoft Office365 
+  * Microsoft ADFSProxy

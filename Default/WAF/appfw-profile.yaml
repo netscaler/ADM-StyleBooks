@@ -1,0 +1,247 @@
+---
+name: appfw-profile
+namespace: com.citrix.adc.stylebooks 
+version: "1.0"
+display-name: "StyleBook for creating an AppFw profile"
+description: "This stylebook configures an AppFw config."
+schema-version: "1.0"
+private: true
+import-stylebooks:
+  - 
+    namespace: com.citrix.adc.commontypes
+    prefix: cmtypes
+    version: "1.0"
+  - 
+    namespace: netscaler.nitro.config
+    prefix: ns
+    version: "12.0"
+parameters:
+  - 
+    name: name
+    label: Application Firewall Profile Name
+    description: |
+      Name for the profile. Must begin with a letter, number, or the underscore character (_), and must contain only letters, numbers, and the hyphen (-), period (.), pound (#), space ( ), at (@), equals (=), colon(:), and underscore (_) characters. Cannot be changed after the profile is added.
+      The following requirement applies only to the Citrix ADC CLI:
+      If the name includes one or more spaces, enclose the name in double or single quotation marks (for example, "my profile" or 'my profile').
+    type: string
+    min-length: 1
+    max-length: 31
+    key: true
+    required: true
+  - 
+    name: type
+    description: |
+     Application firewall profile type, which controls which security checks and settings are applied to content that is filtered with the profile.
+    label: Type of profile
+    type: string[]
+    allowed-values: 
+      - HTML
+      - XML
+    default:
+      - HTML
+    max-items: 2
+
+parameters-default-sources:
+  - cmtypes::appfw-profile-params
+substitutions: 
+  is-not-none(obj): exists($obj)
+  onoff-replace: 
+    false: "OFF"
+    true: "ON"
+  str-esc(val): str("\"") + $val + str("\"")
+  policy-rule(func, name): $func + "(" + $substitutions.str-esc($name) + ")"
+components:
+  - 
+    name: appfw-profile-comp
+    type: ns::appfwprofile
+    properties:
+      name: $parameters.name
+      type: $parameters.type
+      starturlaction?: $parameters.starturl-settings.starturlaction
+      starturlclosure?: $substitutions.onoff-replace[$parameters.starturl-settings.starturlclosure]
+      denyurlaction?: $parameters.denyurl-settings.denyurlaction
+      refererheadercheck?: $parameters.starturl-settings.refererheadercheck
+      cookieconsistencyaction?: $parameters.cookie-settings.cookieconsistencyaction
+      cookieencryption?: $parameters.cookie-settings.cookieencryption
+      cookieproxying?: $parameters.cookie-settings.cookieproxying
+      addcookieflags?: $parameters.cookie-settings.addcookieflags
+      fieldconsistencyaction?: $parameters.formfield-settings.fieldconsistencyaction
+      csrftagaction?: $parameters.csrf-settings.csrftagaction
+      crosssitescriptingaction?: $parameters.crosssitescripting-settings.crosssitescriptingaction
+      crosssitescriptingcheckcompleteurls?: $substitutions.onoff-replace[$parameters.crosssitescripting-settings.crosssitescriptingcheckcompleteurls]
+      crosssitescriptingtransformunsafehtml?: $substitutions.onoff-replace[$parameters.crosssitescripting-settings.crosssitescriptingtransformunsafehtml]
+      sqlinjectionaction?: $parameters.sqlinjection-settings.sqlinjectionaction
+      sqlinjectionchecksqlwildchars?: $substitutions.onoff-replace[$parameters.sqlinjection-settings.sqlinjectionchecksqlwildchars]
+      sqlinjectiontransformspecialchars?: $substitutions.onoff-replace[$parameters.sqlinjection-settings.sqlinjectiontransformspecialchars]
+      sqlinjectiontype?: $parameters.sqlinjection-settings.sqlinjectiontype
+      fieldformataction?: $parameters.formfield-settings.fieldformataction
+      defaultfieldformatmaxlength?: $parameters.formfield-settings.defaultfieldformatmaxlength
+      defaultfieldformatminlength?: $parameters.formfield-settings.defaultfieldformatminlength
+      defaultfieldformattype?: $parameters.formfield-settings.defaultfieldformattype
+      bufferoverflowaction?: $parameters.bufferoverflow-settings.bufferoverflowaction
+      bufferoverflowmaxcookielength?: $parameters.bufferoverflow-settings.bufferoverflowmaxcookielength
+      bufferoverflowmaxheaderlength?: $parameters.bufferoverflow-settings.bufferoverflowmaxheaderlength
+      bufferoverflowmaxurllength?: $parameters.bufferoverflow-settings.bufferoverflowmaxurllength
+      creditcard?: $parameters.creditcard-settings.creditcard
+      creditcardaction?: $parameters.creditcard-settings.creditcardaction
+      creditcardmaxallowed?: $parameters.creditcard-settings.creditcardmaxallowed
+      creditcardxout?: $substitutions.onoff-replace[$parameters.creditcard-settings.creditcardxout]
+      contenttypeaction?: $parameters.contenttype-settings.contenttypeaction
+      requestcontenttype?: $parameters.contenttype-settings.requestcontenttype
+      responsecontenttype?: $parameters.contenttype-settings.responsecontenttype
+      xmlattachmentaction?: $parameters.xml-settings.xmlattachmentaction
+      xmldosaction?: $parameters.xml-settings.xmldosaction
+      xmlerrorobject?: $parameters.xml-settings.xmlerrorobject
+      xmlformataction?: $parameters.xml-settings.xmlformataction
+      xmlsqlinjectionaction?: $parameters.xml-settings.xml-sqlinjection-settings.xmlsqlinjectionaction
+      xmlsqlinjectionchecksqlwildchars?: $substitutions.onoff-replace[$parameters.xml-settings.xml-sqlinjection-settings.xmlsqlinjectionchecksqlwildchars]
+      xmlsqlinjectionparsecomments?: $parameters.xml-settings.xml-sqlinjection-settings.xmlsqlinjectionparsecomments
+      xmlsqlinjectiontype?: $parameters.xml-settings.xml-sqlinjection-settings.xmlsqlinjectiontype
+      xmlvalidationaction?: $parameters.xml-settings.xmlvalidationaction
+      xmlwsiaction?: $parameters.xml-settings.xmlwsiaction
+      xmlxssaction?: $parameters.xml-settings.xmlxssaction
+      signatures?: $parameters.signatures
+      xmlsoapfaultaction?: $parameters.xml-settings.xmlsoapfaultaction
+      usehtmlerrorobject?: $substitutions.onoff-replace[$parameters.errorpage-settings.usehtmlerrorobject]
+      errorurl?: $parameters.errorpage-settings.errorurl
+      htmlerrorobject?: $parameters.errorpage-settings.htmlerrorobject
+      logeverypolicyhit?: $substitutions.onoff-replace[$parameters.misc-settings.logeverypolicyhit]
+      striphtmlcomments?: $parameters.misc-settings.striphtmlcomments
+      stripxmlcomments?: $parameters.xml-settings.stripxmlcomments
+      exemptclosureurlsfromsecuritychecks?: $substitutions.onoff-replace[$parameters.starturl-settings.exemptclosureurlsfromsecuritychecks]
+      defaultcharset?: $parameters.misc-settings.defaultcharset
+      postbodylimit?: $parameters.misc-settings.postbodylimit
+      fileuploadmaxnum?: $parameters.fileupload-settings.fileuploadmaxnum
+      canonicalizehtmlresponse?: $substitutions.onoff-replace[$parameters.misc-settings.canonicalizehtmlresponse]
+      enableformtagging?: $substitutions.onoff-replace[$parameters.formfield-settings.enableformtagging]
+      sessionlessfieldconsistency?: $parameters.formfield-settings.sessionlessfieldconsistency
+      sessionlessurlclosure?: $substitutions.onoff-replace[$parameters.starturl-settings.sessionlessurlclosure]
+      semicolonfieldseparator?: $substitutions.onoff-replace[$parameters.formfield-settings.semicolonfieldseparator]
+      excludefileuploadfromchecks?: $substitutions.onoff-replace[$parameters.fileupload-settings.excludefileuploadfromchecks]
+      sqlinjectionparsecomments?: $parameters.sqlinjection-settings.sqlinjectionparsecomments
+      invalidpercenthandling?: $parameters.misc-settings.invalidpercenthandling
+      checkrequestheaders?: $substitutions.onoff-replace[$parameters.misc-settings.checkrequestheaders]
+      optimizepartialreqs?: $substitutions.onoff-replace[$parameters.misc-settings.optimizepartialreqs]
+      urldecoderequestcookies?: $substitutions.onoff-replace[$parameters.cookie-settings.urldecoderequestcookies]
+      comment?: $parameters.misc-settings.comment
+      archivename?: $parameters.misc-settings.archivename
+    components:
+      - 
+        name: appfw-profile-starturl-binding-comp
+        type: ns::appfwprofile_starturl_binding
+        condition: $parameters.starturl-settings.appfwprofile_starturl_binding
+        repeat: $parameters.starturl-settings.appfwprofile_starturl_binding
+        repeat-item: starturl-binding
+        properties: 
+          name: $parent.properties.name
+          starturl?: $starturl-binding.starturl
+          state?: $starturl-binding.state
+      - 
+        name: appfw-profile-crosssitescripting-binding-comp
+        type: ns::appfwprofile_crosssitescripting_binding
+        condition: $parameters.crosssitescripting-settings.appfwprofile_crosssitescripting_binding
+        repeat: $parameters.crosssitescripting-settings.appfwprofile_crosssitescripting_binding
+        repeat-item: xss-binding
+        properties:
+          name: $parent.properties.name
+          as_scan_location_xss?: $xss-binding.as_scan_location_xss
+          crosssitescripting?: $xss-binding.crosssitescripting
+          formactionurl_xss?: $xss-binding.formactionurl_xss
+          isregex_xss?: $xss-binding.isregex_xss
+          as_value_type_xss?: $xss-binding.as_value_type_xss
+          as_value_expr_xss?: $xss-binding.as_value_expr_xss
+          state?: $xss-binding.state
+      - 
+        name: appfw-profile-fieldconsistency-binding-comp
+        type: ns::appfwprofile_fieldconsistency_binding
+        condition: $parameters.formfield-settings.appfwprofile_fieldconsistency_binding
+        repeat: $parameters.formfield-settings.appfwprofile_fieldconsistency_binding
+        repeat-item: field-con-binding
+        properties:
+          name: $parent.properties.name
+          fieldconsistency?: $field-con-binding.fieldconsistency
+          formactionurl_ffc?: $field-con-binding.formactionurl_ffc
+          isregex_ffc?: $field-con-binding.isregex_ffc
+          state?: $field-con-binding.state
+
+      - 
+        name: appfw-profile-sqlinjection-binding-comp
+        type: ns::appfwprofile_sqlinjection_binding
+        condition: $parameters.sqlinjection-settings.appfwprofile_sqlinjection_binding
+        repeat: $parameters.sqlinjection-settings.appfwprofile_sqlinjection_binding
+        repeat-item: sql-inj-binding
+        properties: 
+          name: $parent.properties.name
+          as_scan_location_sql?: $sql-inj-binding.as_scan_location_sql
+          formactionurl_sql?: $sql-inj-binding.formactionurl_sql
+          isregex_sql?: $sql-inj-binding.isregex_sql
+          sqlinjection?: $sql-inj-binding.sqlinjection
+          as_value_type_sql?: $sql-inj-binding.as_value_type_sql
+          as_value_expr_sql?: $sql-inj-binding.as_value_expr_sql
+          state?: $sql-inj-binding.state
+      - 
+        name: appfw-profile-denyurl-binding-comp
+        type: ns::appfwprofile_denyurl_binding
+        condition: $parameters.denyurl-settings.appfwprofile_denyurl_binding
+        repeat: $parameters.denyurl-settings.appfwprofile_denyurl_binding
+        repeat-item: denyurl_binding
+        properties: 
+          name: $parent.properties.name
+          denyurl?: $denyurl_binding.denyurl
+          state?: $denyurl_binding.state
+      - 
+        name: appfw-profile-fieldformat-binding-comp
+        type: ns::appfwprofile_fieldformat_binding
+        condition: $parameters.formfield-settings.appfwprofile_fieldformat_binding
+        repeat: $parameters.formfield-settings.appfwprofile_fieldformat_binding
+        repeat-item: fformat-binding
+        properties: 
+          name: $parent.properties.name
+          fieldformat?: $fformat-binding.fieldformat
+          fieldformatmaxlength?: $fformat-binding.fieldformatmaxlength
+          fieldformatminlength?: $fformat-binding.fieldformatminlength
+          fieldtype?: $fformat-binding.fieldtype
+          formactionurl_ff?: $fformat-binding.formactionurl_ff
+          isregex_ff?: $fformat-binding.isregex_ff
+          state?: $fformat-binding.state
+      - 
+        name: appfw-profile-xmlsqlinjection-binding-comp
+        type: ns::appfwprofile_xmlsqlinjection_binding
+        condition: $parameters.xml-settings.xml-sqlinjection-settings.appfwprofile_xmlsqlinjection_binding
+        repeat: $parameters.xml-settings.xml-sqlinjection-settings.appfwprofile_xmlsqlinjection_binding
+        repeat-item: xmlsql-binding
+        properties: 
+          name: $parent.properties.name
+          as_scan_location_xmlsql?: $xmlsql-binding.as_scan_location_xmlsql
+          isregex_xmlsql?: $xmlsql-binding.isregex_xmlsql
+          state?: $xmlsql-binding.state
+          xmlsqlinjection?: $xmlsql-binding.xmlsqlinjection
+      - 
+        name: appfw-profile-safeobject-binding-comp
+        type: ns::appfwprofile_safeobject_binding
+        condition: $parameters.safeobject-settings.appfwprofile_safeobject_binding
+        repeat: $parameters.safeobject-settings.appfwprofile_safeobject_binding
+        repeat-item: s-obj-binding
+        properties: 
+          name: $parent.properties.name
+          action?: $s-obj-binding.action
+          expression?: $s-obj-binding.expression
+          maxmatchlength?: $s-obj-binding.maxmatchlength
+          safeobject?: $s-obj-binding.safeobject
+          state?: $s-obj-binding.state
+      - 
+        name: appfw-profile-contenttype-binding-comp
+        type: ns::appfwprofile_contenttype_binding
+        condition: $parameters.contenttype-settings.appfwprofile_contenttype_binding
+        repeat: $parameters.contenttype-settings.appfwprofile_contenttype_binding
+        repeat-item: ctype-binding
+        properties: 
+          name: $parent.properties.name
+          contenttype?: $ctype-binding.contenttype
+          comment?: $ctype-binding.comment
+          state?: $ctype-binding.state
+outputs: 
+  - 
+    name: appfw-profile
+    description: AppFirewall profile component
+    value: $components.appfw-profile-comp

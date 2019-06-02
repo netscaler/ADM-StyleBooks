@@ -1,0 +1,116 @@
+name: oracle-ebusiness-suite12
+namespace: com.citrix.adc.enterprise.stylebooks
+version: "1.0"
+display-name: Oracle E-Business Suite 12.2 
+description: This StyleBook manages the Citrix ADC Optimizations for Oracle E-Business Suite 12.2
+schema-version: "1.0"
+import-stylebooks:
+    -
+        namespace: com.citrix.adc.stylebooks
+        version: "1.0"
+        prefix: stlb
+    - 
+        namespace: com.citrix.adc.commontypes
+        prefix: cmtypes
+        version: "1.0"
+parameters:
+    -
+        name: appname
+        type: string
+        label: Application Name
+        description: Give a name to your Oracle E-Business Suite configuration
+        required: true
+        key: true
+    -   
+        name: virtual-ip
+        type: ipaddress
+        label: Virtual IP (VIP) 
+        description: The Application VIP that clients access
+        required: true
+    -
+        name: virtual-protocol
+        type: string
+        label: Protocol 
+        description: The Protocol (HTTP or SSL) that users connect with to the application
+        allowed-values:
+          - HTTP
+          - SSL
+        default: SSL
+    -
+        name: virtual-port
+        type: tcp-port
+        label: Virtual Port
+        description: The Port to be used by the users in accessing the Oracle E-Business Suite app
+        default: 443
+    -
+        name: svc-servers
+        type: ipaddress[]
+        label: Oracle E-Business Suite Server IPs
+        description: The IP addresses for the Oracle E-Business Suite Application Servers 
+        required: true
+    -
+        name: certificates
+        type: cmtypes::certificate[]
+        label: SSL Certificate settings
+        description: SSL Certificates/keys for this Oracle application
+
+    -   name: advanced-settings
+        type: object
+        label: Advanced Settings
+        description: Advanced settings for Oracle E-business Suite Application
+        required: true
+        gui:
+            collapse_pane: true
+            columns: 1
+        parameters:
+            -
+                name: svc-port
+                type: tcp-port
+                label: Oracle E-Business Suite Servers Port
+                description: The TCP port used by the Oracle E-Business Suite Application Servers 
+                default: 80
+            -
+                name: lb-algorithm
+                type: string
+                label: LoadBalancing Algorithm
+                description: Choose the loadbalancing algorithm (method) used for loadbalancing client requests between the Application Servers
+                allowed-values:
+                  - ROUNDROBIN
+                  - LEASTCONNECTION
+                default: ROUNDROBIN
+            -
+                name: lb-persistence
+                type: string
+                label: LoadBalancer Persistence
+                description: Sets the persistence required for the Oracle E-Business Suite
+                allowed-values: 
+                  - SOURCEIP
+                  - COOKIEINSERT
+                default: SOURCEIP
+components:
+    -
+        name: svc-servers-comp
+        type: cmtypes::server-ip-port-params
+        repeat: $parameters.svc-servers
+        repeat-item: server-ip
+        description: |
+            This helper component builds a list of <ip, port> objects for each server ip provided in the parameters.
+            This is used by the lb-comp component below
+        properties:
+            ip: $server-ip
+            port: $parameters.advanced-settings.svc-port
+    -
+        name: lb-comp
+        type: stlb::lb-mon
+        description: This component creates the LB configuration objects using the lb-mon StyleBook
+        properties:
+            lb-appname: $parameters.appname
+            lb-virtual-ip: $parameters.virtual-ip
+            lb-virtual-port: $parameters.virtual-port
+            lb-service-type: $parameters.virtual-protocol
+            lb-advanced?:
+                algorithm: $parameters.advanced-settings.lb-algorithm
+                persistence: $parameters.advanced-settings.lb-persistence
+            svc-service-type: HTTP
+            svc-servers: $components.svc-servers-comp.properties
+            certificates?: $parameters.certificates

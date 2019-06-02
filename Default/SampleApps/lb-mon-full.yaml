@@ -4,7 +4,7 @@ version: "1.0"
 display-name: Load Balancing StyleBook with L7 Features
 description: |    
     This StyleBook builds on, and augments the lb-mon StyleBook by adding the ability    
-    to make use of rewrite, responder, compression and SSL ciphers features of the NetScaler
+    to make use of rewrite, responder, compression and SSL ciphers features of the Citrix ADC
 schema-version: "1.0"
 import-stylebooks: 
   - 
@@ -74,7 +74,7 @@ components:
   -
     name: ssl-config-comp
     type: stlb::ssl-config
-    condition: $parameters.lb-service-type == SSL
+    condition: $parameters.ssl-config and $parameters.lb-service-type == SSL
     properties-default-sources:
       - $parameters
     properties:

@@ -24,7 +24,7 @@ parameters:
     -
         name: rule
         type: string
-        label: "NetScaler PI Rule for when to apply the Active Directory LDAP Policy"
+        label: "Citrix ADC PI Rule for when to apply the Active Directory LDAP Policy"
         description: "The Application Rule"
     -
         name: ad-settings

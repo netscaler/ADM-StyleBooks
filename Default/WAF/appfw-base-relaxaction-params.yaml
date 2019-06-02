@@ -1,0 +1,39 @@
+---
+name: appfw-base-relaxaction-params
+namespace: com.citrix.adc.commontypes
+version: "1.0"
+display-name: StyleBook for AppFw Relax Action Parameters
+description: This stylebook contains the appfw relax action parameters.
+schema-version: "1.0"
+private: true
+parameters:
+  - 
+    name: name
+    label: Name
+    description: Resource name.
+    type: string
+  - 
+    name: action-url
+    label: Action URL
+    description: Action URL.
+    type: string
+  - 
+    name: isregex
+    label: Is it a Regex?
+    description: Is it a regular expression?
+    type: boolean
+  - 
+    name: state
+    label: State
+    description: State of the action.
+    type: string
+    allowed-values: 
+      - ENABLED
+      - DISABLED 
+  -
+    name: comment
+    description: Any comments about the relax action.
+    label: comment
+    type: string
+    gui:
+        summary_display: false  

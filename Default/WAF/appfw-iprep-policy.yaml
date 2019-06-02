@@ -1,0 +1,33 @@
+---
+name: appfw-iprep-policy
+namespace: com.citrix.adc.stylebooks 
+version: "1.0"
+display-name: "StyleBook for AppFw IP Reputation Policy configuration"
+description: "This stylebook configures a default config for an appfw policy."
+schema-version: "1.0"
+private: true
+import-stylebooks: 
+  - 
+    namespace: netscaler.nitro.config
+    prefix: ns
+    version: "10.5"
+parameters: 
+  -
+    name: appname
+    label: Policy Name
+    type: string
+    key: true
+    required: true 
+components:
+  -
+    name: appfw-iprep-policy-comp
+    type: ns::appfwpolicy
+    description: This component creates an additional appfw policy with ip-reputation.
+    properties:
+        name: $parameters.appname + "-iprep-appfw-policy"
+        rule: CLIENT.IP.SRC.IPREP_IS_MALICIOUS
+        profilename: APPFW_BLOCK
+outputs:
+   -
+     name: appfw-iprep-policy
+     value: $components.appfw-iprep-policy-comp

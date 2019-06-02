@@ -35,7 +35,7 @@ components:
         type: ns::policypatset
         condition: $parameters.compression-config.cmp-file-suffixes
         properties:
-          # It is necessary to use replace as NetScaler policypatset names cannot contain "-"
+          # It is necessary to use replace as Citrix ADC policypatset names cannot contain "-"
           name: replace($parameters.name + "-cmp-file-suffixes-patset", "-", "_")
         components:
           -
@@ -51,7 +51,7 @@ components:
         type: ns::policypatset
         condition: $parameters.compression-config.cmp-all-but-file-suffixes
         properties:
-          # It is necessary to use replace as NetScaler policypatset names cannot contain "-"
+          # It is necessary to use replace as Citrix ADC policypatset names cannot contain "-"
           name: replace($parameters.name + "-cmp-all-but-file-suffixes-patset", "-", "_")
         components:
           -
@@ -67,7 +67,7 @@ components:
         type: ns::policypatset
         condition: $parameters.compression-config.nocmp-file-suffixes
         properties:
-          # It is necessary to use replace as NetScaler policypatset names cannot contain "-"
+          # It is necessary to use replace as Citrix ADC policypatset names cannot contain "-"
           name: replace($parameters.name + "-nocmp-file-suffixes-patset", "-", "_")
         components:
           -
@@ -83,7 +83,7 @@ components:
         type: ns::policypatset
         condition: $parameters.compression-config.nocmp-all-but-file-suffixes
         properties:
-          # It is necessary to use replace as NetScaler policypatset names cannot contain "-"
+          # It is necessary to use replace as Citrix ADC policypatset names cannot contain "-"
           name: replace($parameters.name + "-nocmp-all-but-file-suffixes-patset", "-", "_")
         components:
           -
@@ -159,7 +159,7 @@ components:
         type: ns::policypatset
         condition: $parameters.compression-config.cmp-mime-types
         properties:
-          # It is necessary to use replace as NetScaler policypatset names cannot contain "-"
+          # It is necessary to use replace as Citrix ADC policypatset names cannot contain "-"
           name: replace($parameters.name + "-cmp-mime-types-patset", "-", "_")
         components:
           -
@@ -175,7 +175,7 @@ components:
         type: ns::policypatset
         condition: $parameters.compression-config.cmp-all-but-mime-types
         properties:
-          # It is necessary to use replace as NetScaler policypatset names cannot contain "-"
+          # It is necessary to use replace as Citrix ADC policypatset names cannot contain "-"
           name: replace($parameters.name + "-cmp-all-but-mime-types-patset", "-", "_")
         components:
           -
@@ -191,7 +191,7 @@ components:
         type: ns::policypatset
         condition: $parameters.compression-config.nocmp-mime-types
         properties:
-          # It is necessary to use replace as NetScaler policypatset names cannot contain "-"
+          # It is necessary to use replace as Citrix ADC policypatset names cannot contain "-"
           name: replace($parameters.name + "-nocmp-mime-types-patset", "-", "_")
         components:
           -
@@ -207,7 +207,7 @@ components:
         type: ns::policypatset
         condition: $parameters.compression-config.nocmp-all-but-mime-types
         properties:
-          # It is necessary to use replace as NetScaler policypatset names cannot contain "-"
+          # It is necessary to use replace as Citrix ADC policypatset names cannot contain "-"
           name: replace($parameters.name + "-nocmp-all-but-mime-types-patset", "-", "_")
         components:
           -
@@ -283,7 +283,7 @@ components:
         type: ns::policypatset
         condition: $parameters.compression-config.cmp-resource-names
         properties:
-          # It is necessary to use replace as NetScaler policypatset names cannot contain "-"
+          # It is necessary to use replace as Citrix ADC policypatset names cannot contain "-"
           name: replace($parameters.name + "-cmp-resource-names-patset", "-", "_")
         components:
           -
@@ -299,7 +299,7 @@ components:
         type: ns::policypatset
         condition: $parameters.compression-config.cmp-all-but-resource-names
         properties:
-          # It is necessary to use replace as NetScaler policypatset names cannot contain "-"
+          # It is necessary to use replace as Citrix ADC policypatset names cannot contain "-"
           name: replace($parameters.name + "-cmp-all-but-resource-names-patset", "-", "_")
         components:
           -
@@ -315,7 +315,7 @@ components:
         type: ns::policypatset
         condition: $parameters.compression-config.nocmp-resource-names
         properties:
-          # It is necessary to use replace as NetScaler policypatset names cannot contain "-"
+          # It is necessary to use replace as Citrix ADC policypatset names cannot contain "-"
           name: replace($parameters.name + "-nocmp-resource-names-patset", "-", "_")
         components:
           -
@@ -331,7 +331,7 @@ components:
         type: ns::policypatset
         condition: $parameters.compression-config.nocmp-all-but-resource-names
         properties:
-          # It is necessary to use replace as NetScaler policypatset names cannot contain "-"
+          # It is necessary to use replace as Citrix ADC policypatset names cannot contain "-"
           name: replace($parameters.name + "-nocmp-all-but-resource-names-patset", "-", "_")
         components:
           -

@@ -1,0 +1,1208 @@
+---
+name: appfw-profile-params
+namespace: com.citrix.adc.commontypes 
+version: "1.0"
+display-name: "StyleBook contains the parameters of an AppFw profile"
+description: "StyleBook contains the parameters of an AppFw profile"
+schema-version: "1.0"
+private: true
+import-stylebooks:
+  - 
+    namespace: com.citrix.adc.commontypes
+    prefix: cmtypes
+    version: "1.0"
+parameters:
+  -
+    name: signatures
+    description: Name of signature object
+    label: Signature Object Name
+    type: string
+  -
+    name: starturl-settings
+    label: StartURL Settings
+    type: object
+    parameters:
+      - 
+        name: starturlclosure
+        label: Enforce URL Closure
+        description: Toggle the state of Start URL Closure.
+        type: boolean
+        default: false
+        gui:
+          summary_display: false
+      - 
+        name: exemptclosureurlsfromsecuritychecks
+        description: Exempt URLs that pass the Start URL closure check from SQL injection, cross-site script, field format and field consistency security checks at locations other than headers.
+        label: Exempt closure URLs from security checks
+        type: boolean
+        default: true
+        gui:
+          summary_display: false
+      - 
+        name: sessionlessurlclosure
+        description: Enable session less URL Closure Checks.
+        label: Enable Sessionless URL Closure
+        type: boolean
+        default: false
+        gui:
+          summary_display: false
+      - 
+        name: refererheadercheck
+        label: Referer Header Check
+        description: |
+         Enable validation of Referer headers. 
+         Referer validation ensures that a web form that a user sends to your web site originally came from your web site, not an outside attacker. 
+         Although this parameter is part of the Start URL check, referer validation protects against cross-site request forgery (CSRF) attacks, not Start URL attacks.
+        type: string
+        allowed-values: 
+          - "OFF"
+          - if_present
+          - AlwaysExceptStartURLs
+          - AlwaysExceptFirstRequest
+        default: "OFF"
+        gui:
+          summary_display: false
+      - 
+        name: starturlaction
+        label: StartURL Actions
+        description: |
+         One or more Start URL actions. Available settings function as follows:
+         * Block - Block connections that violate this security check.
+         * Learn - Use the learning engine to generate a list of exceptions to this security check.
+         * Log - Log violations of this security check.
+         * Stats - Generate statistics for this security check.
+         * None - Disable all actions for this security check.
+         CLI users: To enable one or more actions, type \"set appfw profile -startURLaction\" followed by the actions to be enabled. To turn off all actions, type \"set appfw profile -startURLaction none\".
+        type: string[]
+        allowed-values:
+          - log
+          - block
+          - stats
+          - learn
+          - none
+      - 
+        name: appfwprofile_starturl_binding
+        label: Start URL Binding Objects
+        type: object[]
+        parameters: 
+          - 
+            name: starturl
+            description: A regular expression that designates a URL on the Start URL list.
+            label: Start URL regex
+            type: string
+          - 
+            name: state
+            description: The State of the Start URL (ENABLED or DISABLED).
+            label: State
+            type: string
+            allowed-values: 
+              - "ENABLED"
+              - "DISABLED"
+          -
+            name: comment
+            description: Comment
+            label: Comment
+            type: string
+  -
+    name: denyurl-settings
+    label: DenyURL Settings
+    type: object
+    parameters:
+      - 
+        name: denyurlaction
+        label: DenyURL Actions
+        description: |
+         One or more Deny URL actions. Available settings function as follows:
+         * Block - Block connections that violate this security check.
+         * Log - Log violations of this security check.
+         * Stats - Generate statistics for this security check.
+         * None - Disable all actions for this security check.
+         NOTE: The Deny URL check takes precedence over the Start URL check. If you enable blocking for the Deny URL check, the application firewall blocks any URL that is explicitly blocked by a Deny URL, even if the same URL would otherwise be allowed by the Start URL check.
+         CLI users: To enable one or more actions, type \"set appfw profile -denyURLaction\" followed by the actions to be enabled. To turn off all actions, type \"set appfw profile -denyURLaction none\".
+        type: string[]
+        allowed-values:
+          - log
+          - block
+          - stats
+          - none
+      - 
+        name: appfwprofile_denyurl_binding
+        label: Deny URL Object List
+        type: object[]
+        parameters: 
+          - 
+            name: denyurl
+            description: A regular expression that designates a URL on the Deny URL list.
+            label: Deny URL RegEx
+            type: string
+          - 
+            name: state
+            label: State
+            type: string
+            allowed-values: 
+              - "ENABLED"
+              - "DISABLED"
+          -
+            name: comment
+            description: Comment
+            label: Comment
+            type: string
+  -
+    name: cookie-settings
+    label: Cookie Settings
+    type: object
+    parameters:
+      - 
+        name: urldecoderequestcookies
+        description: URL Decode request cookies before subjecting them to SQL and cross-site scripting checks.
+        label: Decode Request Cookie Value
+        type: boolean
+        default: false
+        gui:
+          summary_display: false
+      - 
+        name: cookieconsistencyaction
+        label: Cookie Consistency Actions
+        description: |
+         One or more Cookie Consistency actions. Available settings function as follows:
+         * Block - Block connections that violate this security check.
+         * Learn - Use the learning engine to generate a list of exceptions to this security check.
+         * Log - Log violations of this security check.
+         * Stats - Generate statistics for this security check.
+         * None - Disable all actions for this security check.
+         CLI users: To enable one or more actions, type \"set appfw profile -cookieConsistencyAction\" followed by the actions to be enabled. To turn off all actions, type \"set appfw profile -cookieConsistencyAction none\".
+        type: string[]
+        allowed-values:
+          - log
+          - block
+          - stats
+          - learn
+          - none
+        gui:
+          summary_display: false
+      - 
+        name: cookieencryption
+        label: Cookie Encryption
+        description: |
+         Type of cookie encryption. Available settings function as follows:
+         * None - Do not encrypt cookies.
+         * Decrypt Only - Decrypt encrypted cookies, but do not encrypt cookies.
+         * Encrypt Session Only - Encrypt session cookies, but not permanent cookies.
+         * Encrypt All - Encrypt all cookies.
+        type: string
+        allowed-values: 
+          - none
+          - decryptOnly
+          - encryptSessionOnly
+          - encryptAll
+        default: none
+        gui:
+          summary_display: false
+      - 
+        name: cookieproxying
+        label: Proxy Server Cookies
+        description: |
+         Cookie proxy setting. Available settings function as follows:
+         * None - Do not proxy cookies.
+         * Session Only - Proxy session cookies by using the Citrix ADC session ID, but do not proxy permanent cookies.
+        type: string
+        allowed-values: 
+          - none
+          - sessionOnly
+        default: none
+        gui:
+          summary_display: false
+      - 
+        name: addcookieflags
+        label: Flags to add in Cookies
+        description: |
+         Add the specified flags to cookies. Available settings function as follows:
+         * None - Do not add flags to cookies.
+         * HTTP Only - Add the HTTP Only flag to cookies, which prevents scripts from accessing cookies.
+         * Secure - Add Secure flag to cookies.
+         * All - Add both HTTPOnly and Secure flags to cookies.
+        type: string
+        allowed-values: 
+          - none
+          - httpOnly
+          - secure
+          - all
+        default: none
+        gui:
+          summary_display: false
+  -
+    name: bufferoverflow-settings
+    label: Buffer Overflow Settings
+    type: object
+    parameters:
+      - 
+        name: bufferoverflowaction
+        label: Buffer Overflow Actions
+        description: |
+         One or more Buffer Overflow actions. Available settings function as follows:
+         * Block - Block connections that violate this security check.
+         * Log - Log violations of this security check.
+         * Stats - Generate statistics for this security check.
+         * None - Disable all actions for this security check.
+         CLI users: To enable one or more actions, type \"set appfw profile -bufferOverflowAction\" followed by the actions to be enabled. To turn off all actions, type \"set appfw profile -bufferOverflowAction none\".
+        type: string[]
+        allowed-values:
+          - log
+          - block
+          - stats
+          - none
+      - 
+        name: bufferoverflowmaxurllength
+        label: Buffer Overflow Max URL Length
+        type: number
+        default: 1024
+        max-value: 65535
+        min-value: 0
+        gui:
+          summary_display: false
+      - 
+        name: bufferoverflowmaxheaderlength
+        label: Buffer Overflow Max Header Length
+        description: |
+         Maximum length, in characters, for URLs on your protected web sites. Requests with longer URLs are blocked.
+        type: number
+        default: 4096
+        max-value: 65535
+        min-value: 0
+        gui:
+          summary_display: false
+      - 
+        name: bufferoverflowmaxcookielength
+        label: Buffer Overflow Max Cookie Length
+        description: Maximum length, in characters, for cookies sent to your protected web sites. Requests with longer cookies are blocked.
+        type: number
+        default: 4096
+        max-value: 65535
+        min-value: 0
+        gui:
+          summary_display: false
+  -
+    name: crosssitescripting-settings
+    label: Cross-Site Scripting Settings
+    type: object
+    parameters:
+      - 
+        name: crosssitescriptingtransformunsafehtml
+        label: Disable Unsafe HTML Characters
+        description: |
+          Transform crosssite scripts. This setting configures the application firewall to disable dangerous HTML instead of blocking the request.
+          Make sure that this parameter is enabled if you are configuring any cross-site scripting transformations. If it is disabled, no cross-site scripting transformations are performed regardless of any other settings
+        type: boolean
+        default: false
+        gui:
+          summary_display: false
+      - 
+        name: crosssitescriptingcheckcompleteurls
+        label: Cross Site Scripting check complete URLs
+        description: Check complete URLs for cross-site scripts, instead of just the query portions of URLs.
+        type: boolean
+        default: false
+        gui:
+          summary_display: false
+      - 
+        name: crosssitescriptingaction
+        label: Cross Site Scripting Actions
+        description: |
+         One or more Cross-Site Scripting (XSS) actions. Available settings function as follows:
+         * Block - Block connections that violate this security check.
+         * Learn - Use the learning engine to generate a list of exceptions to this security check.
+         * Log - Log violations of this security check.
+         * Stats - Generate statistics for this security check.
+         * None - Disable all actions for this security check.
+         CLI users: To enable one or more actions, type \"set appfw profile -crossSiteScriptingAction\" followed by the actions to be enabled. To turn off all actions, type \"set appfw profile -crossSiteScriptingAction none\".
+        type: string[]
+        allowed-values:
+          - log
+          - block
+          - stats
+          - learn
+          - none
+      - 
+        name: appfwprofile_crosssitescripting_binding
+        label: Cross-Site Scripting Relaxation Rules
+        type: object[]
+        parameters-default-sources: 
+          - cmtypes::appfw-base-relaxaction-params
+        parameters: 
+          - 
+            name: crosssitescripting
+            type: string
+          -
+            name: isregex_xss
+            label: Is it a Regex?
+            description: Is it a regular expression?
+            type: string
+            allowed-values:
+              - "REGEX"
+              - "NOTREGEX"
+          -  
+            name: formactionurl_xss
+            type: string
+          -
+            name: as_scan_location_xss
+            description: Location of cross-site scripting exception - form field, header or cookie.
+            label: Location
+            type: string
+            allowed-values: 
+              - FORMFIELD
+              - HEADER
+              - COOKIE
+          -
+            name: as_value_type_xss
+            description: Web form value type
+            label: Value type
+            type: string
+            allowed-values:
+              - Tag
+              - Attribute
+              - Pattern
+          -
+            name: as_value_expr_xss
+            description: Web form value expression
+            label: Value expression
+            type: string
+          -
+            name: isvalueregex_xss
+            description: Is the value a regular expression?
+            label: Is value a regular expression?
+            type: string
+            allowed-values:
+              - REGEX
+              - NOTREGEX
+  -
+    name: csrf-settings
+    label: Cross-Site Request Forgery Settings
+    type: object
+    parameters:
+      - 
+        name: csrftagaction
+        label: CSRF Tag Actions
+        description: |
+         One or more Cross-Site Request Forgery (CSRF) Tagging actions. Available settings function as follows:
+         * Block - Block connections that violate this security check.
+         * Learn - Use the learning engine to generate a list of exceptions to this security check.
+         * Log - Log violations of this security check.
+         * Stats - Generate statistics for this security check.
+         * None - Disable all actions for this security check.
+        type: string[]
+        allowed-values:
+          - log
+          - block
+          - stats
+          - learn
+          - none
+        default:
+          - none
+  -
+    name: sqlinjection-settings
+    label: SQL Injection Settings
+    type: object
+    parameters:
+      - 
+        name: sqlinjectiontransformspecialchars
+        label: Transform SQL Special Characters
+        description: |
+          Transform injected SQL code. This setting configures the application firewall to disable SQL special strings instead of blocking the request. Since most SQL servers require a special string to activate an SQL keyword, in most cases a request that contains injected SQL code is safe if special strings are disabled.
+          CAUTION- Make sure that this parameter is set to ON if you are configuring any SQL injection transformations. If it is set to OFF, no SQL injection transformations are performed regardless of any other settings. 
+        type: boolean
+        default: false
+        gui:
+          summary_display: false
+      - 
+        name: sqlinjectionchecksqlwildchars
+        label: Check for SQL wildcard characters
+        description: Check for form fields that contain SQL wild chars.
+        type: boolean
+        default: false
+        gui:
+          summary_display: false
+      - 
+        name: sqlinjectionaction
+        label: SQL Injection Actions
+        description: |
+         One or more HTML SQL Injection actions. Available settings function as follows:
+         * Block - Block connections that violate this security check.
+         * Learn - Use the learning engine to generate a list of exceptions to this security check.
+         * Log - Log violations of this security check.
+         * Stats - Generate statistics for this security check.
+         * None - Disable all actions for this security check.
+         CLI users: To enable one or more actions, type \"set appfw profile -SQLInjectionAction\" followed by the actions to be enabled. To turn off all actions, type \"set appfw profile -SQLInjectionAction none\".
+        type: string[]
+        allowed-values:
+          - log
+          - block
+          - stats
+          - learn
+          - none
+      - 
+        name: sqlinjectiontype
+        label: Check request containing
+        description: |
+         Available SQL injection types. 
+         -SQLSplChar              : Checks for SQL Special Chars
+         -SQLKeyword              : Checks for SQL Keywords
+         -SQLSplCharANDKeyword    : Checks for both and blocks if both are found
+         -SQLSplCharORKeyword     : Checks for both and blocks if anyone is found
+        type: string
+        allowed-values: 
+          - SQLSplChar
+          - SQLKeyword
+          - SQLSplCharORKeyword
+          - SQLSplCharANDKeyword
+        default: SQLSplCharORKeyword
+        gui:
+          summary_display: false
+      - 
+        name: sqlinjectionparsecomments
+        description: Parse HTML comments and exempt them from the HTML SQL Injection check. You must specify the type of comments that the application firewall is to detect and exempt from this security check.
+        label: sqlinjectionparsecomments
+        type: string
+        allowed-values: 
+          - checkall
+          - ansi
+          - nested
+          - ansinested
+        gui:
+          summary_display: false
+      -
+        name: appfwprofile_sqlinjection_binding
+        description: Describes the web form fields for which SQL Injection constraints are relaxed
+        label: SQL Injection Relaxation Rules
+        type: object[]
+        parameters-default-sources: 
+          - cmtypes::appfw-base-relaxaction-params
+        parameters:
+          -
+            name: sqlinjection
+            type: string
+          -
+            name: isregex_sql
+            label: Is it a Regex?
+            description: Is it a regular expression?
+            type: string
+            allowed-values:
+              - "REGEX"
+              - "NOTREGEX"
+          -
+            name: formactionurl_sql
+            type: string
+          -
+            name: as_scan_location_sql
+            description: Location of SQL injection exception - form field, header or cookie.
+            label: Location
+            type: string
+            allowed-values: 
+              - FORMFIELD
+              - HEADER
+              - COOKIE
+          -
+            name: as_value_type_sql
+            description: Web form value type
+            label: Web form value type
+            type: string
+            allowed-values:
+              - Keyword
+              - SpecialString
+              - Wildchar
+          -
+            name: as_value_expr_sql
+            description: Web form value expression
+            label: Value of the expression
+            type: string
+          -
+            name: isvalueregex_sql
+            description: Is the value a regular expression?
+            label: Is Value a regular expression?
+            type: string
+            allowed-values:
+              - "REGEX"
+              - "NOTREGEX"
+  -
+    name: formfield-settings
+    label: Form Field Settings
+    type: object
+    parameters:
+      - 
+        name: enableformtagging
+        description: Enable tagging of web form fields for use by the Form Field Consistency and CSRF Form Tagging checks.
+        label: Enable Form Tagging
+        type: boolean
+        default: true
+        gui:
+          summary_display: false
+      - 
+        name: semicolonfieldseparator
+        description: Allow ';' as a form field separator in URL queries and POST form bodies.
+        label: Semicolon field separator
+        type: boolean
+        default: false
+        gui:
+          summary_display: false
+      - 
+        name: fieldconsistencyaction
+        label: Field Consistency Actions
+        description: |
+         One or more Form Field Consistency actions. Available settings function as follows:
+         * Block - Block connections that violate this security check.
+         * Learn - Use the learning engine to generate a list of exceptions to this security check.
+         * Log - Log violations of this security check.
+         * Stats - Generate statistics for this security check.
+         * None - Disable all actions for this security check.
+         CLI users: To enable one or more actions, type \"set appfw profile -fieldConsistencyaction\" followed by the actions to be enabled. To turn off all actions, type \"set appfw profile -fieldConsistencyAction none\".
+        type: string[]
+        allowed-values:
+          - log
+          - block
+          - stats
+          - learn
+          - none
+        default:
+          - none
+      - 
+        name: sessionlessfieldconsistency
+        description: Perform sessionless Field Consistency Checks.
+        label: sessionlessfieldconsistency
+        type: string
+        allowed-values: 
+          - "OFF"
+          - "ON"
+          - "postOnly"
+        default: "OFF"
+        gui:
+          summary_display: false
+      - 
+        name: fieldformataction
+        label: Field Format Actions
+        description: |
+         One or more Field Format actions. Available settings function as follows:
+         * Block - Block connections that violate this security check.
+         * Learn - Use the learning engine to generate a list of suggested web form fields and field format assignments.
+         * Log - Log violations of this security check.
+         * Stats - Generate statistics for this security check.
+         * None - Disable all actions for this security check.
+         CLI users: To enable one or more actions, type \"set appfw profile -fieldFormatAction\" followed by the actions to be enabled. To turn off all actions, type \"set appfw profile -fieldFormatAction none\".
+        type: string[]
+        allowed-values:
+          - log
+          - block
+          - stats
+          - learn
+          - none
+      - 
+        name: defaultfieldformattype
+        label: Default Field Format Type
+        description: |
+         Designate a default field type to be applied to web form fields that do not have a field type explicitly assigned to them.
+        min-length: 1
+        type: string
+        allowed-values:
+          - "integer"
+          - "alpha"
+          - "alphanum"
+          - "nohtml"
+          - "any"
+        gui:
+          summary_display: false
+      - 
+        name: defaultfieldformatminlength
+        label: Default Field Format Min Length
+        description: |
+         Minimum length, in characters, for data entered into a field that is assigned the default field type. 
+         To disable the minimum and maximum length settings and allow data of any length to be entered into the field, set this parameter to zero (0).
+        type: number
+        default: 0
+        max-value: 65535
+        min-value: 0
+        gui:
+          summary_display: false
+      - 
+        name: defaultfieldformatmaxlength
+        label: Default Field Format Max Length
+        description: Maximum length, in characters, for data entered into a field that is assigned the default field type.
+        type: number
+        default: 65535
+        max-value: 65535
+        min-value: 1
+        gui:
+          summary_display: false
+      - 
+        name: appfwprofile_fieldconsistency_binding
+        description: Describes the web form fields for which field consistency constraints are relaxed
+        label: Field Consistency Relaxation
+        type: object[]
+        parameters-default-sources: 
+          - cmtypes::appfw-base-relaxaction-params
+        parameters:
+          -
+            name: fieldconsistency
+            type: string
+          - 
+            name: isregex_ffc
+            label: Is it a Regex?
+            description: Is it a regular expression?
+            type: string
+            allowed-values:
+              - "REGEX"
+              - "NOTREGEX"
+          -
+            name: formactionurl_ffc
+            type: string
+      - 
+        name: appfwprofile_fieldformat_binding
+        label: Field Format Relaxation Rules
+        type: object[]
+        parameters-default-sources: 
+          - cmtypes::appfw-base-relaxaction-params
+        parameters: 
+          -
+            name: fieldformat
+            type: string
+          -
+            name: isregex_ff
+            label: Is it a Regex?
+            description: Is it a regular expression?
+            type: string
+            allowed-values:
+              - "REGEX"
+              - "NOTREGEX"
+          -
+            name: formactionurl_ff
+            type: string
+          - 
+            name: fieldtype
+            description: The field type you are assigning to this form field.
+            label: Field Type
+            type: string
+          - 
+            name: fieldformatmaxlength
+            label: Field Format Maximum Length
+            type: number
+          - 
+            name: fieldformatminlength
+            label: Field Format Minimum Length
+            type: number
+  -
+    name: creditcard-settings
+    label: Credit Card Settings
+    type: object
+    parameters:
+      - 
+        name: creditcardxout
+        label: Enable Credit Card Number Masking
+        description: Mask any credit card number detected in a response by replacing each digit, except the digits in the final group, with the letter \"X.\"
+        type: boolean
+        default: false
+        gui:
+          summary_display: false
+      - 
+        name: creditcard
+        label: Credit Card Types
+        description: Credit card types that the application firewall should protect.
+        type: string[]
+        allowed-values: 
+          - Visa
+          - Mastercard
+          - Discover
+          - Amex
+          - JCB
+          - Dinersclub
+        gui:
+          summary_display: false
+      - 
+        name: creditcardmaxallowed
+        label: Maximum credit cards allowed per page
+        description: This parameter value is used by the block action. It represents the maximum number of credit card numbers that can appear on a web page served by your protected web sites. Pages that contain more credit card numbers are blocked.
+        type: number
+        max-value: 255
+        min-value: 0
+        gui:
+          summary_display: false
+      - 
+        name: creditcardaction
+        label: CreditCard Actions
+        description: |
+         One or more Credit Card actions. Available settings function as follows:
+         * Block - Block connections that violate this security check.
+         * Log - Log violations of this security check.
+         * Stats - Generate statistics for this security check.
+         * None - Disable all actions for this security check.
+        type: string[]
+        allowed-values:
+          - log
+          - block
+          - stats
+          - learn
+          - none
+        default:
+          - none
+  -
+    name: xml-settings
+    label: XML Security Settings
+    type: object
+    parameters:
+      -
+        name: xml-sqlinjection-settings
+        label: XML SQL Injection Settings
+        description: Group of all the XML SQL Injection related settings
+        type: object
+        parameters:
+          - 
+            name: xmlsqlinjectionchecksqlwildchars
+            description: Check for form fields that contain SQL wild chars.
+            label: Check for XMLSQL injection for SQL wildcard characters
+            type: boolean
+            default: false
+            gui:
+              summary_display: false
+          - 
+            name: xmlsqlinjectionaction
+            description: Actions associated with XMLSQLInjection
+            label: XML SQL Injection Actions
+            type: string[]
+            allowed-values:
+              - log
+              - block
+              - stats
+              - none
+          - 
+            name: xmlsqlinjectiontype
+            label: Check for XMLSQL injection in request containing 
+            description: |
+              Available SQL injection types.
+              SQLSplChar- Checks for SQL Special Chars
+              SQLKeyword- Checks for SQL Keywords
+              SQLSplCharANDKeyword- Checks for both and blocks if both are found
+              SQLSplCharORKeyword- Checks for both and blocks if anyone is found
+            type: string
+            allowed-values: 
+              - SQLSplChar
+              - SQLKeyword
+              - SQLSplCharORKeyworfd
+              - SQLSplCharANDKeyword
+            default: SQLSplCharANDKeyword
+            gui:
+              summary_display: false
+          - 
+            name: xmlsqlinjectionparsecomments
+            description: |
+              Parse comments in XML Data and exempt those sections of the request that are from the XML SQL Injection check. You must configure the type of comments that the application firewall is to detect and exempt from this security check. Available settings function as follows:
+              * Check all - Check all content.
+              * ANSI - Exempt content that is part of an ANSI (Mozilla-style) comment. 
+              * Nested - Exempt content that is part of a nested (Microsoft-style) comment.
+              * ANSI Nested - Exempt content that is part of any type of comment.
+            label: SQL Comments Handling
+            type: string
+            allowed-values: 
+              - checkall
+              - ansi
+              - nested
+              - ansinested
+            default: checkall
+            gui:
+              summary_display: false
+          - 
+            name: appfwprofile_xmlsqlinjection_binding
+            label: XML SQL Injection Relaxation Rules
+            type: object[]
+            parameters-default-sources: 
+              - cmtypes::appfw-base-relaxaction-params
+            parameters: 
+              - 
+                name: xmlsqlinjection
+                type: string
+              -
+                name: isregex_xmlsql
+                label: Is it a Regex?
+                description: Is it a regular expression?
+                type: string
+                allowed-values:
+                  - "REGEX"
+                  - "NOTREGEX"
+              -
+                name: as_scan_location_xmlsql
+                description: ELEMENT if the attachment is located in an XML element, ATTRIBUTE if located in an XML attribute.
+                label: Location
+                type: string
+                allowed-values: 
+                  - ELEMENT
+                  - ATTRIBUTE
+      - 
+        name: xmldosaction
+        label: XML Denial of Service Actions
+        description: |
+         One or more XML Denial-of-Service (XDoS) actions. Available settings function as follows:
+         * Block - Block connections that violate this security check.
+         * Learn - Use the learning engine to generate a list of exceptions to this security check.
+         * Log - Log violations of this security check.
+         * Stats - Generate statistics for this security check.
+         * None - Disable all actions for this security check.
+        type: string[]
+        allowed-values:
+          - log
+          - block
+          - learn
+          - stats
+          - none
+      - 
+        name: xmlformataction
+        description: Actions associated with XMLFormat
+        label: XML Format Actions
+        type: string[]
+        allowed-values:
+          - log
+          - block
+          - stats
+          - none
+      - 
+        name: xmlxssaction
+        description: Actions associated with XMLXSS
+        label: XML XSS Actions
+        type: string[]
+        allowed-values:
+          - log
+          - block
+          - stats
+          - none
+      - 
+        name: xmlwsiaction
+        description: Actions associated with XMLWSI
+        label: XML Web Services Interoperability Actions
+        type: string[]
+        allowed-values:
+          - log
+          - block
+          - stats
+          - learn
+          - none
+      - 
+        name: xmlattachmentaction
+        description: Actions associated with XMLAttachment
+        label: XML Attachment Actions
+        type: string[]
+        allowed-values:
+          - log
+          - block
+          - stats
+          - learn
+          - none
+      - 
+        name: xmlvalidationaction
+        description: Actions associated with XMLValidation
+        label: XML Message Validation Actions
+        type: string[]
+        allowed-values:
+          - log
+          - block
+          - stats
+          - none
+      - 
+        name: xmlsoapfaultaction
+        description: One or more XML SOAP Fault Filtering actions.
+        label: XML SOAP Fault Filtering Actions
+        type: string[]
+        allowed-values: 
+          - none
+          - block
+          - log
+          - remove
+          - stats
+      - 
+        name: xmlerrorobject
+        description: |
+          Name to assign to the XML Error Object, which the application firewall displays when a user request is blocked. 
+          Must begin with a letter, number, or the underscore character (_), and must contain only letters, numbers, and the hyphen (-), period (.) pound (#), space ( ), at (@), equals (=), colon (:), and underscore characters. Cannot be changed after the XML error object is added.
+          The following requirement applies only to the Citrix ADC CLI-
+          If the name includes one or more spaces, enclose the name in double or single quotation marks (for example, "my XML error object" or 'my XML error object').
+        label: XML Error Object
+        min-length: 1
+        max-length: 31
+        type: string
+        gui:
+          summary_display: false
+      - 
+        name: stripxmlcomments
+        description: Strip XML comments before forwarding a web page sent by a protected web site in response to a user request.
+        label: Strip XML Comments
+        type: string
+        allowed-values: 
+          - none
+          - all
+        default: none
+        gui:
+          summary_display: false
+  -
+    name: contenttype-settings
+    label: Content Type Settings
+    type: object
+    parameters:
+      - 
+        name: contenttypeaction
+        label: Content Type Actions
+        description: |
+         One or more Content-type actions. Available settings function as follows:
+         * Block - Block connections that violate this security check.
+         * Learn - Use the learning engine to generate a list of exceptions to this security check.
+         * Log - Log violations of this security check.
+         * Stats - Generate statistics for this security check.
+         * None - Disable all actions for this security check.
+         CLI users: To enable one or more actions, type \"set appfw profile -contentTypeaction\" followed by the actions to be enabled. To turn off all actions, type \"set appfw profile -contentTypeaction none\"."
+        type: string[]
+        allowed-values:
+          - log
+          - block
+          - stats
+          - learn
+          - none
+      - 
+        name: requestcontenttype
+        label: Request Content Type
+        description: |
+          Default Content-Type header for requests. 
+          A Content-Type header can contain 0-255 letters, numbers, and the hyphen (-) and underscore (_) characters.
+        max-length: 255
+        min-length: 1
+        type: string
+        gui:
+          summary_display: false
+      - 
+        name: responsecontenttype
+        label: Response Content Type
+        description: |
+          Default Content-Type header for responses. 
+          A Content-Type header can contain 0-255 letters, numbers, and the hyphen (-) and underscore (_) characters.
+        max-length: 255
+        min-length: 1
+        type: string
+        gui:
+          summary_display: false
+      - 
+        name: inspectcontenttypes
+        description: One or more contenttype lists
+        label: Inspect Content Types
+        type: string[]
+        allowed-values: 
+          - "none"
+          - "application/x-www-form-urlencoded"
+          - "multipart/form-data"
+          - "text/x-gwt-rpc"
+        gui:
+          summary_display: false
+      -
+        name: appfwprofile_contenttype_binding
+        label: Content Type Relaxation Rules
+        type: object[]
+        parameters-default-sources:
+          - cmtypes::appfw-base-relaxaction-params
+        parameters:
+          -
+            name: contenttype
+            label: Content-Type
+            description: Content-type
+            type: string
+  -
+    name: fileupload-settings
+    label: File Upload Settings
+    type: object
+    parameters:
+      - 
+        name: excludefileuploadfromchecks
+        description: Exclude uploaded files from Form checks.
+        label: Exclude File Upload From Checks
+        type: boolean
+        default: false
+        gui:
+          summary_display: false
+      - 
+        name: fileuploadmaxnum
+        description: Maximum allowed number of file uploads per form-submission request. The maximum setting (65535) allows an unlimited number of uploads.
+        label: Maximum file uploads
+        max-value: 65535
+        min-value: 0
+        type: number
+        default: 65535
+        gui:
+          summary_display: false
+  -
+    name: errorpage-settings
+    label: Error Page Settings
+    type: object
+    parameters:
+      - 
+        name: usehtmlerrorobject
+        description: Send an imported HTML Error object to a user when a request is blocked, instead of redirecting the user to the designated Error URL.
+        label: HTML Error Object
+        type: boolean
+        default: false
+        gui:
+          summary_display: false
+      -
+        name: htmlerrorobject 
+        description: Name of error object
+        label: HTML Error Page Name
+        type: string
+      - 
+        name: errorurl
+        description: URL that application firewall uses as the Error URL.
+        label: Redirect URL
+        type: string
+        min-length: 1
+        max-length: 2047
+        gui:
+          summary_display: false
+  -
+    name: safeobject-settings
+    label: Safe Object Settings
+    type: object
+    parameters:
+      - 
+        name: appfwprofile_safeobject_binding
+        label: Safe Object Relaxation Rules
+        type: object[]
+        parameters: 
+          - 
+            name: state
+            label: State
+            type: string
+            allowed-values: 
+              - "ENABLED"
+              - "DISABLED"
+          - 
+            name: safeobject
+            description: Name of the Safe Object.
+            label: Safe Object Name
+            type: string
+          - 
+            name: expression
+            description: A regular expression that defines the Safe Object.
+            label: Regular Expression
+            type: string
+          - 
+            name: maxmatchlength
+            description: Maximum match length for a Safe Object expression.
+            label: Maximum Match Length
+            type: number
+          - 
+            name: action
+            label: Action
+            type: string[]
+            allowed-values:
+              - log
+              - block
+              - stats
+              - remove
+              - xout
+              - none
+          -
+            name: comment
+            description: Comment
+            label: Comment
+            type: string
+  -
+    name: misc-settings
+    label: Miscellaenous WAF Settings
+    type: object
+    parameters:
+      - 
+        name: canonicalizehtmlresponse
+        description: Perform HTML entity encoding for any special characters in responses sent by your protected web sites.
+        label: Canonicalize HTML Response
+        type: boolean
+        default: true
+        gui:
+          summary_display: false
+      - 
+        name: checkrequestheaders
+        description: Check request headers as well as web forms for injected SQL and cross-site scripts.
+        label: Check request headers
+        type: boolean
+        default: false
+        gui:
+          summary_display: false
+      - 
+        name: logeverypolicyhit
+        description: Log every profile match, regardless of security checks results.
+        label: Log every policy hit
+        type: boolean
+        default: false
+        gui:
+          summary_display: false
+      - 
+        name: optimizepartialreqs
+        description: Optimize handling of HTTP partial requests i.e. those with range headers.
+        label: Optimize Partial Requests
+        type: boolean
+        default: true
+        gui:
+          summary_display: false
+      - 
+        name: defaultcharset
+        label: Default Charset
+        max-length: 31
+        min-length: 1
+        type: string
+        allowed-values:
+          - "iso-8859-1"
+          - "big5"
+          - "gb2312"
+          - "sjis"
+          - "euc-jp"
+          - "iso-8859-9"
+          - "utf-8"
+          - "euc-kr"
+        gui:
+          summary_display: false
+      - 
+        name: striphtmlcomments
+        description: Strip HTML comments before forwarding a web page sent by a protected web site in response to a user request.
+        label: Strip HTML Comments
+        type: string
+        allowed-values: 
+          - none
+          - all
+          - exclude_script_tag
+        default: none
+        gui:
+          summary_display: false
+      - 
+        name: invalidpercenthandling
+        description: Configure the method that the application firewall uses to handle percent-encoded names and values
+        label: Invalid Percent Handling
+        type: string
+        allowed-values: 
+          - apache_mode
+          - asp_mode
+          - secure_mode
+        default: secure_mode
+        gui:
+          summary_display: false
+      - 
+        name: postbodylimit
+        default: 20000000
+        label: Post Body Limit
+        type: number
+        min-value: 0
+        max-value: 4294967295
+        gui:
+          summary_display: false
+      - 
+        name: archivename
+        description: Source for tar archive.
+        label: archivename
+        max-length: 31
+        min-length: 1
+        type: string
+        updatable: false
+        gui:
+          summary_display: false
+      - 
+        name: comment
+        description: Any comments about the purpose of profile, or other useful information about the profile.
+        label: comment
+        type: string
+        gui:
+          summary_display: false

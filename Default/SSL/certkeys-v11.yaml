@@ -2,7 +2,7 @@
 name: certkeys
 namespace: com.citrix.adc.stylebooks
 version: "1.1"
-description: This StyleBook uploads certificates files to NetScaler and creates corresponding CertKeys.
+description: This StyleBook uploads certificates files to Citrix ADC and creates corresponding CertKeys.
 private: true
 schema-version: "1.0"
 import-stylebooks: 
@@ -25,7 +25,7 @@ components:
   - 
     name: pem-cert-files-comp
     type: ns::systemfile
-    description: This list of components upload the PEM certificate files onto the NetScaler device.
+    description: This list of components upload the PEM certificate files onto the Citrix ADC device.
     repeat: $parameters.certificates
     repeat-condition: $certificate.ssl-inform == "PEM"
     repeat-item: certificate
@@ -37,7 +37,7 @@ components:
   - 
     name: der-cert-files-comp
     type: ns::systemfile
-    description: This list of components upload the DER certificate files onto the NetScaler device.
+    description: This list of components upload the DER certificate files onto the Citrix ADC device.
     repeat: $parameters.certificates
     repeat-condition: $certificate.ssl-inform != "PEM"
     repeat-item: certificate
@@ -49,7 +49,7 @@ components:
   - 
     name: pem-key-files-comp
     type: ns::systemfile  
-    description: This list of components upload the PEM key files onto the NetScaler device.
+    description: This list of components upload the PEM key files onto the Citrix ADC device.
     condition: $components.der-cert-files-comp or $components.pem-cert-files-comp
     repeat: $parameters.certificates
     repeat-condition: $certificate.key-file
@@ -62,7 +62,7 @@ components:
   - 
     name: der-key-files-comp
     type: ns::systemfile
-    description: This list of components upload the DER key files onto the NetScaler device.
+    description: This list of components upload the DER key files onto the Citrix ADC device.
     condition: $components.der-cert-files-comp or $components.pem-cert-files-comp
     repeat: $parameters.certificates
     repeat-condition: $certificate.ssl-inform != "PEM" and not $certificate.cert-advanced.is-ca-cert
@@ -75,7 +75,7 @@ components:
   - 
     name: certkeys-comp
     type: ns::sslcertkey
-    description: This list of components create certkey entities on the NetScaler device.
+    description: This list of components create certkey entities on the Citrix ADC device.
     condition: $components.der-cert-files-comp or $components.pem-cert-files-comp
     repeat: $parameters.certificates
     repeat-item: certificate
@@ -91,7 +91,7 @@ components:
   - 
     name: certkeys-ca-comp
     type: ns::sslcertkey
-    description: This list of components create CA certkey entities on the NetScaler device.
+    description: This list of components create CA certkey entities on the Citrix ADC device.
     condition: $components.der-cert-files-comp or $components.pem-cert-files-comp
     repeat: $parameters.certificates
     repeat-item: certificate

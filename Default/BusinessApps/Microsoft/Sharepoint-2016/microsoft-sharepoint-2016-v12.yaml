@@ -1,0 +1,20 @@
+---
+name: microsoft-sharepoint-2016
+description: This StyleBook contains Citrix ADC configuration for Microsoft SharePoint 2016
+display-name: Microsoft Sharepoint 2016 StyleBook
+namespace: com.citrix.adc.enterprise.stylebooks
+schema-version: "1.0"
+version: "1.2"
+import-stylebooks:
+  - 
+    namespace: com.citrix.adc.enterprise.stylebooks
+    prefix: entsb11
+    version: "1.2"
+parameters-default-sources:
+  - entsb11::sharepoint-config
+components:
+  -
+    name: sharepoint-config-comp
+    type: entsb11::sharepoint-config
+    properties-default-sources:
+      - $parameters

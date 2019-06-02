@@ -1,0 +1,63 @@
+--- 
+name: vserver-appfwpolicies-bindings
+display-name: VServer to AppFw Policies Binding Stylebook
+description: This StyleBook binds a vserver (LB or CS) to a appfw policy or policy label
+namespace: com.citrix.adc.stylebooks
+private: true
+schema-version: "1.0"
+version: "1.0"
+import-stylebooks: 
+  - 
+    namespace: netscaler.nitro.config
+    prefix: ns
+    version: "10.5"
+  - 
+    namespace: com.citrix.adc.commontypes
+    version: "1.0"
+    prefix: cmtypes    
+parameters-default-sources:
+  - cmtypes::vserver-policies-bindings-params
+substitutions:
+  gotopriorityexpression:
+    true: NEXT
+    false: END
+  policy-name(name, type): if-then-else($type == "POLICY", $name, NOPOLICY-APPFW)
+  policylabel-name(name, type): if-then-else($type == "POLICYLABEL", $name)
+  invoke(type): if-then-else($type == "POLICYLABEL", true)
+  labeltype(type): if-then-else($type == "POLICYLABEL", str("policylabel"))
+  priority(ndx): 10 + ($ndx * 10)
+components:
+  - 
+    name: lbvserver-appfw-policy-binding-comp
+    type: ns::lbvserver_appfwpolicy_binding
+    description: Component for binding appfw policies and lbvserver
+    condition: $parameters.vserver-type == LBVSERVER
+    repeat: $parameters.policies
+    repeat-item: policy
+    repeat-index: ndx
+    properties: 
+      name: $parameters.vserver-name
+      policyname: $substitutions.policy-name($policy.name, $policy.type)
+      bindpoint: $policy.bind-point
+      invoke?: $substitutions.invoke($policy.type)
+      labeltype?: $substitutions.labeltype($policy.type)
+      labelname?: $substitutions.policylabel-name($policy.name, $policy.type)
+      priority: $substitutions.priority($ndx)
+      gotopriorityexpression: $substitutions.gotopriorityexpression[$policy.continue]
+  - 
+    name: csvserver-appfw-policy-binding-comp
+    type: ns::csvserver_appfwpolicy_binding
+    description: Component for binding appfw policies and csvserver
+    condition: $parameters.vserver-type == CSVSERVER
+    repeat: $parameters.policies
+    repeat-item: policy
+    repeat-index: ndx
+    properties: 
+      name: $parameters.vserver-name
+      policyname: $substitutions.policy-name($policy.name, $policy.type)
+      bindpoint: $policy.bind-point
+      invoke?: $substitutions.invoke($policy.type)
+      labeltype?: $substitutions.labeltype($policy.type)
+      labelname?: $substitutions.policylabel-name($policy.name, $policy.type)
+      priority: $substitutions.priority($ndx)
+      gotopriorityexpression: $substitutions.gotopriorityexpression[$policy.continue] 

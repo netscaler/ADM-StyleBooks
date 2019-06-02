@@ -21,7 +21,7 @@ parameters:
     -
         name: rule
         type: string
-        label: "NetScaler PI Rule for when to apply the Session Policy"
+        label: "Citrix ADC PI Rule for when to apply the Session Policy"
         description: "The Application Rule"
         default: "true"
     -
@@ -41,13 +41,13 @@ parameters:
                 name: username
                 type: string
                 label: "Service Account Username"
-                description: "Service Account username used by NetScaler to authenticate users to AD"
+                description: "Service Account username used by Citrix ADC to authenticate users to AD"
                 required: true
             -
                 name: password
                 type: string
                 label: "Service Account Password"
-                description: "Service Account password used by NetScaler to authenticate users to AD"
+                description: "Service Account password used by Citrix ADC to authenticate users to AD"
                 required: true 
 components:
     -

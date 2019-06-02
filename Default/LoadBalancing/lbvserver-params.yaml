@@ -46,6 +46,7 @@ parameters:
     allowed-values: 
       - HTTP
       - SSL
+      - SSL_BRIDGE
       - TCP
       - UDP
       - ANY
@@ -69,6 +70,7 @@ parameters:
           - LEASTCONNECTION
           - ROUNDROBIN
           - LEASTRESPONSETIME
+          - SOURCEIPHASH
       - 
         name: persistence
         label: "Load Balanced App Persistence Type"

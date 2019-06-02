@@ -9,5 +9,5 @@ parameters:
     name: pattern
     type: string
     label: Request Filter (Policy Expression)
-    description: The NetScaler Policy Expression used to select requests for which to perform action on the header
+    description: The Citrix ADC Policy Expression used to select requests for which to perform action on the header
     default: "true"

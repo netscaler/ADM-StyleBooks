@@ -28,7 +28,7 @@ parameters:
     type: string
     label: Occurrences to replace
     description: |
-        Do you want the NetScaler to replace all occurrences of the text in the response body or just the first occurrence.
+        Do you want the Citrix ADC to replace all occurrences of the text in the response body or just the first occurrence.
     default: "All Occurrences"
     allowed-values:
         - "All Occurrences"
@@ -39,16 +39,16 @@ parameters:
     type: number
     label: Max Response Size (KB)
     description: |
-        How deep in a response body should the NetScaler look to identify text strings to replace. 
+        How deep in a response body should the Citrix ADC look to identify text strings to replace. 
         If the text string you want to replace, can occur anywhere in the response body, then you have
         to estimate what is the maximum size (in KiloBytes) of your responses. 
-        Note that the bigger the response size you specify, the more impact on the NetScaler performance 
-        and memory this has, as the NetScaler needs to buffer responses in order to search them.
+        Note that the bigger the response size you specify, the more impact on the Citrix ADC performance 
+        and memory this has, as the Citrix ADC needs to buffer responses in order to search them.
     required: true
     default: 5
   -
     name: pattern
     type: string
     label: Request Filter (Policy Expression)
-    description: The NetScaler Policy Expression used to select requests for which to perform the text replacement. If the value is "true" (default), then the action is applied to all requests.
+    description: The Citrix ADC Policy Expression used to select requests for which to perform the text replacement. If the value is "true" (default), then the action is applied to all requests.
     default: "true"

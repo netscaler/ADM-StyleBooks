@@ -77,7 +77,7 @@ parameters:
       -
         name: rule
         label: "Rule Expression"
-        description: "NetScaler PI rule expression. Client requests that match this expression are served by this pool"
+        description: "Citrix ADC PI rule expression. Client requests that match this expression are served by this pool"
         type: string
         required: true
       -

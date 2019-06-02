@@ -20,7 +20,7 @@ parameters:
     -
         name: rule
         type: string
-        label: "NetScaler PI Rule for when to apply the Session Policy"
+        label: "Citrix ADC PI Rule for when to apply the Session Policy"
         description: "The Application Rule"
         default: ns_true
     -

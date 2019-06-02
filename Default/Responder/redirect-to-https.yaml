@@ -5,7 +5,7 @@ display-name:  Redirect users to use https
 private: true
 schema-version: "1.0"
 description: |    
-    This StyleBook configures NetScaler to redirect users to the https URL.
+    This StyleBook configures Citrix ADC to redirect users to the https URL.
 import-stylebooks: 
   - 
     namespace: netscaler.nitro.config
