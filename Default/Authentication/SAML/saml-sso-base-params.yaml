@@ -2,7 +2,7 @@
 name: saml-sso-base-params
 namespace: com.citrix.adc.commontypes
 version: "1.0"
-description: This StyleBook define the base parameters for SAML IdP configurations in NetScaler.
+description: This StyleBook define the base parameters for SAML IdP configurations in Citrix ADC.
 schema-version: "1.0"
 private: true
 import-stylebooks:
@@ -14,36 +14,36 @@ parameters:
     -
         name: saml-assertion-consumerservice-url
         label: Assertion Consumer Service URL
-        description: Service Provider's URL where NetScaler IdP needs to send the SAML assertions.
+        description: Service Provider's URL where Citrix ADC IdP needs to send the SAML assertions.
         type: string
         required: true
     -
         name: saml-relaystate-expr
         label: RelayState Expression
         description: |
-          The NetScaler Policy (PI) expression used to extract the value for the
+          The Citrix ADC Policy (PI) expression used to extract the value for the
           RelayState attribute that accompanies the issued SAML assertion sent to the Service Provider.
         type: string
         required: true
     -
         name: saml-sso-signing-certificate
         label: IdP Signing Certificate 
-        description: The NetScaler IdP Certificate used to sign the issued SAML Assertions
+        description: The Citrix ADC IdP Certificate used to sign the issued SAML Assertions
         type: cmtypes::certificate
         required: true
     -
         name: saml-sso-issuer-name
         label: SAML Issuer Name
         description: |
-            The NetScaler Issuer name (URL) used by NetScaler IdP in issued SAML Assertions.
-            This name identifies the NetScaler IdP to Service Providers (Relying Parties).
-            For example: "https://<NetScaler Auth VIP>/saml/login"
+            The Citrix ADC Issuer name (URL) used by Citrix ADC IdP in issued SAML Assertions.
+            This name identifies the Citrix ADC IdP to Service Providers (Relying Parties).
+            For example: "https://<Citrix ADC Auth VIP>/saml/login"
         type: string
     -
         name: name-id-expr
         label: NameIdentifier Expression
         description: |
-            NetScaler PI Expression that will be used to fill the value for the SAML NameID of the SAML assertion.
+            Citrix ADC PI Expression that will be used to fill the value for the SAML NameID of the SAML assertion.
             This value is typically extracted from user attributes (e.g. username or email value).
             Example: HTTP.REQ.USER.ATTRIBUTE(1)
         type: string
@@ -70,7 +70,7 @@ parameters:
     -
         name: audience
         label: Audience name or url
-        description: Audience for which assertion sent by NetScaler IdP is applicable. This is typically entity name, ID or URL that represents the Service Provider.
+        description: Audience for which assertion sent by Citrix ADC IdP is applicable. This is typically entity name, ID or URL that represents the Service Provider.
         type: string
     -
         name: valid-period
@@ -102,7 +102,7 @@ parameters:
     -
         name: encrypt-assertion
         label: Encrypt SAML Assertions
-        description: Option to encrypt SAML Assertions issued by NetScaler IdP.
+        description: Option to encrypt SAML Assertions issued by Citrix ADC IdP.
         type: object
         parameters:
           -
@@ -120,14 +120,14 @@ parameters:
             name: saml-sp-certificate
             label: Service Provider Certificate
             description: |
-              The NetScaler Certificate (public certificate) of the Service Provider used by NetScaler IdP
+              The Citrix ADC Certificate (public certificate) of the Service Provider used by Citrix ADC IdP
               to encrypt SAML Assertions sent to the Service Provider.
             type: cmtypes::certificate
     -
         name: user-attrs
         label: User Attributes
         type: object
-        description: Extra User Attributes that need to be included in the issued SAML assertion by the NetScaler IdP
+        description: Extra User Attributes that need to be included in the issued SAML assertion by the Citrix ADC IdP
         parameters:
           -
               name: attribute1-name

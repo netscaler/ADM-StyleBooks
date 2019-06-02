@@ -1,0 +1,64 @@
+--- 
+name: adfs-dns
+namespace: com.citrix.adc.stylebooks
+version: "1.0"
+description: This stylebook configures the ADFS DNS components
+private: true
+schema-version: "1.0"
+import-stylebooks: 
+    - 
+        namespace: netscaler.nitro.config
+        version: "10.5"
+        prefix: ns
+parameters:
+    -
+        name: dns-name
+        type: string
+        label: "Name of DNS Config"
+        description: "Name of the DNS Config"
+        required: true
+    -
+        name: dns-vip
+        type: ipaddress
+        label: "DNS VIP IP address"
+        description: "VIP IP address on Citrix ADC for frontending the DNS Servers"
+        required: true
+    -
+        name: dns-servers
+        type: ipaddress[]
+        label: "IP addresses of DNS Servers"
+        description: "The list of DNS Servers IP addresses"
+        required: true
+components:
+    -
+        name: adfs-dns-lbvserver-comp
+        type: ns::lbvserver
+        properties: 
+            name: "%{$parameters.dns-name}%-adfs-dns"
+            servicetype: DNS
+            ipv46: $parameters.dns-vip
+            port: 53
+        components:
+            -
+                name: adfs-dns-service-comps
+                type: ns::service
+                repeat: $parameters.dns-servers
+                repeat-item: dnsip
+                repeat-index: dnsidx
+                properties: 
+                    name: $parameters.dns-name + "-dns-svc-" + str($dnsidx + 1)
+                    ip: $dnsip
+                    servicetype: DNS
+                    port: 53
+                components:
+                    -
+                        name: adfs-dns-lbvserver-service-comp
+                        type: ns::lbvserver_service_binding
+                        properties:
+                            name: $parent.parent.properties.name
+                            servicename: $parent.properties.name
+outputs:
+    -
+        name: dns-vserver-name
+        value: $components.adfs-dns-lbvserver-comp.properties.name
+        description: "The Name of the DNS vserver"

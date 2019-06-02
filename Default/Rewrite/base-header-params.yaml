@@ -15,7 +15,7 @@ parameters:
     name: pattern
     type: string
     label: Request Filter (Policy Expression)
-    description: The NetScaler Policy Expression used to select requests for which to perform action on the header. If the value is "true" (default), then the action is applied to all requests.
+    description: The Citrix ADC Policy Expression used to select requests for which to perform action on the header. If the value is "true" (default), then the action is applied to all requests.
     default: "true"
   -
     name: on-response

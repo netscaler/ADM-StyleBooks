@@ -2,7 +2,7 @@
 name: tmtraffic-policy
 namespace: com.citrix.adc.stylebooks
 version: "1.0"
-description: This StyleBook configures a NetScaler Traffic policy
+description: This StyleBook configures a Citrix ADC Traffic policy
 schema-version: "1.0"
 private: true
 import-stylebooks: 
@@ -28,14 +28,14 @@ parameters:
     -
         name: rule
         type: string
-        label: "NetScaler PI Rule for when to apply the Active Directory LDAP Policy"
+        label: "Citrix ADC PI Rule for when to apply the Active Directory LDAP Policy"
         description: "The Application Rule"
         default: "true"
     -
         name: traffic-settings
         type: object
         label: Traffic Policy Settings
-        description: "Parameters for configuring NetScaler Traffic Policy"
+        description: "Parameters for configuring Citrix ADC Traffic Policy"
         required: true
         parameters-default-sources:
             - cmtypes::tmtraffic-base-params
@@ -99,7 +99,7 @@ components:
                 - $parameters.traffic-settings.sso-settings.sso-kerberos-settings.delegated-user-ca-cert
     -
         name: kerberos-sso-account-comp
-        description: This component creates a KCD account config object used by the NetScaler to SSO on behalf of the user.
+        description: This component creates a KCD account config object used by the Citrix ADC to SSO on behalf of the user.
         type: ns::aaakcdaccount
         condition: $parameters.traffic-settings.sso-settings.sso-kerberos-settings
         properties:

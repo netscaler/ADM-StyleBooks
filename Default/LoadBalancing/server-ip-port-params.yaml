@@ -25,4 +25,10 @@ parameters:
       type: boolean
       default: true
       gui:
-        hidden: true    
+        hidden: true
+   -
+      name: weight
+      label: "Weight"
+      description: "Weight of the service that is bound to the servicegroup"
+      type: number
+      min-value: 1

@@ -21,6 +21,7 @@ parameters:
       - HTTP
       - TCP
       - SSL
+      - SSL_BRIDGE
       - UDP
       - ANY
     required: true

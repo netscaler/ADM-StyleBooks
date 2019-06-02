@@ -1,0 +1,56 @@
+--- 
+name: lb-appfw
+namespace: com.citrix.adc.stylebooks
+version: "1.0"
+description: "This stylebook defines a Load Balanced Application configuration with AppFw policies"
+display-name: "HTTP/SSL LoadBalancing StyleBook with AppFw Policy and IP Reputation Policy"
+schema-version: "1.0"
+import-stylebooks: 
+  - 
+    namespace: netscaler.nitro.config
+    prefix: ns
+    version: "12.0"
+  -
+    namespace: com.citrix.adc.stylebooks
+    prefix: stlb
+    version: "1.0"
+  -
+    namespace: com.citrix.adc.commontypes
+    prefix: cmtypes
+    version: "1.0"
+parameters-default-sources:
+  - stlb::lb-mon
+parameters:
+  - 
+    name: waf-settings
+    label: WAF Settings
+    description: Configure WAF Settings
+    type: object
+    parameters-default-sources:
+      - cmtypes::appfw-config-params
+components:
+  - 
+    name: lb-comp
+    type: stlb::lb-mon
+    properties-default-sources:
+      - $parameters
+  -
+    name: appfw-config-comp
+    type: stlb::appfw-config
+    condition: exists($parameters.waf-settings)
+    properties:
+      appname: $parameters.lb-appname
+    properties-default-sources:
+      - $parameters.waf-settings
+  -
+    name: appfw-policies-bindings-comp
+    type: stlb::vserver-appfwpolicies-bindings
+    condition: exists($parameters.waf-settings)
+    properties:
+        vserver-name: $components.lb-comp.outputs.lbvserver.properties.name
+        vserver-type: LBVSERVER
+        policies:
+          -
+            name: $components.appfw-config-comp.outputs.appfw-policy-label
+            type: POLICYLABEL
+            bind-point: REQUEST

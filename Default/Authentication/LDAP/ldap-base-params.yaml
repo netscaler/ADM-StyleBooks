@@ -2,7 +2,7 @@
 name: ldap-base-params
 namespace: com.citrix.adc.commontypes
 version: "1.0"
-description: This StyleBook define the base parameters for LDAP configurations in NetScaler.
+description: This StyleBook define the base parameters for LDAP configurations in Citrix ADC.
 schema-version: "1.0"
 private: true
 parameters:
@@ -29,7 +29,7 @@ parameters:
         name: server-ip
         label: LDAP Server (Active Direcory) IP
         description: |
-          The LDAP Server IP Address that NetScaler connects to for authenticating users.
+          The LDAP Server IP Address that Citrix ADC connects to for authenticating users.
         type: ipaddress
     -
         name: server-name
@@ -41,7 +41,7 @@ parameters:
     -
         name: server-port
         label: LDAP Server (Active Directory) Port
-        description: The LDAP Server port that NetScaler connects to for authenticating users
+        description: The LDAP Server port that Citrix ADC connects to for authenticating users
         type: tcp-port
         default: 389
     -
@@ -63,7 +63,7 @@ parameters:
     -
         name: user-attribute-name
         label: LDAP (Active Directory) Login username
-        description: AD Login name. The NetScaler appliance uses this username to query external LDAP (Active Directory) Servers
+        description: AD Login name. The Citrix ADC appliance uses this username to query external LDAP (Active Directory) Servers
         type: string
         default: samAccountname
     -

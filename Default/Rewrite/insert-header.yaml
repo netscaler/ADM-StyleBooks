@@ -6,7 +6,7 @@ private: true
 schema-version: "1.0"
 description: |    
     This StyleBook inserts an HTTP header in the request or response stream. For each header, the user 
-    specifies the header name, the header value, and optionally a NetScaler Policy expression for selecting a subset of the requests    
+    specifies the header name, the header value, and optionally a Citrix ADC Policy expression for selecting a subset of the requests    
     for which the header is inserted (defaults to "true").
 import-stylebooks: 
   - 

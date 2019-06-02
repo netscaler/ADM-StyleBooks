@@ -2,7 +2,7 @@
 name: vserver-certs-binds
 namespace: com.citrix.adc.stylebooks
 version: "1.1"
-description: "This StyleBook creates corresponding certkey entities on NetScaler and binds a set of certificates to an existing SSL virtual load balanced seerver."
+description: "This StyleBook creates corresponding certkey entities on Citrix ADC and binds a set of certificates to an existing SSL virtual load balanced seerver."
 schema-version: "1.0"
 private: true
 import-stylebooks: 
@@ -36,7 +36,7 @@ components:
   - 
     name: certkeys-comp
     type: stlb::certkeys
-    description: "This component uploads the certificate files and creates corresponding certkey entities on NetScaler."
+    description: "This component uploads the certificate files and creates corresponding certkey entities on Citrix ADC."
     properties: 
       certificates: $parameters.certificates
   - 

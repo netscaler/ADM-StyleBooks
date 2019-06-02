@@ -3,7 +3,7 @@ name: kerberos-kcdaccount
 namespace: com.citrix.adc.commontypes
 version: "1.0"
 description: |
-    This StyleBook define the base parameters for Kerberos KCD account used by NetScaler for constrained delegation.
+    This StyleBook define the base parameters for Kerberos KCD account used by Citrix ADC for constrained delegation.
 schema-version: "1.0"
 private: true
 import-stylebooks:
@@ -21,7 +21,7 @@ parameters:
             -
                 name: keytab-file
                 label: Keytab File path
-                description: The absolute path on the NetScaler for the keytab file to use
+                description: The absolute path on the Citrix ADC for the keytab file to use
                 type: string
                 required: true
     -
@@ -45,7 +45,7 @@ parameters:
         name: delegated-user
         label: Delegated User Name
         description: |
-            The username that NetScaler uses to obtain a TGT ticket from Kerberos KDC (Active Directory).
+            The username that Citrix ADC uses to obtain a TGT ticket from Kerberos KDC (Active Directory).
             The username can be simple (e.g. root) or specified in the SPN format (e.g. host/webacct.example.com)
         type: string
     -
@@ -71,6 +71,6 @@ parameters:
         name: service-spn
         label: Service Principal Name (SPN)
         description: |
-            When specified, this will be used to fetch kerberos tickets for backend services (e.g. HTTP/app.acme.com). If not specified, Netscaler will 
+            When specified, this will be used to fetch kerberos tickets for backend services (e.g. HTTP/app.acme.com). If not specified, Citrix ADC will 
             construct SPN using the accessed service FQDN.
         type: string

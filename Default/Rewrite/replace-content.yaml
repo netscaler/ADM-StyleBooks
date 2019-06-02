@@ -5,7 +5,7 @@ display-name: Replace Text in Responses StyleBook
 private: true
 schema-version: "1.0"
 description: |    
-    This StyleBook can be use to configure NetScaler to replace Text Strings ina Response.
+    This StyleBook can be use to configure Citrix ADC to replace Text Strings ina Response.
 import-stylebooks: 
   - 
     namespace: netscaler.nitro.config

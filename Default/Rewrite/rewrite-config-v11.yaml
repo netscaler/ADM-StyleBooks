@@ -3,7 +3,7 @@ namespace: com.citrix.adc.stylebooks
 version: "1.1"
 display-name: Rewrite Config StyleBook
 description: Rewrite |    
-    This StyleBook contains the different rewrite configuration that can be applied to traffic by NetScaler
+    This StyleBook contains the different rewrite configuration that can be applied to traffic by Citrix ADC
 private: true
 schema-version: "1.0"
 import-stylebooks: 
@@ -40,7 +40,7 @@ components:
   -
     name: rewrite-enable-feature-comp
     type: ns::nsfeature
-    description: Enables the REWRITE feature on NetScaler
+    description: Enables the REWRITE feature on Citrix ADC
     meta-properties:
         action: enable
     properties:

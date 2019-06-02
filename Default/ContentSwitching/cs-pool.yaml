@@ -17,8 +17,8 @@ import-stylebooks:
 parameters: 
   -
     name: rule
-    label: "L7 NetScaler PI Rule Expression"
-    description: "The NetScaler PI Policy Expression to use for this server pool (L7 Rule)"
+    label: "L7 Citrix ADC PI Rule Expression"
+    description: "The Citrix ADC PI Policy Expression to use for this server pool (L7 Rule)"
     type: string
     required: true
     gui: 

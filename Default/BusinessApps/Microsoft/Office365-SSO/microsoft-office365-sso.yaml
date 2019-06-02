@@ -4,7 +4,7 @@ namespace: com.citrix.adc.enterprise.stylebooks
 version: "1.0"
 display-name: SSO Office 365 StyleBook
 description: | 
-  This StyleBook configures NetScaler to play the role of a SAML IdP for Office 365, therefore 
+  This StyleBook configures Citrix ADC to play the role of a SAML IdP for Office 365, therefore 
   providing Single SignOn (SSO) to users.
 schema-version: "1.0"
 import-stylebooks:
@@ -37,13 +37,13 @@ parameters:
   -
     name: auth-cert
     label: SSL Certificate for the Authentication Virtual IP
-    description: SSL Certification to be bound to authentication vserver on NetScaler (Not Office 365 Certificate)
+    description: SSL Certification to be bound to authentication vserver on Citrix ADC (Not Office 365 Certificate)
     type: cmtypes::certificate
     required: true
   -
     name: auth-ca-cert
     label: SSL CA Certificate for the Authentication Virtual IP
-    description: SSL CA Certification to be bound to authentication vserver on NetScaler (Not Office 365 Certificate)
+    description: SSL CA Certification to be bound to authentication vserver on Citrix ADC (Not Office 365 Certificate)
     type: cmtypes::certificate
   -
     name: ldap-settings
@@ -63,7 +63,7 @@ parameters:
         -
             name: saml-idp-cert
             label: SAML IdP Certificate
-            description: SSL Certificate used by NetScaler to sign issued SAML assertions
+            description: SSL Certificate used by Citrix ADC to sign issued SAML assertions
             type: cmtypes::certificate
             required: true
         -
@@ -74,7 +74,7 @@ parameters:
         -
             name: saml-sp-cert
             label: SAML SP Certificate
-            description: Office365 SSL Public Certificate used by NetScaler to verify incoming SAML authentication requests
+            description: Office365 SSL Public Certificate used by Citrix ADC to verify incoming SAML authentication requests
             type: cmtypes::certificate
             required: true
         -
@@ -85,13 +85,13 @@ parameters:
         -
             name: saml-issuer-name
             label: Saml issuer name
-            description: The name to be used in requests sent from NetScaler IdP to uniquely identify NetScaler.
+            description: The name to be used in requests sent from Citrix ADC IdP to uniquely identify Citrix ADC.
             type: string
             default: "https://nssaml.citrix.com/saml/login"
         -
             name: name-id-expr
             label: Name Identifier Expression
-            description: NetScaler Expression that will be evaluated to extract the SAML NameIdentifier to be sent in the SAML assertion.
+            description: Citrix ADC Expression that will be evaluated to extract the SAML NameIdentifier to be sent in the SAML assertion.
             type: string
             default: "HTTP.REQ.USER.ATTRIBUTE(2).B64ENCODE"
         -
@@ -116,7 +116,7 @@ parameters:
             name: audience
             label: Audience name or url
             description: |
-              Audience for which assertion sent by NetScaler IdP is applicable. This is typically entity name or url that represents 
+              Audience for which assertion sent by Citrix ADC IdP is applicable. This is typically entity name or url that represents 
               ServiceProvider (Microsoft Office365).
             type: string
             default: "urn:federation:MicrosoftOnline"
@@ -156,7 +156,7 @@ parameters:
             name: saml-rule-expr
             label: PI Rule Expression 
             description: |
-              NetScaler PI boolean expression that matches traffic to which these SAML settings are 
+              Citrix ADC PI boolean expression that matches traffic to which these SAML settings are 
               applied. The default expression is "HTTP.REQ.HEADER(\"Referer\").CONTAINS(\"microsoft\")"
             type: string
 substitutions:

@@ -1,0 +1,54 @@
+---
+name: appfw-policy
+namespace: com.citrix.adc.stylebooks 
+version: "1.0"
+display-name: "StyleBook for AppFw Policy configuration"
+description: "This stylebook configures a default config for an appfw policy."
+schema-version: "1.0"
+private: true
+import-stylebooks: 
+  - 
+    namespace: com.citrix.adc.stylebooks
+    prefix: stlb
+    version: "1.0"
+  - 
+    namespace: com.citrix.adc.commontypes
+    prefix: cmtypes
+    version: "1.0"
+  - 
+    namespace: netscaler.nitro.config
+    prefix: ns
+    version: "12.0"
+parameters: 
+  -
+    name: name
+    label: Policy Name
+    type: string
+    key: true
+    required: true 
+parameters-default-sources:
+  - cmtypes::appfw-policy-params
+
+components:
+  -
+    name: appfw-profile-comp
+    type: stlb::appfw-profile
+    properties:
+      name: $parameters.name + "-appfw-profile"
+      type: $parameters.type
+    properties-default-sources:
+      - $parameters.profile-settings
+  -
+    name: appfw-policy-comp
+    type: ns::appfwpolicy
+    description: This component creates appfw policy
+    properties:
+      name: $parameters.name + "-appfw-policy"
+      rule: $parameters.rule
+      profilename: $components.appfw-profile-comp.outputs.appfw-profile.properties.name
+
+outputs:
+   -
+    name: appfw-policy
+    value: $components.appfw-policy-comp
+

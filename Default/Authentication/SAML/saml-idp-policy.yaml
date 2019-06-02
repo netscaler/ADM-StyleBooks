@@ -2,7 +2,7 @@
 name: saml-idp-policy
 namespace: com.citrix.adc.stylebooks
 version: "1.1"
-description: This StyleBook configures an SAML IdP Policy and Profile on NetScaler 11.0 and above.
+description: This StyleBook configures an SAML IdP Policy and Profile on Citrix ADC 11.0 and above.
 schema-version: "1.0"
 private: true
 import-stylebooks: 
@@ -24,7 +24,7 @@ parameters:
     -
         name: rule
         type: string
-        label: NetScaler PI Rule for when to apply the Active Directory SAML Policy
+        label: Citrix ADC PI Rule for when to apply the Active Directory SAML Policy
         description: The Application Rule
         default: "true"
     -
@@ -40,16 +40,16 @@ parameters:
                 name: saml-idp-cert-name
                 label: CertKey Name for Signing Assertions 
                 description: |
-                    The CertKey Name (private key) is used by NetScaler to sign SAML Responses sent to the Service Provider 
-                    after successful authentication. This Certificate and its private key are created on the NetScaler
+                    The CertKey Name (private key) is used by Citrix ADC to sign SAML Responses sent to the Service Provider 
+                    after successful authentication. This Certificate and its private key are created on the Citrix ADC
                 type: string
                 required: true
             -
                 name: saml-sp-cert-name
                 label: CertKey Name for Verifying Authentication Requests
                 description: |
-                    This CertKey Name (the public key) that is used by NetScaler to verify the Service Provider's signature. 
-                    This Certificate is created by the Service Provider and provided to the NetScaler.
+                    This CertKey Name (the public key) that is used by Citrix ADC to verify the Service Provider's signature. 
+                    This Certificate is created by the Service Provider and provided to the Citrix ADC.
                 type: string
 substitutions:
     bool-to-onoff: 
@@ -59,7 +59,7 @@ components:
     -
         name: enable-features-comp
         type: ns::nsfeature
-        description: Enables the NetScaler features needed for SSO Office 365
+        description: Enables the Citrix ADC features needed for SSO Office 365
         meta-properties:
           action: enable
         properties:

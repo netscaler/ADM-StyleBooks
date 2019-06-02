@@ -1,0 +1,22 @@
+---
+name: appfw-config-params
+namespace: com.citrix.adc.commontypes 
+version: "1.0"
+display-name: "StyleBook contains the parameters of an AppFw config"
+description: "StyleBook contains the settings of an AppFw config"
+schema-version: "1.0"
+private: true
+import-stylebooks:
+  - 
+    namespace: com.citrix.adc.commontypes
+    prefix: cmtypes
+    version: "1.0"
+parameters:
+    -
+        name: enable-ipreputation
+        label: Enable IP Reputation Check
+        description: This creates an AppFw policy to block requests from disreputable source IPs.
+        type: boolean
+        default: false
+parameters-default-sources:
+  - cmtypes::appfw-policy-params

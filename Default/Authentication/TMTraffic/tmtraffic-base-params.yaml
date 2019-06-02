@@ -2,7 +2,7 @@
 name: tmtraffic-base-params
 namespace: com.citrix.adc.commontypes
 version: "1.0"
-description: This StyleBook define the base parameters for NetScaler TM Traffic configurations.
+description: This StyleBook define the base parameters for Citrix ADC TM Traffic configurations.
 schema-version: "1.0"
 private: true
 import-stylebooks:
@@ -53,7 +53,7 @@ parameters:
         name: sso-settings
         label: Enable Single Signon (SSO) Settings to the Backend App Servers 
         description: |
-            Enable Single Signon to the web application servers using of SSO methods supported by the NetScaler
+            Enable Single Signon to the web application servers using of SSO methods supported by the Citrix ADC
             (Basic Auth SSO, NTLM SSO, WebForm SSO, Kerberos SSO, SAML SSO).
         type: object
         parameters:
@@ -61,16 +61,16 @@ parameters:
                 name: username-expr
                 label: Expression to Extract Username
                 description: |
-                    The NetScaler policy expression to use to extract the username sent to the backend application
-                    if it is different than the username used to authenticate to the NetScaler
+                    The Citrix ADC policy expression to use to extract the username sent to the backend application
+                    if it is different than the username used to authenticate to the Citrix ADC
 
                 type: string
             -
                 name: password-expr
                 label: Expression to Extract User Password
                 description: |
-                    The NetScaler policy expression to use to extract the password sent to the backend application
-                    if it is different than the password (or other credential) used to authenticate to the NetScaler.
+                    The Citrix ADC policy expression to use to extract the password sent to the backend application
+                    if it is different than the password (or other credential) used to authenticate to the Citrix ADC.
                 type: string
             -
                 name: sso-form-settings

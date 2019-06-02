@@ -1,0 +1,84 @@
+name: appfw-config
+namespace: com.citrix.adc.stylebooks
+version: "1.0"
+display-name: AppFw Config StyleBook
+description: AppFw |    
+    This StyleBook contains the App Firewall Protections that can be applied to traffic by Citrix ADC
+private: true
+schema-version: "1.0"
+import-stylebooks: 
+  - 
+    namespace: netscaler.nitro.config
+    version: "10.5"
+    prefix: ns
+  - 
+    namespace: com.citrix.adc.stylebooks
+    version: "1.0"
+    prefix: stlb
+  - 
+    namespace: com.citrix.adc.commontypes
+    version: "1.0"
+    prefix: cmtypes
+parameters:
+    -
+        name: appname
+        label: Application Name
+        type: string
+        required: true
+        key: true
+parameters-default-sources:
+    - cmtypes::appfw-config-params
+components:
+  -
+    name: appfw-enable-feature-comp
+    type: ns::nsfeature
+    description: Enables the APPFW feature on Citrix ADC
+    meta-properties:
+        action: enable
+    properties:
+        feature: ["appfw"]
+  - 
+    name: appfw-policy-label-comp
+    type: ns::appfwpolicylabel
+    description: The appfw policy label to which all appfw policies are bound
+    properties: 
+      labelname: $parameters.appname + "-appfwpolicylabel"
+      policylabeltype: HTTP_REQ
+  -
+    name: appfw-policy-comp
+    type: stlb::appfw-policy
+    condition: exists($parameters.profile-settings)
+    properties-default-sources:
+        - $parameters
+    properties:
+        name: $parameters.appname
+    components:
+      -
+        name: appfwpolicy-appfwpolicylabel-binding-comp
+        type: ns::appfwpolicylabel_appfwpolicy_binding
+        description: Binds the appfw policy created in the parent component to the request policy label
+        properties:
+            labelname: $components.appfw-policy-label-comp.properties.labelname
+            policyname: $parent.outputs.appfw-policy.properties.name
+            gotopriorityexpression: END
+            priority: 10
+  -
+    name: appfw-iprep-policy-comp
+    type: stlb::appfw-iprep-policy
+    condition: $parameters.enable-ipreputation
+    properties-default-sources:
+        - $parameters
+    components:
+      -
+        name: appfwpolicy-appfwpolicylabel-binding-comp
+        type: ns::appfwpolicylabel_appfwpolicy_binding
+        description: Binds the appfw policy created in the parent component to the request policy label
+        properties:
+            labelname: $components.appfw-policy-label-comp.properties.labelname
+            policyname: $parent.outputs.appfw-iprep-policy.properties.name
+            gotopriorityexpression: END
+            priority: 20
+outputs:
+  -
+    name: appfw-policy-label
+    value: $components.appfw-policy-label-comp.properties.labelname

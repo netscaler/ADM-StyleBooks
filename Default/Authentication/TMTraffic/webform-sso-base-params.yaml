@@ -2,7 +2,7 @@
 name: webform-sso-base-params
 namespace: com.citrix.adc.commontypes
 version: "1.0"
-description: This StyleBook define the base parameters for WebForm-based SSO configurations in NetScaler.
+description: This StyleBook define the base parameters for WebForm-based SSO configurations in Citrix ADC.
 schema-version: "1.0"
 private: true
 parameters:
@@ -44,7 +44,7 @@ parameters:
         name: success-expr
         label: Success Policy Expression
         description: | 
-            A NetScaler Policy Expression (PI) on the response payload that evaluates to true 
+            A Citrix ADC Policy Expression (PI) on the response payload that evaluates to true 
             if the web form authentication was successful (e.g. HTTP.RES.HEADER("Set-Cookie").CONTAINS("acme-auth="))
         type: string
     -

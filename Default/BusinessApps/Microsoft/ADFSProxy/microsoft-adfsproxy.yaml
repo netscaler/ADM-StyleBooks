@@ -1,0 +1,332 @@
+--- 
+name: microsoft-adfsproxy
+namespace: com.citrix.adc.enterprise.stylebooks
+version: "1.0"
+display-name: Microsoft ADFSProxy StyleBook
+description: |
+    This stylebook configures Citrix ADC to act as an ADFS Proxy. For details on the Citrix ADC configuration created
+    by this StyleBook, please refer to the Citrix Deployment Guide titled "Guide to Deploying Citrix ADC as an 
+    Active Directory Federation Services Proxy" available at 
+    https://www.citrix.com/content/dam/citrix/en_us/documents/products-solutions/guide-to-deploying-netscaler-as-an-active-directory-federation-services-proxy.pdf
+schema-version: "1.0"
+import-stylebooks: 
+    - 
+        namespace: netscaler.nitro.config
+        version: "10.5"
+        prefix: ns
+    - 
+        namespace: com.citrix.adc.stylebooks
+        version: "1.0"
+        prefix: stlb
+    - 
+        namespace: com.citrix.adc.commontypes
+        version: "1.0"
+        prefix: cmtypes
+parameters:
+    -
+        name: adfs-appname
+        label: ADFSProxy Deployment Name
+        description: The name to be given to this deployment of ADFSProxy config
+        type: string
+        required: true
+        key: true
+    -
+        name: adfs-servers
+        type: string[]
+        label: "ADFS Servers FQDNs and/or IPs"
+        description: "The list of FQDNs (domain names) and/or IPs of ADFS Servers"
+        required: true 
+    -
+        name: adfs-vip
+        type: ipaddress
+        label: "ADFSProxy Public VIP IP"
+        description: "The Public VIP IP address on Citrix ADC that ADFSProxy users connect to"
+        required: true 
+    -   
+        name: adfs-certificates
+        type: object
+        label: ADFSProxy Certificates
+        description: ADFS certificates bound to the SSL VServers created by this StyleBook
+        required: true
+        parameters:
+            -
+                name: cert
+                type: cmtypes::certificate
+                label: "Certificate File path"
+                required: true
+            -
+                name: ca-cert
+                type: cmtypes::certificate
+                label: "CA Certificate File path"
+                description: "CA Certificate file"
+    -   
+        name: adfs-auth
+        type: object
+        label: "Enable Authentication for ADFS Passive and/or Active clients"
+        description: "Turn on authentication for ADFSProxy for Active and Passive Clients"
+        parameters:
+            -
+                name: auth-domain
+                type: string
+                label: "ADFSProxy Authentication Domain"
+                description: "The DNS Domain Name in Active Directory for User Authentication"
+                required: true
+            -
+                name: auth-active
+                type: object
+                label: "Enable Active Clients Authentication"
+                description: "Parameters for configuring Active Client Authentication to ADFS (AD Negotiate + SSO to ADFS)"  
+                parameters:
+                    -
+                        name: auth-vip
+                        type: ipaddress
+                        label: "ADFSProxy Active Authentication VIP"
+                        description: "The VIP IP address on Citrix ADC for the Authentication VServer to which Active Clients are redirected"
+                        required: true
+                    -
+                        name: service-account-username
+                        type: string
+                        label: "Service Account Username"
+                        description: "Service Account username used by Citrix ADC to authenticate users to AD"
+                        required: true
+                    -
+                        name: service-account-password
+                        type: password
+                        label: "Service Account Password"
+                        description: "Service Account password used by Citrix ADC to authenticate users to AD"
+                        required: true 
+                    - 
+                        name: delegate-username
+                        type: string
+                        label: "Kerberos Delegate Username"
+                        description: "The User Account Username used for Kerberos Constrained Delegation to impersonate users and enable SSO"
+                        required: true
+                    - 
+                        name: delegate-password
+                        type: password
+                        label: "Kerberos Delegate Password"
+                        description: "The User Account Password used for Kerberos Constrained Delegation to to impersonate users and enable SSO"
+                        required: true
+            -
+                name: auth-passive
+                type: object
+                label: "Enable Passive Clients Authentication"
+                description: "Parameters for configuring AD Auth for ADFSProxy"
+                parameters:
+                    -
+                        name: auth-vip
+                        type: ipaddress
+                        label: "ADFSProxy Passive Authentication VIP"
+                        description: "The VIP IP address on Citrix ADC for authenticating Passive clients to Active Directory"
+                        required: true
+                parameters-default-sources:
+                    - cmtypes::ldap-base-params
+    -   
+        name: adfs-dns
+        type: object
+        label: Configure DNS Settings
+        description: DNS settings
+        parameters:
+            -
+                name: dns-vip
+                type: ipaddress
+                label: "DNS VIP IP address"
+                description: "VIP IP address on Citrix ADC for frontending the DNS Servers"
+                required: true
+            -
+                name: dns-servers
+                type: ipaddress[]
+                label: "IP addresses of DNS Servers"
+                description: "The list of DNS Servers IP addresses"
+                required: true
+substitutions:
+  add-domain-port(server-name): 
+    domain : $server-name
+    port: 443
+  add-ip-port(server-ip): 
+    ip : ip($server-ip)
+    port: 443
+  is-server-ip(name): is-ipv4($name) or is-ipv6($name)
+  is-server-name(name): not $substitutions.is-server-ip($name)
+  server-names: filter($substitutions.is-server-name, $parameters.adfs-servers)
+  server-ips: filter($substitutions.is-server-ip, $parameters.adfs-servers)
+  request-url-expression: HTTP.REQ.URL
+  trust-path: /adfs/services/trust
+  metadata-path: /trust/proxymex
+  auth-integrated-path: /adfs/ls/auth/integrated
+  wia-path: /adfs/ls/wia
+  full-metadata-path: /adfs/services/trust/proxymex
+  metadata-xml-path: /federationmetadata/2007-06/federationmetadata.xml
+  url-contains(path): str("HTTP.REQ.URL.CONTAINS(%{quotewrap($path)}%)")
+  trust-url-rule: str("%{$substitutions.url-contains($substitutions.trust-path)}% && (!%{$substitutions.url-contains($substitutions.metadata-path)}%)")
+  federationproxy-activeauth-rule: str("true")
+  windows-integrated-auth-rule: str("HTTP.REQ.URL.CONTAINS(%{quotewrap($substitutions.auth-integrated-path)}%) || HTTP.REQ.URL.CONTAINS(%{quotewrap($substitutions.wia-path)}%)")
+  federationproxy-rule: str("HTTP.REQ.URL.CONTAINS(%{quotewrap($substitutions.trust-path)}%) || HTTP.REQ.URL.CONTAINS(%{quotewrap($substitutions.metadata-xml-path)}%)")
+  federationproxy-activeorfed-rule: str("%{$substitutions.federationproxy-rule}% || %{$substitutions.windows-integrated-auth-rule}%")
+  federation-notpassive-rule: if-then-else(exists($parameters.adfs-auth.auth-active), $substitutions.federationproxy-activeorfed-rule, str("true"))
+  federation-passive-rule: if-then-else(exists($parameters.adfs-auth.auth-active), $substitutions.federationproxy-rule, str("true"))
+  federation-pool-rule: if-then-else(exists($parameters.adfs-auth.auth-passive), $substitutions.federation-passive-rule, $substitutions.federation-notpassive-rule)
+  federation-priority(auth-obj): if-then-else(exists($auth-obj), 3, 2)
+  passive-priority(auth-obj): if-then-else(exists($auth-obj), 2, 3)
+components:
+    -
+        name: enable-features-comp
+        type: ns::nsfeature
+        description: Enables the Citrix ADC features needed for ADFSProxy configuration
+        meta-properties:
+            action: enable
+        properties:
+            feature: ["cs", "lb", "ssl", "rewrite", "aaa"]
+    -
+        name: adfs-dns-comp
+        type: stlb::adfs-dns
+        condition: $parameters.adfs-dns and $parameters.adfs-auth.auth-active
+        description: This component configures DNS VIP and Servers when ADFS active clients auth is enabled.
+        properties:
+            dns-name: $parameters.adfs-appname
+            dns-vip: $parameters.adfs-dns.dns-vip
+            dns-servers: $parameters.adfs-dns.dns-servers
+    -
+        name: adfs-auth-401-comp
+        type: stlb::adfs-auth-401
+        condition: $parameters.adfs-auth.auth-active
+        description: This component creates an Auth 401 VServer and binds certs, ADFS negotiate and session policies to it
+        properties:
+            adfs-appname: $parameters.adfs-appname
+            auth-domain: $parameters.adfs-auth.auth-domain
+            auth-info: $parameters.adfs-auth.auth-active
+            cert: $parameters.adfs-certificates.cert
+            ca-cert?: $parameters.adfs-certificates.ca-cert
+    -
+        name: adfs-auth-ldap-comp
+        type: stlb::adfs-auth-ldap
+        condition: $parameters.adfs-auth.auth-passive
+        description: This component creates an Auth LDAP VServer and binds certs, ADFS ldap and session policies to it
+        properties:
+            adfs-appname: $parameters.adfs-appname
+            auth-domain: $parameters.adfs-auth.auth-domain
+            auth-info: 
+                auth-vip: $parameters.adfs-auth.auth-passive.auth-vip
+                server-ip: $parameters.adfs-auth.auth-passive.server-ip
+                ldap-base: $parameters.adfs-auth.auth-passive.ldap-base
+                bind-dn: $parameters.adfs-auth.auth-passive.bind-dn
+                bind-dn-password: $parameters.adfs-auth.auth-passive.bind-dn-password
+                default-group?: $parameters.adfs-auth.auth-passive.default-group
+            cert: $parameters.adfs-certificates.cert
+            ca-cert?: $parameters.adfs-certificates.ca-cert
+    -
+        name: federation-pool-comp
+        type: object
+        description: |
+            Builds a pool object representing "federation" requests needed later for building 
+            the adfs-cs-comp component below.
+        properties:
+            rule: $substitutions.federation-pool-rule
+            lb-pool:
+                lb-appname: $parameters.adfs-appname + "-adfs-federationproxy"
+                lb-virtual-ip: $parameters.adfs-vip
+                lb-virtual-port: 445
+                lb-service-type: SSL
+                certificates: [$parameters.adfs-certificates.cert, $parameters.adfs-certificates.ca-cert]
+                svc-servers?: map($substitutions.add-ip-port, $substitutions.server-ips)
+                svc-server-domains?: map($substitutions.add-domain-port, $substitutions.server-names)
+                svc-service-type: SSL
+            priority: $substitutions.federation-priority($parameters.adfs-auth.auth-active)
+    -
+        name: passive-pool-comp
+        type: object
+        condition: $parameters.adfs-auth.auth-passive
+        description: |
+            If ADFS passive clients are enabled, builds a pool object representing "passive clients" requests 
+            needed later for building the adfs-cs-comp component below.
+        properties:
+            rule: $substitutions.windows-integrated-auth-rule 
+            lb-pool:
+                lb-appname: $parameters.adfs-appname + "-adfs-passive"
+                lb-virtual-ip: $parameters.adfs-vip
+                lb-virtual-port: 446
+                lb-service-type: SSL
+                certificates: [$parameters.adfs-certificates.cert, $parameters.adfs-certificates.ca-cert]
+                lb-advanced:
+                    auth-params:
+                        authentication?: "ON"
+                        authentication-http-401: "OFF"
+                        authentication-host: $parameters.adfs-auth.auth-domain
+                        authentication-vserver-name: $components.adfs-auth-ldap-comp.outputs.auth-vserver.properties.name
+                svc-servers?: map($substitutions.add-ip-port, $substitutions.server-ips)
+                svc-server-domains?: map($substitutions.add-domain-port, $substitutions.server-names)
+                svc-service-type: SSL
+            priority: $substitutions.passive-priority($parameters.adfs-auth.auth-active)
+    -
+        name: active-pool-comp
+        type: object
+        condition: $parameters.adfs-auth.auth-active
+        description: |
+            If ADFS active clients are enabled, builds a pool object representing "active clients" requests 
+            needed later for building the adfs-cs-comp component below.
+        properties:
+            rule: str("true")
+            lb-pool:
+                lb-appname: $parameters.adfs-appname + "-adfs-active"
+                lb-virtual-ip: $parameters.adfs-vip
+                lb-virtual-port: 444
+                lb-service-type: SSL
+                certificates: [$parameters.adfs-certificates.cert, $parameters.adfs-certificates.ca-cert]
+                lb-advanced:
+                    auth-params:
+                        authentication: "OFF"
+                        authentication-http-401: "ON"
+                        authentication-vserver-name: $components.adfs-auth-401-comp.outputs.auth-vserver.properties.name
+                svc-servers?: map($substitutions.add-ip-port, $substitutions.server-ips)
+                svc-server-domains?: map($substitutions.add-domain-port, $substitutions.server-names)
+                svc-service-type: SSL
+            priority: 1
+    -
+        name: pools-helper-comp
+        type: object
+        description: |
+            Builds a list from the pools (federation, active, passive) that are used by cs-lb-mon.
+            Note that the list will only contain the components that are actually built. components
+            that are skipped because their condition evaluates to false are omitted from the list 
+            that is the value of the pools property below.
+        properties:
+            pools: 
+                - $components.federation-pool-comp.properties
+                - $components.passive-pool-comp.properties
+                - $components.active-pool-comp.properties
+    -
+        name: adfs-cs-comp
+        type: stlb::cs-lb-mon
+        description: Builds a CS config with the LBVServers and their config corresponding to the pools in the list.
+        properties:
+            appname: $parameters.adfs-appname
+            cs-virtual-ip: $parameters.adfs-vip
+            cs-virtual-port: 443
+            cs-service-type: SSL
+            certificates: [$parameters.adfs-certificates.cert, $parameters.adfs-certificates.ca-cert]
+            pools: $components.pools-helper-comp.properties.pools
+    -
+        name: adfs-federationproxy-rewrite-config-comp
+        type: stlb::rewrite-config
+        description: This component creates the rewrite policies required for the ADFS federation proxy
+        properties:
+            appname: $parameters.adfs-appname
+            rewrite-config:
+                replace-headers:
+                    -
+                        name: $substitutions.request-url-expression
+                        pattern: $substitutions.trust-url-rule
+                        value: $substitutions.full-metadata-path
+        components:
+            -
+                name: adfs-federationproxy-lbvserver-rewrite-bindings-comp
+                type: stlb::vserver-rewritepolicies-bindings
+                description: This component binds the lbvserver to the rewrite policy label created by the parent component.
+                properties:
+                  vserver-name: $components.adfs-cs-comp.outputs.non-default-lbvservers[0].properties.name
+                  vserver-type: LBVSERVER
+                  policies:
+                    -
+                      name: $parent.outputs.rewrite-request-policy-label
+                      type: POLICYLABEL
+                      bind-point: REQUEST

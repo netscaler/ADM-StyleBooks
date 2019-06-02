@@ -3,7 +3,7 @@ name: microsoft-skype-for-business-front-end
 namespace: com.citrix.adc.enterprise.stylebooks
 version: "1.1"
 description: |
-            This StyleBook defines the NetScaler configuration for the Front End server of 
+            This StyleBook defines the Citrix ADC configuration for the Front End server of 
             Microsoft Skype for Business 2015.
 display-name: Microsoft Skype for Business 2015 StyleBook (Front-End Server)
 schema-version: "1.0"

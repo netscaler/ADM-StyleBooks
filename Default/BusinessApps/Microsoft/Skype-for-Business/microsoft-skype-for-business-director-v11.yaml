@@ -3,7 +3,7 @@ name: microsoft-skype-for-business-director
 namespace: com.citrix.adc.enterprise.stylebooks
 version: "1.1"
 description: |
-            This StyleBook defines a NetScaler configuration for the Director Server of 
+            This StyleBook defines a Citrix ADC configuration for the Director Server of 
             Microsoft Skype for Business 2015.
 display-name: Microsoft Skype for Business 2015 StyleBook (Director)
 schema-version: "1.0"

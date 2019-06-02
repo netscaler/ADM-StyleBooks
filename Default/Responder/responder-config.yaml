@@ -3,7 +3,7 @@ namespace: com.citrix.adc.stylebooks
 version: "1.0"
 display-name: Responder Config StyleBook
 private: true
-description: This StyleBook contains the different responder configuration that can be applied to traffic by NetScaler
+description: This StyleBook contains the different responder configuration that can be applied to traffic by Citrix ADC
 schema-version: "1.0"
 import-stylebooks: 
   - 
@@ -32,7 +32,7 @@ components:
     # -
     #   name: responder-enable-feature-comp
     #   type: ns::nsfeature
-    #   description: Enables the RESPONDER feature on NetScaler
+    #   description: Enables the RESPONDER feature on Citrix ADC
     #   meta-properties:
     #       action: enable
     #   properties:
