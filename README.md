@@ -21,7 +21,7 @@ StyleBooks fit in well with the principles of Infrastructure-as-code that is pra
 
 * **API-driven**: All configuration operations are supported by using the Citrix ADM GUI or through REST APIs and the Python SDK. The APIs can be used in synchronous or asynchronous mode. In addition to the configuration tasks, the StyleBooks APIs also allow you to discover the schema (parameters description) of any StyleBook at runtime.
 
-For a reference on the syntax of StyleBooks and how to write and test new ones, please refer to the Citrix online documentation at: https://docs.citrix.com/en-us/Citrix ADC-ADM/12/stylebooks.html
+For a reference on the syntax of StyleBooks and how to write and test new ones, please refer to the Citrix online documentation at: https://docs.citrix.com/en-us/citrix-application-delivery-management-software/12-1/stylebooks.html
 
 
 You can also login to Citrix ADM, browse the StyleBooks catalog, and see how the different StyleBooks relate to (and depend on) each other, by using the Dependencies Viewer. If you maintain your StyleBooks in Github, you can use Citrix ADM Github integration to sync your StyleBooks to ADM.
