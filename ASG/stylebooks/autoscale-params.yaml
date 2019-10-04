@@ -1,0 +1,55 @@
+--- 
+name: autoscale-params
+namespace: com.citrix.adc.commontypes
+version: "1.0"
+description: "This StyleBook defines the parameters required for Autoscale Deployment."
+display-name: "Autoscale Parmeters StyleBook"
+private: true
+type: autoscale
+schema-version: "1.0"
+parameters:
+  
+  - 
+    name: app_name
+    label: "Application Name"
+    description: "Name of the Application"
+    type: string
+    key: true
+    gui:
+      updatable: false
+    required: true
+  
+  -
+    name: ip_address
+    label: "IP Address of the LoadBalancer"
+    description: "IP Address of the LoadBalancer"
+    type: ipaddress
+    gui:
+        hidden: true
+          
+  -
+    name: domain_name
+    label: "Name for the domain"
+    description: "Name for the domain"
+    type: string
+    required: true
+    gui:
+      updatable: false
+    
+  -
+    name: zone_name
+    label: "Zone of the domain"
+    description: "Zone of the domain"
+    type: string   
+    required: true
+    gui:
+      updatable: false
+      
+  -
+    name: ipset
+    label: "IPSet"
+    description: "Configuration for network ipset resource"
+    type: string
+    gui:
+        hidden: true
+
