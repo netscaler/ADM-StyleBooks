@@ -1,0 +1,286 @@
+--- 
+name: lb-mon-autoscale
+namespace: com.citrix.adc.stylebooks
+version: "1.0"
+display-name: "HTTP/SSL LoadBalancing StyleBook for Autoscale Deployment"
+description: "This stylebook configures Load Balancing Application for Autoscale Deployment"
+schema-version: "1.0"
+type: "autoscale"
+import-stylebooks: 
+  - 
+    namespace: netscaler.nitro.config
+    prefix: ns
+    version: "12.1"
+  - 
+    namespace: com.citrix.adc.commontypes
+    prefix: cmtypes
+    version: "1.0"
+  - 
+    namespace: com.citrix.adc.stylebooks
+    prefix: stlb
+    version: "1.0"
+
+parameters-default-sources:
+  - cmtypes::autoscale-params
+  - cmtypes::lbvserver-params-autoscale
+  
+parameters:
+      
+  
+  -
+    name: cloud-backend-settings
+    label: Application Server Group Type CLOUD
+    description: |
+       Automatically detect the servers in your Autoscaling application server fleet in the cloud and load balance traffic among these servers.
+       The name provided below should match the name provided for the fleet in the cloud.
+    type: object
+    gui: 
+          summary_display: true
+          collapse_pane: true
+    parameters-default-sources:
+           - cmtypes::services-params-autoscale
+  -
+    name: backend-settings-servers
+    label: Application Server Group Type STATIC
+    description: "Load balance traffic among the servers provided."
+    type: object
+    gui: 
+         summary_display: true
+         collapse_pane: true
+    parameters-default-sources:
+          - cmtypes::services-params
+  - 
+    name: certificates
+    label: "SSL Certificate Settings"
+    description: "Certificates for this Virtual Server if this Load Balanced Application is exposed using SSL"
+    type: "cmtypes::certificate[]"
+  
+  -
+    name: monitors
+    label: "List of Monitors"
+    description: "List of Monitors to monitor Application Servers"
+    type: cmtypes::monitor[]
+
+substitutions:
+  mon-name(appname, monname): $appname + "-mon-" + $monname
+  
+components:
+  -
+    name: nsfeatures-comp
+    type: ns::nsfeature
+    meta-properties:
+      action: enable
+    properties:
+      feature:
+        - LB
+        - CS
+        - OSPF
+        - SSL
+        
+  -
+    name: nsmode-comp
+    type: ns::nsmode
+    meta-properties:
+      action: enable
+    properties:
+      mode:
+        - FR
+        - L3
+        - Edge
+        - USNIP
+        - PMTUD
+      
+  - 
+    name: lbvserver-comp
+    type: ns::lbvserver
+    properties: 
+      name: $parameters.app_name + "-lb"
+      servicetype: $parameters.lb-service-type
+      ipv46: $parameters.ip_address
+      port?: $parameters.lb-virtual-port
+      lbmethod?: $parameters.lb-advanced.algorithm
+      persistencetype?: $parameters.lb-advanced.persistence
+      persistencebackup?: $parameters.lb-advanced.persistence-backup
+      backuppersistencetimeout?: $parameters.lb-advanced.backup-persistence-timeout
+      clttimeout?: $parameters.lb-advanced.client-timeout
+      timeout?: $parameters.lb-advanced.timeout
+      insertvserveripport?: $parameters.lb-advanced.insert-vserver-ipport
+      redirurl?: $parameters.lb-advanced.redirect-url
+      somethod?: $parameters.lb-advanced.spillover-method
+      sothreshold?: $parameters.lb-advanced.spillover-threshold
+      httpprofilename?: $parameters.lb-advanced.http-profile
+      downstateflush?: $parameters.lb-advanced.flush-on-state-down
+      authentication?: $parameters.lb-advanced.auth-params.authentication
+      authenticationhost?: $parameters.lb-advanced.auth-params.authentication-host
+      authnvsname?: $parameters.lb-advanced.auth-params.authentication-vserver-name
+      authn401?: $parameters.lb-advanced.auth-params.authentication-http-401
+      appflowlog?: $parameters.lb-advanced.appflow-log
+      comment?: $parameters.lb-advanced.comment
+      ipset: $parameters.ipset
+      
+    components: 
+      - 
+        name: servicegroup-comp
+        type: ns::servicegroup
+        condition: "$parameters.cloud-backend-settings"
+        properties: 
+          servicegroupname: $parameters.cloud-backend-settings.autoscale_name
+          servicetype: $parameters.cloud-backend-settings.auto-svc-service-type
+          autoscale: "CLOUD"
+          memberport: $parameters.cloud-backend-settings.member_port
+          autodisablegraceful?: $parameters.cloud-backend-settings.autodisable_graceful
+          autodisabledelay?: $parameters.cloud-backend-settings.autodisable_delay
+          cip?: $parameters.cloud-backend-settings.auto-svcg-advanced.svc-client-ip
+          cipheader?: $parameters.cloud-backend-settings.auto-svcg-advanced.svc-client-ip-header
+          cka?: $parameters.cloud-backend-settings.auto-svcg-advanced.svc-client-keepalive
+          clttimeout?: $parameters.cloud-backend-settings.auto-svcg-advanced.svc-client-timeout
+          svrtimeout?: $parameters.cloud-backend-settings.auto-svcg-advanced.svc-server-timeout
+          maxclient?: $parameters.cloud-backend-settings.auto-svcg-advanced.svc-max-clients
+          maxreq?: $parameters.cloud-backend-settings.auto-svcg-advanced.svc-max-requests
+          tcpb?: $parameters.cloud-backend-settings.auto-svcg-advanced.svc-tcp-buffering
+          usip?: $parameters.cloud-backend-settings.auto-svcg-advanced.svc-use-source-ip
+          useproxyport?: $parameters.cloud-backend-settings.auto-svcg-advanced.svc-use-proxy-port
+          cmp?: $parameters.cloud-backend-settings.auto-svcg-advanced.svc-compression
+          sc?: $parameters.cloud-backend-settings.auto-svcg-advanced.svc-sure-connect
+          sp?: $parameters.cloud-backend-settings.auto-svcg-advanced.svc-surge-protection
+          customserverid?: $parameters.cloud-backend-settings.auto-svcg-advanced.svc-custom-server-id
+          downstateflush?: $parameters.cloud-backend-settings.auto-svcg-advanced.svc-downstate-flush
+          state?: $parameters.cloud-backend-settings.auto-svcg-advanced.svc-state
+          healthmonitor?: $parameters.cloud-backend-settings.auto-svcg-advanced.svc-enable-health-monitor
+          comment?: $parameters.cloud-backend-settings.auto-svcg-advanced.svc-comment
+      
+      - 
+        name: servicegroup-comp-noncloud
+        type: ns::servicegroup
+        condition: "$parameters.backend-settings-servers"
+        properties: 
+          servicegroupname: $parameters.app_name
+          servicetype: $parameters.backend-settings-servers.svc-service-type
+          cip?: $parameters.backend-settings-servers.svcg-advanced.svc-client-ip
+          cipheader?: $parameters.backend-settings-servers.svcg-advanced.svc-client-ip-header
+          cka?: $parameters.backend-settings-servers.svcg-advanced.svc-client-keepalive
+          clttimeout?: $parameters.backend-settings-servers.svcg-advanced.svc-client-timeout
+          svrtimeout?: $parameters.backend-settings-servers.svcg-advanced.svc-server-timeout
+          maxclient?: $parameters.backend-settings-servers.svcg-advanced.svc-max-clients
+          maxreq?: $parameters.backend-settings-servers.svcg-advanced.svc-max-requests
+          tcpb?: $parameters.backend-settings-servers.svcg-advanced.svc-tcp-buffering
+          usip?: $parameters.backend-settings-servers.svcg-advanced.svc-use-source-ip
+          useproxyport?: $parameters.backend-settings-servers.svcg-advanced.svc-use-proxy-port
+          cmp?: $parameters.backend-settings-servers.svcg-advanced.svc-compression
+          sc?: $parameters.backend-settings-servers.svcg-advanced.svc-sure-connect
+          sp?: $parameters.backend-settings-servers.svcg-advanced.svc-surge-protection
+          customserverid?: $parameters.backend-settings-servers.svcg-advanced.svc-custom-server-id
+          downstateflush?: $parameters.backend-settings-servers.svcg-advanced.svc-downstate-flush
+          state?: $parameters.backend-settings-servers.svcg-advanced.svc-state
+          healthmonitor?: $parameters.backend-settings-servers.svcg-advanced.svc-enable-health-monitor
+          comment?: $parameters.backend-settings-servers.svcg-advanced.svc-comment
+        components: 
+         
+          -
+            name: server-members
+            type: ns::server
+            repeat: $parameters.backend-settings-servers.svc-servers
+            repeat-item: server
+            repeat-condition: $server.add-server
+            properties:
+              name: str($server.ip)
+              ipaddress: $server.ip
+          - 
+            name: svg-ip-members
+            type: ns::servicegroup_servicegroupmember_binding
+            repeat: $parameters.backend-settings-servers.svc-servers
+            repeat-item: server
+            properties: 
+              ip: $server.ip
+              port: $server.port
+              weight?: $server.weight
+              servicegroupname: $parent.properties.servicegroupname
+      -  
+        name: server-members
+        type: ns::server
+        condition: $parameters.backend-settings-servers.svc-server-domains
+        repeat: $parameters.backend-settings-servers.svc-server-domains
+        repeat-item: server
+        properties: 
+          name: $server.domain + "-server"
+          domain: $server.domain
+      -
+        name: service-members
+        type: ns::service
+        condition: $parameters.backend-settings-servers.svc-server-domains
+        repeat: $parameters.backend-settings-servers.svc-server-domains
+        repeat-item: server
+        properties: 
+           name: $server.domain + "-service"
+           servername: $server.domain + "-server"
+           servicetype: $parameters.backend-settings-servers.svc-service-type
+           port: $server.port
+        components:
+           -
+              name: lbvserver-service-binding
+              type: ns::lbvserver_service_binding
+              properties: 
+                 name: $parent.parent.properties.name
+                 servicename: $parent.properties.name  
+      - 
+        name: lbvserver-svg-binding
+        type: ns::lbvserver_servicegroup_binding
+        condition: "$parameters.cloud-backend-settings"
+        properties: 
+          name: $parent.properties.name
+          servicegroupname: $parent.components.servicegroup-comp.properties.servicegroupname
+          
+      - 
+        name: lbvserver-svg-binding-noncloud
+        type: ns::lbvserver_servicegroup_binding
+        condition: "$parameters.backend-settings-servers"
+        properties: 
+          name: $parent.properties.name
+          servicegroupname: $parent.components.servicegroup-comp-noncloud.properties.servicegroupname 
+      
+  - 
+        name: vserver-certs-bindings
+        type: stlb::vserver-certs-binds
+        condition: "$parameters.certificates and ($parameters.lb-service-type == \"SSL\")"
+        properties: 
+          certificates: $parameters.certificates
+          vserver-name: $components.lbvserver-comp.properties.name
+          
+  -
+        name: monitors-comp
+        type: cmtypes::monitor
+        condition: $parameters.monitors
+        repeat: $parameters.monitors
+        repeat-item: mon
+        repeat-index: ndx
+        description: "Builds a list of NetScaler monitor objects and binds them to the servicegroup of this LB config"
+        properties-default-sources:
+          - $mon
+        properties:
+          monitorname: $substitutions.mon-name($parameters.app_name, $mon.monitorname)
+        components:
+          -
+           name: monitor-svcg-binding-comp
+           type: ns::servicegroup_lbmonitor_binding
+           condition: "$parameters.cloud-backend-settings"
+           properties:
+            servicegroupname: $components.lbvserver-comp.components.servicegroup-comp.properties.servicegroupname
+            monitor_name: $parent.properties.monitorname
+        
+          -
+           name: monitor-svcg-binding-comp-noncloud
+           type: ns::servicegroup_lbmonitor_binding
+           condition: "$parameters.backend-settings-servers"
+           properties:
+            servicegroupname: $components.lbvserver-comp.components.servicegroup-comp-noncloud.properties.servicegroupname
+            monitor_name: $parent.properties.monitorname
+
+      
+outputs: 
+  - 
+    name: lbvserver
+    value: $components.lbvserver-comp
+  - 
+    name: servicegroup
+    value: $components.lbvserver-comp.components.servicegroup-comp
+
